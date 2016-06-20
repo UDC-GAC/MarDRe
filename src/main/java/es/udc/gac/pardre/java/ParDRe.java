@@ -6,21 +6,28 @@ import java.util.ArrayList;
 import es.udc.gac.pardre.util.Options;
 import es.udc.gac.pardre.util.SeqFileParser;
 import es.udc.gac.pardre.util.Sequence;
+import es.udc.gac.pardre.util.Timer;
 
 public class ParDRe {
 
+	public static final int T_TOTAL = 0;
+	public static final int T_READ_SEQ = 1;
+	public static final int T_REMOVE_DUP = 2;
+	public static final int T_PRINT_SEQ = 3;
+	
 	/**
 	 * @param args
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
+		Timer timer = new Timer();
+
 		System.out.println("Starting ParDRe");
 
-		long startTime = System.currentTimeMillis();
-		long time, partialTime;
+		timer.start(T_TOTAL);
 
 		Options options = new Options();
-		if(!options.parse(args)){
+		if(!options.parse(args)) {
 			options.printUsage("ParDRe");
 			return;
 		}
@@ -28,21 +35,22 @@ public class ParDRe {
 		SeqFileParser parser = new SeqFileParser(options);
 		ArrayList<Sequence> sequences = new ArrayList<Sequence>();
 
-		partialTime = System.currentTimeMillis();
+		timer.start(T_READ_SEQ);
 
 		// The method getSeq returns 0 if there are no more sequences in the file
-		while(true){
+		while(true) {
 			Sequence seq = new Sequence();
 			if(parser.getSeq(seq) == 0){
 				break;
 			}
-
 			sequences.add(seq);
 		}
 
-		time = System.currentTimeMillis()-partialTime;
-		System.out.println("Read " + sequences.size() + " sequences in " + ((float) time)/1000 + " seconds");
-		partialTime = System.currentTimeMillis();
+		timer.stop(T_READ_SEQ);
+		
+		System.out.format(java.util.Locale.ENGLISH," Read %i sequences in %.2f seconds\n", sequences.size(), timer.read(T_READ_SEQ));
+		
+		timer.start(T_REMOVE_DUP);
 
 		for(int i=0; i<sequences.size()-1; i++){
 			for(int j=i+1; j<sequences.size(); j++){
@@ -57,18 +65,22 @@ public class ParDRe {
 			}
 		}
 
-		time = System.currentTimeMillis()-partialTime;
-		System.out.println("Remove duplicate in " + ((float) time)/1000 + " seconds");
-
-		for(int i=0; i<sequences.size(); i++){
+		timer.stop(T_REMOVE_DUP);
+		
+		System.out.format(java.util.Locale.ENGLISH," Remove duplicate in %.2f seconds\n", timer.read(T_REMOVE_DUP));
+		
+		timer.start(T_PRINT_SEQ);
+		
+		for(int i=0; i<sequences.size(); i++) {
 			parser.printSeq(sequences.get(i));
 		}
 
-		time = System.currentTimeMillis()-partialTime;
-		System.out.println("Print " + sequences.size() + " sequences in " + ((float) time)/1000 + " seconds");
-
-		time = System.currentTimeMillis() - startTime;
-
-		System.out.println("Done in " + ((float) time)/1000 + " seconds");
+		timer.stop(T_PRINT_SEQ);
+		
+		System.out.format(java.util.Locale.ENGLISH," Print %i sequences in %.2f seconds\n", sequences.size(), timer.read(T_PRINT_SEQ));
+		
+		timer.stop(T_TOTAL);
+		
+		System.out.format(java.util.Locale.ENGLISH," Done in seconds =\t%.2f\n", timer.read(T_TOTAL));
 	}
 }

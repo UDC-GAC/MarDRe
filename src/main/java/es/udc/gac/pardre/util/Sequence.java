@@ -6,9 +6,11 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.StringWriter;
 
-import org.apache.hadoop.io.Writable;
+//import org.apache.hadoop.io.Writable;
 
-public class Sequence implements Writable
+//public class Sequence implements Writable
+
+public class Sequence
 {
 
 	private static short[] _decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
