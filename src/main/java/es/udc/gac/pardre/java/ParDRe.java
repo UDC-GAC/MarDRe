@@ -7,21 +7,21 @@ import es.udc.gac.pardre.util.Options;
 import es.udc.gac.pardre.util.SeqFileParser;
 import es.udc.gac.pardre.util.Sequence;
 
-public class ParDRe_Java {
+public class ParDRe {
 
 	/**
 	 * @param args
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		System.out.println("In ParDRe_Java");
+		System.out.println("Starting ParDRe");
 
 		long startTime = System.currentTimeMillis();
 		long time, partialTime;
 
 		Options options = new Options();
 		if(!options.parse(args)){
-			options.printUsage("ParDRe_Java");
+			options.printUsage("ParDRe");
 			return;
 		}
 
