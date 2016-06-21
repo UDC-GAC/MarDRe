@@ -39,6 +39,8 @@ public class ParDRe {
 		List<Sequence> sequences = new ArrayList<Sequence>();
 		timer.stop(T_INIT);
 
+		System.out.format(java.util.Locale.ENGLISH,"Initialized in %.3f seconds\n", timer.read(T_INIT));
+
 		timer.start(T_READ_SEQ);
 		// The method getSeq returns 0 if there are no more sequences in the file
 		while(true) {
@@ -49,6 +51,8 @@ public class ParDRe {
 			sequences.add(seq);
 		}
 		timer.stop(T_READ_SEQ);
+
+		System.out.format(java.util.Locale.ENGLISH,"Read %d sequences in %.3f seconds\n", sequences.size(), timer.read(T_READ_SEQ));
 
 		timer.start(T_REMOVE_DUP);
 		for(int i=0; i<sequences.size()-1; i++) {
@@ -65,6 +69,8 @@ public class ParDRe {
 		}
 		timer.stop(T_REMOVE_DUP);
 
+		System.out.format(java.util.Locale.ENGLISH,"Remove duplicate in %.3f seconds\n", timer.read(T_REMOVE_DUP));
+
 		timer.start(T_PRINT_SEQ);
 		for(int i=0; i<sequences.size(); i++) {
 			parser.printSeq(sequences.get(i));
@@ -73,9 +79,6 @@ public class ParDRe {
 
 		timer.stop(T_TOTAL);
 
-		System.out.format(java.util.Locale.ENGLISH,"Initialized in %.3f seconds\n", timer.read(T_INIT));
-		System.out.format(java.util.Locale.ENGLISH,"Read %d sequences in %.3f seconds\n", sequences.size(), timer.read(T_READ_SEQ));
-		System.out.format(java.util.Locale.ENGLISH,"Remove duplicate in %.3f seconds\n", timer.read(T_REMOVE_DUP));
 		System.out.format(java.util.Locale.ENGLISH,"Print %d sequences in %.3f seconds\n", sequences.size(), timer.read(T_PRINT_SEQ));
 		System.out.format(java.util.Locale.ENGLISH,"Done in %.3f seconds\n", timer.read(T_TOTAL));
 		System.exit(0);
