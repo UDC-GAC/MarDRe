@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import es.udc.gac.pardre.util.Options;
 import es.udc.gac.pardre.util.SeqFileParser;
 import es.udc.gac.pardre.util.Sequence;
@@ -14,7 +11,6 @@ import es.udc.gac.pardre.util.Timer;
 
 public class ParDRe {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ParDRe.class.getName());
 	private static final int T_TOTAL = 0;
 	private static final int T_INIT = 1;
 	private static final int T_READ_SEQ = 2;
