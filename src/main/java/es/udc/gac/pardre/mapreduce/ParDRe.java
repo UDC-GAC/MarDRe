@@ -20,13 +20,17 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import es.udc.gac.pardre.util.Options;
 import es.udc.gac.pardre.util.SeqStringParser;
 import es.udc.gac.pardre.util.Sequence;
 import es.udc.gac.pardre.util.Timer;
 
-public class ParDRe_MapReduce {
+public class ParDRe {
 
+	private static final Logger LOG = LoggerFactory.getLogger(ParDRe.class.getName());
 	private static final int T_TOTAL = 0;
 	private static final int T_REMOVE_DUP = 1;
 	private static final int T_PRINT_SEQ = 2;
@@ -50,8 +54,7 @@ public class ParDRe_MapReduce {
 			minQual = (char) Integer.parseInt(job.get(MINQUALPARAM));
 			parser = new SeqStringParser(prefixLength, minQual);
 
-			System.out.println("ParDreMapper: prefixLength = " + prefixLength
-					+ " ; minQual = " + (int) minQual);
+			LOG.debug("ParDreMapper: prefixLength = {}, minQual = {}", prefixLength, (int)minQual);
 		}
 
 		@Override
@@ -125,7 +128,7 @@ public class ParDRe_MapReduce {
 
 		Timer timer = new Timer();
 
-		System.out.println("Starting ParDRe_MapReduce");
+		System.out.println("Starting ParDRe MapReduce");
 
 		timer.start(T_TOTAL);
 
@@ -135,7 +138,7 @@ public class ParDRe_MapReduce {
 
 		Options options = new Options();
 		if (!options.parse(otherArgs)) {
-			options.printUsage("ParDRe_MapReduce");
+			options.printUsage("ParDRe MapReduce");
 			return;
 		}
 
@@ -148,8 +151,8 @@ public class ParDRe_MapReduce {
 		Path tmpPath = new Path(options.get_writeFileName() + ".tmp");
 		Path outputPath = new Path(options.get_writeFileName());
 
-		Job job1 = Job.getInstance(conf, "ParDRe_MapReduce_RemoveDuplicate");
-		job1.setJarByClass(ParDRe_MapReduce.class);
+		Job job1 = Job.getInstance(conf, "ParDRe_RemoveDuplicate");
+		job1.setJarByClass(ParDRe.class);
 		job1.setInputFormatClass(TextInputFormat.class);
 		job1.setOutputFormatClass(SequenceFileOutputFormat.class);
 		job1.setMapOutputKeyClass(LongWritable.class);
@@ -168,8 +171,8 @@ public class ParDRe_MapReduce {
 		boolean result = job1.waitForCompletion(true);
 		timer.stop(T_REMOVE_DUP);
 
-		Job job2 = Job.getInstance(conf, "ParDRe_MapReduce_SaveOutput");
-		job2.setJarByClass(ParDRe_MapReduce.class);
+		Job job2 = Job.getInstance(conf, "ParDRe_SaveOutput");
+		job2.setJarByClass(ParDRe.class);
 		job2.setInputFormatClass(SequenceFileInputFormat.class);
 		job2.setOutputFormatClass(TextOutputFormat.class);
 		job2.setMapOutputKeyClass(NullWritable.class);
