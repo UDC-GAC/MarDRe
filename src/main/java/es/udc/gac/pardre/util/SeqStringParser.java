@@ -2,31 +2,27 @@ package es.udc.gac.pardre.util;
 
 import java.util.StringTokenizer;
 
-public class SeqStringParser
-{
+public class SeqStringParser {
 
 	private short _prefixLength;
 	private char _minQual;
 
-	public SeqStringParser(short prefixLength, char minQual)
-	{
+	public SeqStringParser(short prefixLength, char minQual) {
 		this._prefixLength = prefixLength;
 		this._minQual = minQual;
 	}
 
-	public int getSeq(String s, Sequence seq)
-	{
-		if (s.equals(""))
-		{
+	public int getSeq(String s, Sequence seq) {
+		if (s.equals("")) {
 			System.out.println("Found empty string " + s);
 			return 0;
 		}
-		
+
 		StringTokenizer st = new StringTokenizer(s, "\n");
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
-							+ ": no name available");
+					+ ": no name available");
 		String str = st.nextToken();
 		String strQuals;
 
@@ -38,21 +34,21 @@ public class SeqStringParser
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
-							+ ": only name available");
+					+ ": only name available");
 		str = st.nextToken();
 
 		// Read the comment line
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
-							+ ": no comment available");
+					+ ": no comment available");
 		strQuals = st.nextToken();
 
 		// Read the qualities
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
-							+ ": no qualities available");
+					+ ": no qualities available");
 		strQuals = st.nextToken();
 
 		seq.set_length(str.length());
@@ -63,5 +59,4 @@ public class SeqStringParser
 
 		return seq.get_length();
 	}
-
 }

@@ -23,17 +23,20 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import es.udc.gac.pardre.util.Options;
 import es.udc.gac.pardre.util.SeqStringParser;
 import es.udc.gac.pardre.util.Sequence;
+import es.udc.gac.pardre.util.Timer;
 
-public class ParDRe_MapReduce
-{
+public class ParDRe_MapReduce {
 
+	private static final int T_TOTAL = 0;
+	private static final int T_REMOVE_DUP = 1;
+	private static final int T_PRINT_SEQ = 2;
 	private static final String PREFIXLENGTHPARAM = "pardre_prefixLength";
 	private static final String MINQUALPARAM = "pardre_minQual";
 	private static final String MISSMATCHPARAM = "pardre_missMatch";
 
 	public static class ParDReMapper
-			extends Mapper<Object, Text, LongWritable, Sequence>
-	{
+	extends Mapper<Object, Text, LongWritable, Sequence> {
+
 		private Sequence seq = new Sequence();
 		private LongWritable longKey = new LongWritable();
 		private SeqStringParser parser;
@@ -41,8 +44,7 @@ public class ParDRe_MapReduce
 		private char minQual;
 
 		@Override
-		public void setup(Context context)
-		{
+		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTHPARAM));
 			minQual = (char) Integer.parseInt(job.get(MINQUALPARAM));
@@ -54,27 +56,24 @@ public class ParDRe_MapReduce
 
 		@Override
 		public void map(Object key, Text value, Context context)
-				throws IOException, InterruptedException
-		{
-			if (parser.getSeq(value.toString(), seq) != 0)
-			{
-				longKey.set(seq.get_key());
-				// System.out.println("WRITING " + key + ":" +
-				// seq.toStringFull());
+				throws IOException, InterruptedException {
+
+			if (parser.getSeq(value.toString(), seq) != 0) {
+				longKey.set(seq.getKey());
+				System.out.println("WRITING " + key + ":" + seq.toStringFull());
 				context.write(longKey, seq);
 			}
 		}
 	}
 
 	public static class ParDReReducer
-			extends Reducer<LongWritable, Sequence, NullWritable, Sequence>
-	{
+	extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
+
 		private short missMatch;
 		private NullWritable caca = NullWritable.get();
 
 		@Override
-		public void setup(Context context)
-		{
+		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
 			missMatch = Short.parseShort(job.get(MISSMATCHPARAM));
 
@@ -83,27 +82,24 @@ public class ParDRe_MapReduce
 
 		@Override
 		public void reduce(LongWritable key, Iterable<Sequence> values,
-				Context context) throws IOException, InterruptedException
-		{
+				Context context) throws IOException, InterruptedException {
+
 			List<Sequence> sequences = new ArrayList<Sequence>();
-			for (Sequence seq : values)
-			{
+
+			for (Sequence seq : values) {
 				sequences.add(new Sequence(seq));
 			}
 
-			// System.out.println("KEY=" + key + " - " + sequences.size());
-			// for (Sequence seq : sequences)
-			// {
-			// System.out.println(key + ":" + seq);
-			// }
+			System.out.println("KEY=" + key + " - " + sequences.size());
+			for (Sequence seq : sequences) {
+				System.out.println(key + ":" + seq);
+			}
 
-			for (int i = 0; i < sequences.size(); i++)
-			{
+			for (int i = 0; i < sequences.size(); i++) {
 				Sequence seqi = sequences.get(i);
-				for (int j = i + 1; j < sequences.size(); j++)
-				{
-					if (seqi.equal(sequences.get(j), missMatch, true))
-					{
+
+				for (int j = i + 1; j < sequences.size(); j++) {
+					if (seqi.equal(sequences.get(j), missMatch, true)) {
 						// Delete the second one.
 						// In the future we must delete the one with the lowest
 						// priority
@@ -115,10 +111,9 @@ public class ParDRe_MapReduce
 						j--;
 					}
 				}
-				// System.out.println("WRITING " + key + ":" + seqi);
+				System.out.println("WRITING " + key + ":" + seqi);
 				context.write(caca, seqi);
 			}
-
 		}
 	}
 
@@ -126,20 +121,20 @@ public class ParDRe_MapReduce
 	 * @param args
 	 * @throws Exception
 	 */
-	public static void main(String[] args) throws Exception
-	{
-		System.out.println("In ParDRe_MapReduce");
+	public static void main(String[] args) throws Exception {
 
-		long startTime = System.currentTimeMillis();
-		long time;
+		Timer timer = new Timer();
+
+		System.out.println("Starting ParDRe_MapReduce");
+
+		timer.start(T_TOTAL);
 
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args)
 				.getRemainingArgs();
 
 		Options options = new Options();
-		if (!options.parse(otherArgs))
-		{
+		if (!options.parse(otherArgs)) {
 			options.printUsage("ParDRe_MapReduce");
 			return;
 		}
@@ -164,13 +159,14 @@ public class ParDRe_MapReduce
 		job1.setMapperClass(ParDReMapper.class);
 		job1.setReducerClass(ParDReReducer.class);
 
-		for (int i = 0; i < otherArgs.length - 1; ++i)
-		{
+		for (int i = 0; i < otherArgs.length - 1; ++i) {
 			FileInputFormat.addInputPath(job1, inputPath);
 		}
 		FileOutputFormat.setOutputPath(job1, tmpPath);
 
+		timer.start(T_REMOVE_DUP);
 		boolean result = job1.waitForCompletion(true);
+		timer.stop(T_REMOVE_DUP);
 
 		Job job2 = Job.getInstance(conf, "ParDRe_MapReduce_SaveOutput");
 		job2.setJarByClass(ParDRe_MapReduce.class);
@@ -184,76 +180,28 @@ public class ParDRe_MapReduce
 		job2.setReducerClass(Reducer.class);
 		job2.setNumReduceTasks(1);
 
-		for (int i = 0; i < otherArgs.length - 1; ++i)
-		{
+		for (int i = 0; i < otherArgs.length - 1; ++i) {
 			FileInputFormat.addInputPath(job2, tmpPath);
 		}
 		FileOutputFormat.setOutputPath(job2, outputPath);
 
+		timer.start(T_PRINT_SEQ);
 		result = job2.waitForCompletion(true);
-
-		// SeqFileParser parser = new SeqFileParser(options);
-		// ArrayList<Sequence> sequences = new ArrayList<Sequence>();
-		//
-		// partialTime = System.currentTimeMillis();
-		//
-		// // The method getSeq returns 0 if there are no more sequences in the
-		// file
-		// while(true){
-		// Sequence seq = new Sequence();
-		// if(parser.getSeq(seq) == 0){
-		// break;
-		// }
-		//
-		// sequences.add(seq);
-		// }
-		//
-		// time = System.currentTimeMillis()-partialTime;
-		// System.out.println("Read " + sequences.size() + " sequences in " +
-		// ((float) time)/1000 + " seconds");
-		// partialTime = System.currentTimeMillis();
-		//
-		// for(int i=0; i<sequences.size()-1; i++){
-		// for(int j=i+1; j<sequences.size(); j++){
-		// // In this case I indicate with true that we should also look at the
-		// prefix.
-		// // In general comparisons within the clusters we have to indicate
-		// false.
-		// if(sequences.get(i).equal(sequences.get(j), options.get_missMatch(),
-		// true)){
-		// // Delete the second one.
-		// // In the future we must delete the one with the lowest priority
-		// sequences.remove(j);
-		// j--;
-		// }
-		// }
-		// }
-		//
-		// time = System.currentTimeMillis()-partialTime;
-		// System.out.println("Remove duplicate in " + ((float) time)/1000 + "
-		// seconds");
-		//
-		// for(int i=0; i<sequences.size(); i++){
-		// parser.printSeq(sequences.get(i));
-		// }
-		//
-		// time = System.currentTimeMillis()-partialTime;
-		// System.out.println("Print " + sequences.size() + " sequences in " +
-		// ((float) time)/1000 + " seconds");
-		//
+		timer.stop(T_PRINT_SEQ);
 
 		tmpPath.getFileSystem(conf).delete(tmpPath, true);
 
-		if (result)
-		{
+		timer.stop(T_TOTAL);
+
+		if (result) {
 			System.out.println("Application completed successfully");
-			time = System.currentTimeMillis() - startTime;
-			//
-			System.out.println("Done in " + ((float) time) / 1000 + " seconds");
+			System.out.format(java.util.Locale.ENGLISH,"Remove duplicate in %.3f seconds\n", timer.read(T_REMOVE_DUP));
+			System.out.format(java.util.Locale.ENGLISH,"Print sequences in %.3f seconds\n", timer.read(T_PRINT_SEQ));
+			System.out.format(java.util.Locale.ENGLISH,"Done in %.3f seconds\n", timer.read(T_TOTAL));
 			System.exit(0);
 		}
-		System.out.println("Application failed to complete successfully");
-		System.exit(2);
 
+		System.out.println("Application failed to complete successfully");
+		System.exit(-1);
 	}
 }

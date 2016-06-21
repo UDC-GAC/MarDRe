@@ -6,8 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-public class SeqFileParser
-{
+public class SeqFileParser {
 
 	private BufferedReader _fileBufferR;
 	private BufferedWriter _fileBufferW;
@@ -15,16 +14,13 @@ public class SeqFileParser
 	private short _prefixLength;
 	private char _minQual;
 
-	public SeqFileParser(Options options)
-	{
-		try
-		{
+	public SeqFileParser(Options options) {
+		try {
 			_fileBufferR = new BufferedReader(
 					new FileReader(options.get_readFileName()));
 			_fileBufferW = new BufferedWriter(
 					new FileWriter(options.get_writeFileName()));
-		} catch (Exception e)
-		{
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -35,21 +31,17 @@ public class SeqFileParser
 
 	// Returns the size of the sequence or 0 if there are no more sequences in
 	// the file
-	public int getSeq(Sequence seq) throws IOException
-	{
+	public int getSeq(Sequence seq) throws IOException {
 		String str = _fileBufferR.readLine();
 		String strQuals;
 
 		// Look for the line where the sequence starts
-		while ((str != null) && (str.charAt(0) != '@'))
-		{
+		while ((str != null) && (str.charAt(0) != '@')) {
 			str = _fileBufferR.readLine();
 		}
 
 		if (str == null)
-		{
 			return 0;
-		}
 
 		// Read the sequence name
 		// Everything but the @
@@ -57,24 +49,21 @@ public class SeqFileParser
 
 		// Read the sequence bases
 		str = _fileBufferR.readLine();
-		if (str == null)
-		{
+		if (str == null) {
 			throw new IOException(
 					"Sequence incomplete in FASTQ file: Only name available");
 		}
 
 		// Read the comment line
 		strQuals = _fileBufferR.readLine();
-		if (strQuals == null)
-		{
+		if (strQuals == null) {
 			throw new IOException(
 					"Sequence incomplete in FASTQ file: No comment available ");
 		}
 
 		// Read the qualities
 		strQuals = _fileBufferR.readLine();
-		if (strQuals == null)
-		{
+		if (strQuals == null) {
 			throw new IOException(
 					"Sequence incomplete in FASTQ file: No qualities available ");
 		}
@@ -88,16 +77,12 @@ public class SeqFileParser
 		return seq.get_length();
 	}
 
-	public void printSeq(Sequence seq)
-	{
-		try
-		{
-//			_fileBufferW.write('@');
+	public void printSeq(Sequence seq) {
+		try {
 			seq.print(_fileBufferW);
 			_fileBufferW.newLine();
 			_fileBufferW.flush();
-		} catch (IOException e)
-		{
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

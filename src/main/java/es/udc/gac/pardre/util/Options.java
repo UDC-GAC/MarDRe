@@ -1,66 +1,13 @@
 package es.udc.gac.pardre.util;
 
-public class Options
-{
+public class Options {
 	private String _readFileName;
 	private String _writeFileName;
-
 	private char _minQual;
 	private short _missMatch;
 	private short _prefixLength;
 
-	public String get_readFileName()
-	{
-		return _readFileName;
-	}
-
-	public void set_readFileName(String readFileName)
-	{
-		_readFileName = readFileName;
-	}
-
-	public String get_writeFileName()
-	{
-		return _writeFileName;
-	}
-
-	public void set_writeFileName(String writeFileName)
-	{
-		_writeFileName = writeFileName;
-	}
-
-	public char get_minQual()
-	{
-		return _minQual;
-	}
-
-	public void set_minQual(char minQual)
-	{
-		_minQual = minQual;
-	}
-
-	public short get_missMatch()
-	{
-		return _missMatch;
-	}
-
-	public void set_missMatch(short missMatch)
-	{
-		_missMatch = missMatch;
-	}
-
-	public short get_prefixLength()
-	{
-		return _prefixLength;
-	}
-
-	public void set_prefixLength(short prefixLength)
-	{
-		_prefixLength = prefixLength;
-	}
-
-	public Options()
-	{
+	public Options() {
 		_readFileName = null;
 		_writeFileName = null;
 		_minQual = 3;
@@ -68,8 +15,47 @@ public class Options
 		_prefixLength = 20;
 	}
 
-	public void printUsage(String name)
-	{
+	public String get_readFileName() {
+		return _readFileName;
+	}
+
+	public void set_readFileName(String readFileName) {
+		_readFileName = readFileName;
+	}
+
+	public String get_writeFileName() {
+		return _writeFileName;
+	}
+
+	public void set_writeFileName(String writeFileName) {
+		_writeFileName = writeFileName;
+	}
+
+	public char get_minQual() {
+		return _minQual;
+	}
+
+	public void set_minQual(char minQual) {
+		_minQual = minQual;
+	}
+
+	public short get_missMatch() {
+		return _missMatch;
+	}
+
+	public void set_missMatch(short missMatch) {
+		_missMatch = missMatch;
+	}
+
+	public short get_prefixLength() {
+		return _prefixLength;
+	}
+
+	public void set_prefixLength(short prefixLength) {
+		_prefixLength = prefixLength;
+	}
+
+	public void printUsage(String name) {
 		System.out.println();
 		System.out.println(
 				"Usage: " + name + " -i readFile [options]");
@@ -100,8 +86,7 @@ public class Options
 		System.out.println();
 	}
 
-	public boolean parse(String[] args)
-	{
+	public boolean parse(String[] args) {
 		int argInd = 0;
 
 		if (args.length < 2)
@@ -114,84 +99,70 @@ public class Options
 		System.out.print("Command: ");
 		for (int i = 0; i < args.length; i++)
 		{
-			System.out.print(args[i]);
+			System.out.print(args[i]+" ");
 		}
 		System.out.println();
 
-		while (argInd < args.length)
-		{
+		while (argInd < args.length) {
 			// Input file
-			if (args[argInd].equals("-i"))
-			{
+			if (args[argInd].equals("-i")) {
 				argInd++;
-				if (argInd < args.length)
-				{
+				if (argInd < args.length) {
 					_readFileName = args[argInd];
 					_writeFileName = args[argInd];
 					_writeFileName = _writeFileName.concat(".NonDup");
 					argInd++;
-				} else
-				{
+				} else {
 					System.out.println("Not specified value for parameter -i");
 					return false;
 				}
-			} else if (args[argInd].equals("-m"))
-			{ // Number of missmatches
+			} else if (args[argInd].equals("-m")) {
+				// Number of missmatches
 				argInd++;
-				if (argInd < args.length)
-				{
+				if (argInd < args.length) {
 					_missMatch = Short.parseShort(args[argInd]);
+
 					if (_missMatch < 0)
-					{
 						_missMatch = 0;
-					}
+
 					argInd++;
-				} else
-				{
+				} else {
 					System.out.println("Not specified value for parameter -m");
 					return false;
 				}
-			} else if (args[argInd].equals("-l"))
-			{ // Prefiz length
+			} else if (args[argInd].equals("-l")) {
+				// Prefix length
 				argInd++;
-				if (argInd < args.length)
-				{
+				if (argInd < args.length) {
 					_prefixLength = Short.parseShort(args[argInd]);
 					if (_prefixLength < 1)
-					{
 						_prefixLength = 1;
-					}
+
 					if (_prefixLength > 27)
-					{
 						_prefixLength = 27;
-					}
+
 					argInd++;
-				} else
-				{
+				} else {
 					System.out.println("Not specified value for parameter -l");
 					return false;
 				}
-			} else if (args[argInd].equals("-q"))
-			{ // Minimal quality score
+			} else if (args[argInd].equals("-q")) {
+				// Minimal quality score
 				argInd++;
-				if (argInd < args.length)
-				{
+				if (argInd < args.length) {
 					_minQual = args[argInd].charAt(0);
 					if (_minQual < 0)
-					{
 						_minQual = 0;
-					}
+
 					argInd++;
-				} else
-				{
+				} else {
 					System.out.println("Not specified value for parameter -q");
 					return false;
 				}
-			} else if (args[argInd].equals("-h"))
-			{ // Check the help
+			} else if (args[argInd].equals("-h")) {
+				// Check the help
 				return false;
-			} else
-			{
+			} else {
 				System.out.println("Parameter " + args[argInd] + " not valid");
 				return false;
 			}

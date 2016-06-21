@@ -9,7 +9,7 @@ public class Timer {
 	private static final double TENTO9 = new Long(1000000000L).doubleValue();
 
 	public Timer() {
-		for(int i=0; i<MAX_TIMERS; i++){
+		for(int i=0; i<MAX_TIMERS; i++) {
 			startTime[i] = 0;
 			elapsedTime[i] = 0;
 			totalTime[i] = 0;

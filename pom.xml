@@ -28,19 +28,6 @@
 	</repositories>
 
 	<dependencies>
-
-		<!-- <dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-yarn-client</artifactId>
-			<version>2.7.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-yarn-common</artifactId>
-			<version>2.7.1</version>
-		</dependency> -->
-
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
@@ -66,12 +53,13 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.5.1</version>
 				<configuration>
 					<source>1.7</source>
 					<target>1.7</target>
 				</configuration>
 			</plugin>
-			<!-- <plugin>
+			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<executions>
 					<execution>
@@ -86,7 +74,7 @@
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
 				</configuration>
-			</plugin> -->
+			</plugin>
 		</plugins>
 		<sourceDirectory>src</sourceDirectory>
 	</build>
