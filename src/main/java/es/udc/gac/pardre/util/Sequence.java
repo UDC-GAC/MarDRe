@@ -353,6 +353,6 @@ public class Sequence implements Writable {
 
 	public String toStringFull() {
 		return toString() + ", _compressSuffix.length=" + _compressSuffix.length
-				+ "," + ", prefixLength=" + _prefixLength;
+				+ ", prefixLength=" + _prefixLength;
 	}
 }

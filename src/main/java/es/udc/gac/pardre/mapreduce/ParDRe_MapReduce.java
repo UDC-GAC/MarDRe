@@ -50,7 +50,7 @@ public class ParDRe_MapReduce {
 			minQual = (char) Integer.parseInt(job.get(MINQUALPARAM));
 			parser = new SeqStringParser(prefixLength, minQual);
 
-			System.out.println("ParDreMapper : prefixLength = " + prefixLength
+			System.out.println("ParDreMapper: prefixLength = " + prefixLength
 					+ " ; minQual = " + (int) minQual);
 		}
 
@@ -60,7 +60,7 @@ public class ParDRe_MapReduce {
 
 			if (parser.getSeq(value.toString(), seq) != 0) {
 				longKey.set(seq.getKey());
-				System.out.println("WRITING " + key + ":" + seq.toStringFull());
+				System.out.println("WRITING " + longKey + ": " + seq.toStringFull());
 				context.write(longKey, seq);
 			}
 		}
@@ -77,7 +77,7 @@ public class ParDRe_MapReduce {
 			Configuration job = context.getConfiguration();
 			missMatch = Short.parseShort(job.get(MISSMATCHPARAM));
 
-			System.out.println("ParDreReducer : missMatch = " + missMatch);
+			System.out.println("ParDreReducer: missMatch = " + missMatch);
 		}
 
 		@Override
@@ -92,7 +92,7 @@ public class ParDRe_MapReduce {
 
 			System.out.println("KEY=" + key + " - " + sequences.size());
 			for (Sequence seq : sequences) {
-				System.out.println(key + ":" + seq);
+				System.out.println(key + ": " + seq);
 			}
 
 			for (int i = 0; i < sequences.size(); i++) {
@@ -106,12 +106,12 @@ public class ParDRe_MapReduce {
 						System.out.println(seqi.toStringFull() + " equals to <"
 								+ sequences.get(j).toStringFull());
 						System.out.println(
-								"REMOVING " + key + ":" + sequences.get(j));
+								"REMOVING " + key + ": " + sequences.get(j));
 						sequences.remove(j);
 						j--;
 					}
 				}
-				System.out.println("WRITING " + key + ":" + seqi);
+				System.out.println("WRITING " + key + ": " + seqi);
 				context.write(caca, seqi);
 			}
 		}
