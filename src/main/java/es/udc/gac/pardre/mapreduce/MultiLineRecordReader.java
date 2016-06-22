@@ -23,7 +23,8 @@ public class MultiLineRecordReader extends RecordReader<LongWritable, Text> {
 	private long end = 0;
 	private long pos = 0;
 	private int maxLineLength;
-
+	private final Text endline = new Text("\n");
+	
 	@Override
 	public synchronized void close() throws IOException {
 		if (in != null) {
@@ -73,7 +74,7 @@ public class MultiLineRecordReader extends RecordReader<LongWritable, Text> {
 			--start;
 			filein.seek(start);
 		}
-		in = new LineReader(filein,conf);
+		in = new LineReader(filein, conf);
 		if(skipFirstLine){
 			start += in.readLine(new Text(), 0, (int) Math.min(Integer.MAX_VALUE, end - start));
 		}
@@ -90,14 +91,14 @@ public class MultiLineRecordReader extends RecordReader<LongWritable, Text> {
 			value = new Text();
 		}
 		value.clear();
-		final Text endline = new Text("\n");
+		
 		int newSize = 0;
 		for(int i=0;i<linesToProcess;i++) {
 			Text v = new Text();
 			while (pos < end) {
 				newSize = in.readLine(v, maxLineLength, maxBytesToConsume(pos));
-				value.append(v.getBytes(),0, v.getLength());
-				value.append(endline.getBytes(),0, endline.getLength());
+				value.append(v.getBytes(), 0, v.getLength());
+				value.append(endline.getBytes(), 0, endline.getLength());
 				if (newSize == 0) {
 					break;
 				}
