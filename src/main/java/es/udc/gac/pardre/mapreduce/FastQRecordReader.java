@@ -14,7 +14,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
-public class MultiLineRecordReader extends RecordReader<LongWritable, Text> {
+public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 	private int linesToProcess;
 	private LineReader in;
 	private LongWritable key;

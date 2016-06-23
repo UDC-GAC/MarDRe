@@ -122,7 +122,7 @@ public class ParDRe {
 	private static Job configureJob1(Configuration conf) throws IOException {
 		Job job1 = Job.getInstance(conf, "ParDRe_RemoveDuplicate");
 		job1.setJarByClass(ParDRe.class);
-		job1.setInputFormatClass(MultiLineInputFormat.class);
+		job1.setInputFormatClass(FastQInputFormat.class);
 		job1.setOutputFormatClass(SequenceFileOutputFormat.class);
 		job1.setMapOutputKeyClass(LongWritable.class);
 		job1.setMapOutputValueClass(Sequence.class);
