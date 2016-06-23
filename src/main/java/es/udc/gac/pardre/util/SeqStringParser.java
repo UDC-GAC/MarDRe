@@ -28,7 +28,7 @@ public class SeqStringParser {
 
 		// Read the sequence name
 		// Everything but the @
-		seq.set_name(str);
+		seq.set_name(str.substring(1));
 
 		// Read the sequence bases
 		if (!st.hasMoreTokens())

@@ -18,11 +18,13 @@ public class MultiLineRecordReader extends RecordReader<LongWritable, Text> {
 	private int linesToProcess;
 	private LineReader in;
 	private LongWritable key;
-	private Text value = new Text();
+	private Text value;
+	private Text newLine;
+	private Text temp;
 	private long start = 0;
 	private long end = 0;
 	private long pos = 0;
-	private int maxLineLength;
+	private int maxLineLength = Integer.MAX_VALUE;
 	private final Text endline = new Text("\n");
 	
 	@Override
@@ -61,59 +63,114 @@ public class MultiLineRecordReader extends RecordReader<LongWritable, Text> {
 		FileSplit split = (FileSplit) genericSplit;
 		final Path file = split.getPath();
 		Configuration conf = context.getConfiguration();
-		this.linesToProcess = 4;//conf.getInt("mapreduce.input.lineinputformat.linespermap", 1); 
-		this.maxLineLength = conf.getInt("mapreduce.input.linerecordreader.line.maxlength", Integer.MAX_VALUE);
 		FileSystem fs = file.getFileSystem(conf);
-		start = split.getStart();
-		end = start + split.getLength();
-		boolean skipFirstLine = false;
+		this.linesToProcess = 4;
+		this.key = new LongWritable();
+		this.value = new Text();
+		this.newLine = new Text();
+		this.temp = new Text();
+		this.start = split.getStart();
+		this.pos = this.start;
+		this.end = start + split.getLength();
 		FSDataInputStream filein = fs.open(file);
-
-		if (start != 0){
-			skipFirstLine = true;
-			--start;
-			filein.seek(start);
-		}
-		in = new LineReader(filein, conf);
-		if(skipFirstLine){
-			start += in.readLine(new Text(), 0, (int) Math.min(Integer.MAX_VALUE, end - start));
-		}
-		this.pos = start;
+		filein.seek(start);
+		this.in = new LineReader(filein, conf);
 	}
 
 	@Override
 	public boolean nextKeyValue() throws IOException {
-		if (key == null) {
-			key = new LongWritable();
-		}
-		key.set(pos);
-		if (value == null) {
-			value = new Text();
-		}
+		int i = 0;
+		long firstRead = 0, secondRead = 0;
+		boolean found = false;
+		newLine.clear();
 		value.clear();
-		
-		int newSize = 0;
-		for(int i=0;i<linesToProcess;i++) {
-			Text v = new Text();
-			while (pos < end) {
-				newSize = in.readLine(v, maxLineLength, maxBytesToConsume(pos));
-				value.append(v.getBytes(), 0, v.getLength());
+		temp.clear();
+	
+		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
+
+		if (this.pos >= this.end) {
+			//System.out.println("nextKeyValue: not in chunk");
+			return false;
+		}
+
+		key.set(this.pos);
+
+		while(i < linesToProcess) {
+			firstRead = in.readLine(newLine, maxLineLength, maxBytesToConsume(this.pos));
+			this.pos += firstRead;
+			i++;
+
+			//System.out.println("nextKeyValue: line "+i+", read "+firstRead+", start "+start+", pos "+pos+", end "+end);
+
+			if (firstRead == 0) {
+				//System.out.println("nextKeyValue: EOF");
+				return false;
+			}
+
+			//System.out.println("nextKeyValue: value "+newLine.toString());
+
+			if (found == true && i == linesToProcess) {
+				//System.out.println("nextKeyValue: last line and starting @ has been previously found");
+				value.append(newLine.getBytes(), 0, newLine.getLength());
 				value.append(endline.getBytes(), 0, endline.getLength());
-				if (newSize == 0) {
-					break;
+				continue;
+			}
+
+			if (newLine.charAt(0) == '@') {
+				//System.out.println("nextKeyValue: starting @ has been found at line "+i);
+				found = true;
+
+				secondRead = in.readLine(temp, maxLineLength, maxBytesToConsume(this.pos));
+				value.clear();
+				this.pos += secondRead;
+
+				if (secondRead == 0) {
+					//System.out.println("nextKeyValue: next line is EOF");
+					return false;
 				}
-				pos += newSize;
-				if (newSize < maxLineLength) {
-					break;
+
+				//System.out.println("nextKeyValue: next line (read "+secondRead+") "+temp);
+
+				if (temp.charAt(0) != '@') {
+					//System.out.println("nextKeyValue: next line has no starting @ (new record)");
+					key.set(this.pos-firstRead);
+					i = 2;
+					newLine.append(endline.getBytes(), 0, endline.getLength());
+					newLine.append(temp.getBytes(), 0, temp.getLength());
+				} else {
+					//System.out.println("nextKeyValue: next line has starting @ (new record, discard previous data)");
+					key.set(this.pos);
+					i = 1;
+					value.append(temp.getBytes(), 0, temp.getLength());
+					value.append(endline.getBytes(), 0, endline.getLength());
+					continue;
 				}
 			}
+
+			if (found == false) {
+				if (newLine.find("@", 1) != -1) {
+					//System.out.println("nextKeyValue: non-starting @ has been found at line "+i+ "(discard previous data)");
+					value.clear();
+					key.set(this.pos);
+					i = 0;
+					continue;
+				}
+
+				if (i == linesToProcess) {
+					//System.out.println("nextKeyValue: last line and no starting @ has been found (discard previous data)");
+					value.clear();
+					key.set(this.pos);
+					i = 0;
+					continue;
+				}
+			} 
+
+			value.append(newLine.getBytes(), 0, newLine.getLength());
+			value.append(endline.getBytes(), 0, endline.getLength());
 		}
-		if (newSize == 0) {
-			key = null;
-			value = null;
-			return false;
-		} else {
-			return true;
-		}
+
+		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
+
+		return true;
 	}
 }

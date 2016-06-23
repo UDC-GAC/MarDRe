@@ -55,9 +55,17 @@ public class ParDRe {
 		public void map(Object key, Text value, Context context)
 				throws IOException, InterruptedException {
 
+			/*System.out.println("key:");
+			System.out.println(key);
+			System.out.println("value:");
+			System.out.println(value);
+			System.out.println("----------------------------");*/
+
 			if (parser.getSeq(value.toString(), seq) != 0) {
 				longKey.set(seq.getKey());
-				System.out.println("WRITING " + longKey + ": " + seq.toStringFull());
+				/*System.out.println("WRITING: KEY "+longKey);
+				System.out.println("----------------------------");
+				System.out.println(longKey + ": " + seq);*/
 				context.write(longKey, seq);
 			}
 		}
@@ -86,13 +94,12 @@ public class ParDRe {
 				sequences.add(new Sequence(seq));
 			}
 
-			System.out.println("KEY=" + key + " - " + sequences.size());
-			for (Sequence seq : sequences) {
-				System.out.println(key + ": " + seq);
-				context.write(nullWritable, seq);
-			}
+			/*System.out.println("READING: KEY " + key + ", Sequences " + sequences.size());
+			System.out.println("------------------------------------------");
+			for (Sequence seq : sequences)
+				System.out.println(key + ": " + seq);*/
 			
-			/*for (int i = 0; i < sequences.size(); i++) {
+			for (int i = 0; i < sequences.size(); i++) {
 				Sequence seqi = sequences.get(i);
 
 				for (int j = i + 1; j < sequences.size(); j++) {
@@ -100,17 +107,15 @@ public class ParDRe {
 						// Delete the second one.
 						// In the future we must delete the one with the lowest
 						// priority
-						System.out.println(seqi.toStringFull() + " equals to <"
-								+ sequences.get(j).toStringFull());
-						System.out.println(
-								"REMOVING " + key + ": " + sequences.get(j));
 						sequences.remove(j);
 						j--;
 					}
 				}
-				System.out.println("WRITING " + key + ": " + seqi);
+				/*System.out.println("WRITING: KEY "+key);
+				System.out.println("----------------------------");
+				System.out.println(key + ": " + seqi);*/
 				context.write(nullWritable, seqi);
-			}*/
+			}
 		}
 	}
 
@@ -168,7 +173,6 @@ public class ParDRe {
 		conf.setInt(PREFIXLENGTHPARAM, options.get_prefixLength());
 		conf.setInt(MINQUALPARAM, options.get_minQual());
 		conf.setInt(MISSMATCHPARAM, options.get_missMatch());
-		conf.set("textinputformat.record.delimiter", "@");
 
 		Path inputPath = new Path(options.get_readFileName());
 		Path tmpPath = new Path(options.get_writeFileName() + ".tmp");
