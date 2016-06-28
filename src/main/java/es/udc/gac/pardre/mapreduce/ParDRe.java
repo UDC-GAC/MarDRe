@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
@@ -48,7 +50,7 @@ public class ParDRe {
 			minQual = (char) Integer.parseInt(job.get(MINQUALPARAM));
 			parser = new SeqStringParser(prefixLength, minQual);
 
-			System.out.println("ParDreMapper: prefixLength = "+prefixLength+", minQual = "+(int)minQual);
+			System.out.println("ParDReMapper: prefixLength = "+prefixLength+", minQual = "+(int)minQual);
 		}
 
 		@Override
@@ -81,7 +83,7 @@ public class ParDRe {
 			Configuration job = context.getConfiguration();
 			missMatch = Short.parseShort(job.get(MISSMATCHPARAM));
 
-			System.out.println("ParDreReducer: missMatch = " + missMatch);
+			System.out.println("ParDReReducer: missMatch = " + missMatch);
 		}
 
 		@Override
@@ -94,8 +96,8 @@ public class ParDRe {
 				sequences.add(new Sequence(seq));
 			}
 
-			/*System.out.println("READING: KEY " + key + ", Sequences " + sequences.size());
-			System.out.println("------------------------------------------");
+			//System.out.println("READING: KEY " + key + ", Sequences " + sequences.size());
+			/*System.out.println("------------------------------------------");
 			for (Sequence seq : sequences)
 				System.out.println(key + ": " + seq);*/
 			
@@ -123,7 +125,8 @@ public class ParDRe {
 		Job job1 = Job.getInstance(conf, "ParDRe_RemoveDuplicate");
 		job1.setJarByClass(ParDRe.class);
 		job1.setInputFormatClass(FastQInputFormat.class);
-		job1.setOutputFormatClass(SequenceFileOutputFormat.class);
+		//job1.setOutputFormatClass(SequenceFileOutputFormat.class);
+		job1.setOutputFormatClass(TextOutputFormat.class);
 		job1.setMapOutputKeyClass(LongWritable.class);
 		job1.setMapOutputValueClass(Sequence.class);
 		job1.setOutputKeyClass(NullWritable.class);
@@ -133,21 +136,6 @@ public class ParDRe {
 		return job1;
 	}
 
-	private static Job configureJob2(Configuration conf) throws IOException {
-		Job job2 = Job.getInstance(conf, "ParDRe_SaveOutput");
-		job2.setJarByClass(ParDRe.class);
-		job2.setInputFormatClass(SequenceFileInputFormat.class);
-		job2.setOutputFormatClass(TextOutputFormat.class);
-		job2.setMapOutputKeyClass(NullWritable.class);
-		job2.setMapOutputValueClass(Sequence.class);
-		job2.setOutputKeyClass(NullWritable.class);
-		job2.setOutputValueClass(Sequence.class);
-		job2.setMapperClass(Mapper.class);
-		job2.setReducerClass(Reducer.class);
-		job2.setNumReduceTasks(1);
-		return job2;
-	}
-	
 	/**
 	 * @param args
 	 * @throws Exception
@@ -189,18 +177,11 @@ public class ParDRe {
 		boolean result = job1.waitForCompletion(true);
 		timer.stop(T_REMOVE_DUP);
 
-		Job job2 = ParDRe.configureJob2(conf);
-
-		for (int i = 0; i < otherArgs.length - 1; ++i) {
-			FileInputFormat.addInputPath(job2, tmpPath);
-		}
-		FileOutputFormat.setOutputPath(job2, outputPath);
-
 		timer.start(T_PRINT_SEQ);
-		result = job2.waitForCompletion(true);
+		FileSystem fs = FileSystem.get(conf);
+		System.out.println("Merging output file...");
+		result = FileUtil.copyMerge(fs, tmpPath, fs, outputPath, true, conf, null);
 		timer.stop(T_PRINT_SEQ);
-
-		tmpPath.getFileSystem(conf).delete(tmpPath, true);
 
 		timer.stop(T_TOTAL);
 
