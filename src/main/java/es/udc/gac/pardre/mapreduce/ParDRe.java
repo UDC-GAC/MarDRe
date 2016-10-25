@@ -123,7 +123,6 @@ public class ParDRe {
 		Job job1 = Job.getInstance(conf, "ParDRe_RemoveDuplicate");
 		job1.setJarByClass(ParDRe.class);
 		job1.setInputFormatClass(FastQInputFormat.class);
-		//job1.setOutputFormatClass(SequenceFileOutputFormat.class);
 		job1.setOutputFormatClass(TextOutputFormat.class);
 		job1.setMapOutputKeyClass(LongWritable.class);
 		job1.setMapOutputValueClass(Sequence.class);
@@ -184,14 +183,14 @@ public class ParDRe {
 		timer.stop(T_TOTAL);
 
 		if (result) {
-			System.out.println("Application completed successfully");
-			System.out.format(java.util.Locale.ENGLISH,"Remove duplicate in %.3f seconds\n", timer.read(T_REMOVE_DUP));
-			System.out.format(java.util.Locale.ENGLISH,"Print sequences in %.3f seconds\n", timer.read(T_PRINT_SEQ));
-			System.out.format(java.util.Locale.ENGLISH,"Done in %.3f seconds\n", timer.read(T_TOTAL));
+			System.out.println("ParDRe completed successfully");
+			System.out.format(java.util.Locale.ENGLISH,"Duplicates removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
+			System.out.format(java.util.Locale.ENGLISH,"Sequences printed in %.3f seconds\n", timer.read(T_PRINT_SEQ));
+			System.out.format(java.util.Locale.ENGLISH,"Total: %.3f seconds\n", timer.read(T_TOTAL));
 			System.exit(0);
 		}
 
-		System.out.println("Application failed to complete successfully");
+		System.out.println("ParDRe failed to complete successfully");
 		System.exit(-1);
 	}
 }

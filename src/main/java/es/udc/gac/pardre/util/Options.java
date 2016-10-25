@@ -63,8 +63,6 @@ public class Options {
 				"WARNING: Current version only allows single-end datasets");
 		System.out.println(
 				"WARNING: In the current version we do not use qualities for selecting the representative sequence when duplicated");
-		System.out.println(
-				"WARNING: The current version does not support threads");
 		System.out.println("Input:");
 		System.out.println(
 				"    -i <string> readFile (sequence file in FASTQ format)");
