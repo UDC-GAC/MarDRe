@@ -25,6 +25,7 @@ public class ParDRe {
 		Timer timer = new Timer();
 
 		System.out.println("Starting ParDRe");
+		System.out.println("WARNING: Serial version only supports single-end datasets (i.e., -p is ignored)");
 
 		timer.start(T_TOTAL);
 

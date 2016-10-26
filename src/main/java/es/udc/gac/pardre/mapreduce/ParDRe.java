@@ -17,6 +17,8 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
+import org.apache.hadoop.mapred.join.TupleWritable;
 import org.apache.hadoop.util.GenericOptionsParser;
 
 import es.udc.gac.pardre.util.Options;
@@ -33,7 +35,7 @@ public class ParDRe {
 	private static final String MINQUALPARAM = "pardre_minQual";
 	private static final String MISSMATCHPARAM = "pardre_missMatch";
 
-	public static class ParDReMapper extends Mapper<Object, Text, LongWritable, Sequence> {
+	public static class ParDReSingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
 
 		private Sequence seq = new Sequence();
 		private LongWritable longKey = new LongWritable();
@@ -48,11 +50,11 @@ public class ParDRe {
 			minQual = (char) Integer.parseInt(job.get(MINQUALPARAM));
 			parser = new SeqStringParser(prefixLength, minQual);
 
-			System.out.println("ParDReMapper: prefixLength = "+prefixLength+", minQual = "+(int)minQual);
+			System.out.println("ParDReSingleEndMapper: prefixLength = "+prefixLength+", minQual = "+(int)minQual);
 		}
 
 		@Override
-		public void map(Object key, Text value, Context context)
+		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
 
 			/*System.out.println("key:");
@@ -71,7 +73,22 @@ public class ParDRe {
 		}
 	}
 
-	public static class ParDReReducer extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
+	public static class ParDReIdentityMapper extends Mapper<LongWritable, Text, LongWritable, Text> {
+
+		@Override
+		public void map(LongWritable key, Text value, Context context)
+				throws IOException, InterruptedException {
+
+			/*System.out.println("key:");
+			System.out.println(key);
+			System.out.println("value:");
+			System.out.println(value);
+			System.out.println("----------------------------");*/
+			context.write(key, value);
+		}
+	}
+
+	public static class ParDReSingleEndReducer extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
 
 		private short missMatch;
 		private NullWritable nullWritable = NullWritable.get();
@@ -119,18 +136,44 @@ public class ParDRe {
 		}
 	}
 
-	private static Job configureJob1(Configuration conf) throws IOException {
-		Job job1 = Job.getInstance(conf, "ParDRe_RemoveDuplicate");
-		job1.setJarByClass(ParDRe.class);
-		job1.setInputFormatClass(FastQInputFormat.class);
-		job1.setOutputFormatClass(TextOutputFormat.class);
-		job1.setMapOutputKeyClass(LongWritable.class);
-		job1.setMapOutputValueClass(Sequence.class);
-		job1.setOutputKeyClass(NullWritable.class);
-		job1.setOutputValueClass(Sequence.class);
-		job1.setMapperClass(ParDReMapper.class);
-		job1.setReducerClass(ParDReReducer.class);
-		return job1;
+	private static Job configureRemoveDuplicateJob(Configuration conf) throws IOException {
+		Job job = Job.getInstance(conf, "ParDRe_RemoveDuplicate");
+		job.setJarByClass(ParDRe.class);
+
+		// I/O Format classes
+		job.setInputFormatClass(FastQInputFormat.class);
+		job.setOutputFormatClass(TextOutputFormat.class);
+
+		// Mapper and Reducer classes
+		job.setMapperClass(ParDReSingleEndMapper.class);
+		job.setReducerClass(ParDReSingleEndReducer.class);
+
+		// Mapper output K/V classes
+		job.setMapOutputKeyClass(LongWritable.class);
+		job.setMapOutputValueClass(Sequence.class);
+
+		// Job ouput K/V classes
+		job.setOutputKeyClass(NullWritable.class);
+		job.setOutputValueClass(Sequence.class);
+		return job;
+	}
+
+	private static Job configureSortByKeyJob(Configuration conf) throws IOException {
+		Job job = Job.getInstance(conf, "ParDRe_SortByKey");
+		job.setJarByClass(ParDRe.class);
+
+		// I/O Format classes
+		job.setInputFormatClass(FastQInputFormat.class);
+                job.setOutputFormatClass(TextOutputFormat.class);
+
+		// Mapper/Reducer clases (identity)
+		job.setMapperClass(ParDReIdentityMapper.class);
+		job.setReducerClass(Reducer.class);
+
+		// Job ouput K/V classes
+		job.setOutputKeyClass(LongWritable.class);
+		job.setOutputValueClass(Text.class);
+		return job;
 	}
 
 	/**
@@ -146,8 +189,7 @@ public class ParDRe {
 		timer.start(T_TOTAL);
 
 		Configuration conf = new Configuration();
-		String[] otherArgs = new GenericOptionsParser(conf, args)
-				.getRemainingArgs();
+		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 
 		Options options = new Options();
 		if (!options.parse(otherArgs)) {
@@ -159,25 +201,40 @@ public class ParDRe {
 		conf.setInt(MINQUALPARAM, options.get_minQual());
 		conf.setInt(MISSMATCHPARAM, options.get_missMatch());
 
-		Path inputPath = new Path(options.get_readFileName());
-		Path tmpPath = new Path(options.get_writeFileName() + ".tmp");
-		Path outputPath = new Path(options.get_writeFileName());
+		Path inputPath1 = new Path(options.get_readFileName1());
+		Path outputPath1 = new Path(options.get_writeFileName1());
+		Path tmpPath1 = new Path(outputPath1+".tmp");
+		Path inputPath2 = null;
+		Path outputPath2 = null;
+		Job jobSortByKey = null;
+		Job jobRemoveDuplicate = null;
 
-		Job job1 = ParDRe.configureJob1(conf);
-
-		for (int i = 0; i < otherArgs.length - 1; ++i) {
-			FileInputFormat.addInputPath(job1, inputPath);
+		if (options.isPaired()) {
+			//Paired-end datasets read (and write) a second file
+			inputPath2 = new Path(options.get_readFileName2());
+			outputPath2 = new Path(options.get_writeFileName2());
+			//Add additional output for the second file
+			MultipleOutputs.addNamedOutput(jobRemoveDuplicate, outputPath2+".tmp", TextOutputFormat.class, NullWritable.class, Sequence.class);
+			jobSortByKey = ParDRe.configureSortByKeyJob(conf);
+			FileInputFormat.addInputPath(jobSortByKey, inputPath1);
+			FileInputFormat.addInputPath(jobSortByKey, inputPath2);
+			FileOutputFormat.setOutputPath(jobSortByKey, new Path("input.sorted"));
 		}
-		FileOutputFormat.setOutputPath(job1, tmpPath);
 
+		jobRemoveDuplicate = ParDRe.configureRemoveDuplicateJob(conf);
+		FileInputFormat.addInputPath(jobRemoveDuplicate, inputPath1);
+		FileOutputFormat.setOutputPath(jobRemoveDuplicate, tmpPath1);
+		
+		// Run MapReduce job
 		timer.start(T_REMOVE_DUP);
-		boolean result = job1.waitForCompletion(true);
+		boolean result = jobRemoveDuplicate.waitForCompletion(true);
 		timer.stop(T_REMOVE_DUP);
 
+		// Merge output files
 		timer.start(T_PRINT_SEQ);
 		FileSystem fs = FileSystem.get(conf);
-		System.out.println("Merging output file...");
-		result = FileUtil.copyMerge(fs, tmpPath, fs, outputPath, true, conf, null);
+		System.out.println("Merging output files...");
+		result = FileUtil.copyMerge(fs, tmpPath1, fs, outputPath1, true, conf, null);
 		timer.stop(T_PRINT_SEQ);
 
 		timer.stop(T_TOTAL);
