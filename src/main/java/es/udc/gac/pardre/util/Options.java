@@ -113,19 +113,10 @@ public class Options {
 	public boolean parse(String[] args) {
 		int argInd = 0;
 
-		if (args.length < 2)
-		{
+		if (args.length < 2) {
 			System.out.println("Not enough parameters");
 			return false;
 		}
-
-		// Print out the command line
-		System.out.print("Command: ");
-		for (int i = 0; i < args.length; i++)
-		{
-			System.out.print(args[i]+" ");
-		}
-		System.out.println();
 
 		while (argInd < args.length) {
 			// Single-end sequence files

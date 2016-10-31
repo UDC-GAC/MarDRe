@@ -14,6 +14,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.TaskCounter;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
@@ -238,7 +239,7 @@ public class ParDReMR {
 
 		Timer timer = new Timer();
 
-		System.out.println("Starting ParDRe-MR ("+es.udc.gac.pardre.util.Configuration.PARDREMR_HOME+")");
+		System.out.println("ParDRe-MR: starting from $PARDREMR_HOME="+es.udc.gac.pardre.util.Configuration.PARDREMR_HOME);
 
 		timer.start(T_TOTAL);
 
@@ -247,9 +248,16 @@ public class ParDReMR {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 
+                // Print out the command line
+		System.out.print("ParDRe-MR: command is ");
+		for (int i = 0; i < args.length; i++) {
+			System.out.print(args[i]+" ");
+                }
+                System.out.println();
+
 		Options options = new Options();
 		if (!options.parse(otherArgs)) {
-			options.printUsage("ParDRe-MR");
+			options.printUsage(ParDReMR.class.getName());
 			return;
 		}
 
@@ -265,7 +273,7 @@ public class ParDReMR {
 		Job jobRemoveDuplicate = null;
 
 		if (options.isPaired()) {
-			System.out.println("Using paired-end mode");
+			System.out.println("ParDRe-MR: Using paired-end mode");
 			// Paired-end datasets read (and write) a second file
 			Path inputPath2 = new Path(options.get_readFileName2());
 			outputPath2 = new Path(options.get_writeFileName2());
@@ -281,15 +289,13 @@ public class ParDReMR {
 			String joinExpression = CompositeInputFormat.compose("inner", FastQInputFormat.class, inputPath1, inputPath2);
 			jobRemoveDuplicate.getConfiguration().set("mapreduce.join.expr", joinExpression);
 		} else {
-			System.out.println("Using single-end mode");
+			System.out.println("ParDRe-MR: Using single-end mode");
 			// Configure job
 			jobRemoveDuplicate = ParDReMR.configureSingleEndJob(conf);
 			FileInputFormat.addInputPath(jobRemoveDuplicate, inputPath1);
 			FileOutputFormat.setOutputPath(jobRemoveDuplicate, tmpPath1);
 		}
 		timer.stop(T_INIT);
-
-		System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR initialized in %.3f seconds\n", timer.read(T_INIT));
 
 		// Run MapReduce job
 		timer.start(T_REMOVE_DUP);
@@ -301,7 +307,7 @@ public class ParDReMR {
 				// Merge output files
 				timer.start(T_PRINT_SEQ);
 				FileSystem fs = FileSystem.get(conf);
-				System.out.println("Merging output files...");
+				System.out.println("ParDRe-MR: merging output files...");
 				status = FileUtil.copyMerge(fs, tmpPath1, fs, outputPath1, es.udc.gac.pardre.util.Configuration.DELETE_TEMP, conf, null);
 				if (options.isPaired())
 					status = FileUtil.copyMerge(fs, tmpPath2, fs, outputPath2, es.udc.gac.pardre.util.Configuration.DELETE_TEMP, conf, null);
@@ -310,16 +316,22 @@ public class ParDReMR {
 
 			timer.stop(T_TOTAL);
 
-			System.out.println("ParDRe-MR completed successfully");
-			System.out.format(java.util.Locale.ENGLISH,"Initialization: %.3f seconds\n", timer.read(T_INIT));
-			System.out.format(java.util.Locale.ENGLISH,"Duplicates have been removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
+			System.out.println("ParDRe-MR: completed successfully!");
+
+			// Get task counters
+			long inputSequences = jobRemoveDuplicate.getCounters().findCounter(TaskCounter.MAP_INPUT_RECORDS).getValue();
+			long outputSequences = jobRemoveDuplicate.getCounters().findCounter(TaskCounter.REDUCE_OUTPUT_RECORDS).getValue();
+
+			System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR: non duplicated paired reads %d/%d\n", outputSequences, inputSequences);
+			System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR: execution time was %.3f seconds\n", timer.read(T_TOTAL));
+			System.out.format(java.util.Locale.ENGLISH,"\tInitialization: %.3f seconds\n", timer.read(T_INIT));
+			System.out.format(java.util.Locale.ENGLISH,"\tDuplicates have been removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
 			if (es.udc.gac.pardre.util.Configuration.MERGE)
-				System.out.format(java.util.Locale.ENGLISH,"Sequences have been merged in %.3f seconds\n", timer.read(T_PRINT_SEQ));
-			System.out.format(java.util.Locale.ENGLISH,"Total: %.3f seconds\n", timer.read(T_TOTAL));
+				System.out.format(java.util.Locale.ENGLISH,"\tSequences have been merged in %.3f seconds\n", timer.read(T_PRINT_SEQ));
 			System.exit(0);
 		}
 
-		System.out.println("ParDRe-MR failed to complete successfully");
+		System.out.println("ParDRe-MR: failed to complete successfully");
 		System.exit(-1);
 	}
 }
