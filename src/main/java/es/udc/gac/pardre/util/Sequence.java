@@ -309,6 +309,7 @@ public class Sequence implements Writable {
 		}
 	}
 
+	@Override
 	public String toString() {
 		StringWriter sw = new StringWriter();
 		BufferedWriter bw = new BufferedWriter(sw);
@@ -324,6 +325,7 @@ public class Sequence implements Writable {
 		return sw.toString();
 	}
 
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeLong(_key);
 		out.writeInt(_length);
@@ -337,6 +339,7 @@ public class Sequence implements Writable {
 			out.writeLong(_compressSuffix[i]);
 	}
 
+	@Override
 	public void readFields(DataInput in) throws IOException {
 		_key = in.readLong();
 		_length = in.readInt();

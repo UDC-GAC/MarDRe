@@ -143,7 +143,7 @@ public class Options {
 			} else if (args[argInd].equals("-p")) {
 				argInd++;
 				if (argInd < args.length) {
-					_readFileName1 = args[argInd];
+					_readFileName2 = args[argInd];
 					_writeFileName2 = args[argInd];
 					_writeFileName2 = _writeFileName2.concat(".NonDup");
 					_paired = true;

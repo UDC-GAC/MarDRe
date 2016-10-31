@@ -136,7 +136,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 
 				if (temp.charAt(0) != '@') {
 					//System.out.println("nextKeyValue: next line has no starting @ (new record)");
-					key.set(this.pos-firstRead);
+					key.set(this.pos-(firstRead+secondRead));
 					i = 2;
 					newLine.append(endline.getBytes(), 0, endline.getLength());
 					newLine.append(temp.getBytes(), 0, temp.getLength());
