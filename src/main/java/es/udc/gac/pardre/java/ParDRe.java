@@ -40,7 +40,7 @@ public class ParDRe {
 		List<Sequence> sequences = new ArrayList<Sequence>();
 		timer.stop(T_INIT);
 
-		System.out.format(java.util.Locale.ENGLISH,"Initialized in %.3f seconds\n", timer.read(T_INIT));
+		System.out.format(java.util.Locale.ENGLISH,"ParDRe initialized in %.3f seconds\n", timer.read(T_INIT));
 
 		timer.start(T_READ_SEQ);
 		// The method getSeq returns 0 if there are no more sequences in the file
@@ -76,9 +76,10 @@ public class ParDRe {
 
 		timer.stop(T_TOTAL);
 
-		System.out.format(java.util.Locale.ENGLISH,"Sequences read in %.3f seconds\n", timer.read(T_READ_SEQ));
-		System.out.format(java.util.Locale.ENGLISH,"Duplicates removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
-		System.out.format(java.util.Locale.ENGLISH,"Sequences written in %.3f seconds\n", timer.read(T_PRINT_SEQ));
+		System.out.format(java.util.Locale.ENGLISH,"Initialization: %.3f seconds\n", timer.read(T_INIT));
+		System.out.format(java.util.Locale.ENGLISH,"Sequences have been read in %.3f seconds\n", timer.read(T_READ_SEQ));
+		System.out.format(java.util.Locale.ENGLISH,"Duplicates have been removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
+		System.out.format(java.util.Locale.ENGLISH,"Sequences have been written in %.3f seconds\n", timer.read(T_PRINT_SEQ));
 		System.out.format(java.util.Locale.ENGLISH,"Total: %.3f seconds\n", timer.read(T_TOTAL));
 		System.exit(0);
 	}

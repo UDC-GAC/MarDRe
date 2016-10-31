@@ -54,9 +54,6 @@ public class ParDReMR {
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
 			minQual = (char) Integer.parseInt(job.get(MINQUAL));
 			parser = new SeqStringParser(prefixLength, minQual);
-
-			System.out.println("ParDReMRSingleEndMapper: prefixLength = "+prefixLength+", minQual = "+(int)minQual);
-			System.out.println("-----------------------------------------------------");
 		}
 
 		@Override
@@ -86,11 +83,7 @@ public class ParDReMR {
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
 			minQual = (char) Integer.parseInt(job.get(MINQUAL));
 			parser = new SeqStringParser(prefixLength, minQual);
-
-			System.out.println("ParDReMRPairedEndMapper: prefixLength = "+prefixLength+", minQual = "+(int)minQual);
-			System.out.println("-----------------------------------------------------");
 		}
-
 
 		@Override
 		public void map(LongWritable key, TupleWritable value, Context context)
@@ -102,12 +95,6 @@ public class ParDReMR {
 					pairedSeq.setSecondSeq(seq2);
 					longKey.set(pairedSeq.getKey());
 					context.write(longKey, pairedSeq);
-					System.out.println("WRITING KEY: "+longKey+"(position = "+key+")");
-					System.out.println("Value 1: ");
-					System.out.println(value.get(0).toString());
-					System.out.println("Value 2: ");
-					System.out.println(value.get(1).toString());
-					System.out.println("-----------------------------------------------------");
 				}
 			}
 		}
@@ -124,9 +111,6 @@ public class ParDReMR {
 			Configuration job = context.getConfiguration();
 			missMatch = Short.parseShort(job.get(MISSMATCH));
 			mos = new MultipleOutputs<NullWritable,Sequence>(context);
-
-			System.out.println("ParDReMRPairedEndReducer: missMatch = " + missMatch);
-			System.out.println("-------------------------------------------------------------");
 		}
 
 		@Override
@@ -140,12 +124,7 @@ public class ParDReMR {
 
 			List<PairedSequence> sequences = new ArrayList<PairedSequence>();
 
-			System.out.println("READING KEY: "+key);
-
 			for (PairedSequence seq : values) {
-				System.out.println("Value: ");
-				System.out.println(seq);
-				System.out.println("-------------------------------------------------------------");
 				sequences.add(new PairedSequence(seq.getFirstSeq(), seq.getSecondSeq()));
 			}
 
@@ -178,9 +157,6 @@ public class ParDReMR {
 		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
 			missMatch = Short.parseShort(job.get(MISSMATCH));
-
-			System.out.println("ParDReMRSingleEndReducer: missMatch = " + missMatch);
-			System.out.println("-------------------------------------------------------------");
 		}
 
 		@Override
@@ -260,7 +236,6 @@ public class ParDReMR {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		boolean status;
 		Timer timer = new Timer();
 
 		System.out.println("Starting ParDRe-MR");
@@ -268,6 +243,7 @@ public class ParDReMR {
 		timer.start(T_TOTAL);
 
 		timer.start(T_INIT);
+		es.udc.gac.pardre.util.Configuration.loadConfiguration();
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 
@@ -313,28 +289,32 @@ public class ParDReMR {
 		}
 		timer.stop(T_INIT);
 
-		System.out.format(java.util.Locale.ENGLISH,"Initialized in %.3f seconds\n", timer.read(T_INIT));
-		
+		System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR initialized in %.3f seconds\n", timer.read(T_INIT));
+
 		// Run MapReduce job
 		timer.start(T_REMOVE_DUP);
-		status = jobRemoveDuplicate.waitForCompletion(true);
+		boolean status = jobRemoveDuplicate.waitForCompletion(true);
 		timer.stop(T_REMOVE_DUP);
 
 		if (status) {
-			// Merge output files
-			timer.start(T_PRINT_SEQ);
-			FileSystem fs = FileSystem.get(conf);
-			System.out.println("Merging output files...");
-			status = FileUtil.copyMerge(fs, tmpPath1, fs, outputPath1, false, conf, null);
-			if (options.isPaired())
-				status = FileUtil.copyMerge(fs, tmpPath2, fs, outputPath2, false, conf, null);
-			timer.stop(T_PRINT_SEQ);
+			if (es.udc.gac.pardre.util.Configuration.MERGE) {
+				// Merge output files
+				timer.start(T_PRINT_SEQ);
+				FileSystem fs = FileSystem.get(conf);
+				System.out.println("Merging output files...");
+				status = FileUtil.copyMerge(fs, tmpPath1, fs, outputPath1, es.udc.gac.pardre.util.Configuration.DELETE_TEMP, conf, null);
+				if (options.isPaired())
+					status = FileUtil.copyMerge(fs, tmpPath2, fs, outputPath2, es.udc.gac.pardre.util.Configuration.DELETE_TEMP, conf, null);
+				timer.stop(T_PRINT_SEQ);
+			}
 
 			timer.stop(T_TOTAL);
 
 			System.out.println("ParDRe-MR completed successfully");
-			System.out.format(java.util.Locale.ENGLISH,"Duplicates removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
-			System.out.format(java.util.Locale.ENGLISH,"Sequences written in %.3f seconds\n", timer.read(T_PRINT_SEQ));
+			System.out.format(java.util.Locale.ENGLISH,"Initialization: %.3f seconds\n", timer.read(T_INIT));
+			System.out.format(java.util.Locale.ENGLISH,"Duplicates have been removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
+			if (es.udc.gac.pardre.util.Configuration.MERGE)
+				System.out.format(java.util.Locale.ENGLISH,"Sequences have been merged in %.3f seconds\n", timer.read(T_PRINT_SEQ));
 			System.out.format(java.util.Locale.ENGLISH,"Total: %.3f seconds\n", timer.read(T_TOTAL));
 			System.exit(0);
 		}
