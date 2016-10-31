@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ -z "$HADOOP_HOME" ]; then
+        echo "HADOOP_HOME must be set";
+        exit -1;
+fi
+
+$HADOOP_HOME/bin/hadoop jar $PARDREMR_HOME/target/pardre-1.0.jar es.udc.gac.pardre.mapreduce.ParDReMR "$@"

@@ -238,7 +238,7 @@ public class ParDReMR {
 
 		Timer timer = new Timer();
 
-		System.out.println("Starting ParDRe-MR");
+		System.out.println("Starting ParDRe-MR ("+es.udc.gac.pardre.util.Configuration.PARDREMR_HOME+")");
 
 		timer.start(T_TOTAL);
 
