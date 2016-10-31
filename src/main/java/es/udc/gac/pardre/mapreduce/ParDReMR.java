@@ -11,12 +11,10 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
@@ -33,8 +31,9 @@ import es.udc.gac.pardre.util.Timer;
 public class ParDReMR {
 
 	private static final int T_TOTAL = 0;
-	private static final int T_REMOVE_DUP = 1;
-	private static final int T_PRINT_SEQ = 2;
+	private static final int T_INIT = 1;
+	private static final int T_REMOVE_DUP = 2;
+	private static final int T_PRINT_SEQ = 3;
 	private static final String PREFIXLENGTH = "ParDRe-MR_prefixLength";
 	private static final String MINQUAL = "ParDRe-MR_minQual";
 	private static final String MISSMATCH = "ParDRe-MR_missMatch";
@@ -87,7 +86,7 @@ public class ParDReMR {
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
 			minQual = (char) Integer.parseInt(job.get(MINQUAL));
 			parser = new SeqStringParser(prefixLength, minQual);
-			
+
 			System.out.println("ParDReMRPairedEndMapper: prefixLength = "+prefixLength+", minQual = "+(int)minQual);
 			System.out.println("-----------------------------------------------------");
 		}
@@ -118,13 +117,13 @@ public class ParDReMR {
 
 		private short missMatch;	
 		private static final NullWritable nullKey = NullWritable.get();
-		private MultipleOutputs mos;
+		private MultipleOutputs<NullWritable,Sequence> mos;
 
 		@Override
 		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
 			missMatch = Short.parseShort(job.get(MISSMATCH));
-			mos = new MultipleOutputs(context);
+			mos = new MultipleOutputs<NullWritable,Sequence>(context);
 
 			System.out.println("ParDReMRPairedEndReducer: missMatch = " + missMatch);
 			System.out.println("-------------------------------------------------------------");
@@ -142,7 +141,7 @@ public class ParDReMR {
 			List<PairedSequence> sequences = new ArrayList<PairedSequence>();
 
 			System.out.println("READING KEY: "+key);
-			
+
 			for (PairedSequence seq : values) {
 				System.out.println("Value: ");
 				System.out.println(seq);
@@ -239,7 +238,7 @@ public class ParDReMR {
 
 		// I/O Format classes
 		job.setInputFormatClass(CompositeInputFormat.class);
-                job.setOutputFormatClass(TextOutputFormat.class);
+		job.setOutputFormatClass(TextOutputFormat.class);
 
 		// Mapper/Reducer clases (identity)
 		job.setMapperClass(ParDReMRPairedEndMapper.class);
@@ -268,6 +267,7 @@ public class ParDReMR {
 
 		timer.start(T_TOTAL);
 
+		timer.start(T_INIT);
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 
@@ -280,7 +280,7 @@ public class ParDReMR {
 		conf.setInt(PREFIXLENGTH, options.get_prefixLength());
 		conf.setInt(MINQUAL, options.get_minQual());
 		conf.setInt(MISSMATCH, options.get_missMatch());
-	
+
 		Path inputPath1 = new Path(options.get_readFileName1());
 		Path outputPath1 = new Path(options.get_writeFileName1());
 		Path outputPath2 = null;
@@ -311,7 +311,10 @@ public class ParDReMR {
 			FileInputFormat.addInputPath(jobRemoveDuplicate, inputPath1);
 			FileOutputFormat.setOutputPath(jobRemoveDuplicate, tmpPath1);
 		}
+		timer.stop(T_INIT);
 
+		System.out.format(java.util.Locale.ENGLISH,"Initialized in %.3f seconds\n", timer.read(T_INIT));
+		
 		// Run MapReduce job
 		timer.start(T_REMOVE_DUP);
 		status = jobRemoveDuplicate.waitForCompletion(true);
@@ -331,7 +334,7 @@ public class ParDReMR {
 
 			System.out.println("ParDRe-MR completed successfully");
 			System.out.format(java.util.Locale.ENGLISH,"Duplicates removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
-			System.out.format(java.util.Locale.ENGLISH,"Sequences printed in %.3f seconds\n", timer.read(T_PRINT_SEQ));
+			System.out.format(java.util.Locale.ENGLISH,"Sequences written in %.3f seconds\n", timer.read(T_PRINT_SEQ));
 			System.out.format(java.util.Locale.ENGLISH,"Total: %.3f seconds\n", timer.read(T_TOTAL));
 			System.exit(0);
 		}

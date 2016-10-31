@@ -8,9 +8,9 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
 public class FastQInputFormat extends TextInputFormat {
-	
-    @Override
-    public RecordReader<LongWritable, Text> createRecordReader(InputSplit inputSplit, TaskAttemptContext context) {
-        return new FastQRecordReader();
-    }
+
+	@Override
+	public RecordReader<LongWritable, Text> createRecordReader(InputSplit inputSplit, TaskAttemptContext context) {
+		return new FastQRecordReader();
+	}
 }

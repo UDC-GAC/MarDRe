@@ -10,7 +10,7 @@ public class PairedSequence implements Writable {
 
 	private Sequence firstSeq;
 	private Sequence secondSeq;
-	
+
 	public PairedSequence() {
 		this.firstSeq = null;
 		this.secondSeq = null;
@@ -40,7 +40,7 @@ public class PairedSequence implements Writable {
 	public long getKey() {
 		return this.firstSeq.getKey();
 	}
-	
+
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		this.firstSeq = new Sequence();

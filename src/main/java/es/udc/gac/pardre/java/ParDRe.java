@@ -53,8 +53,6 @@ public class ParDRe {
 		}
 		timer.stop(T_READ_SEQ);
 
-		System.out.format(java.util.Locale.ENGLISH,"Read %d sequences in %.3f seconds\n", sequences.size(), timer.read(T_READ_SEQ));
-
 		timer.start(T_REMOVE_DUP);
 		for(int i=0; i<sequences.size()-1; i++) {
 			for(int j=i+1; j<sequences.size(); j++) {
@@ -70,8 +68,6 @@ public class ParDRe {
 		}
 		timer.stop(T_REMOVE_DUP);
 
-		System.out.format(java.util.Locale.ENGLISH,"Remove duplicate in %.3f seconds\n", timer.read(T_REMOVE_DUP));
-
 		timer.start(T_PRINT_SEQ);
 		for(int i=0; i<sequences.size(); i++) {
 			parser.printSeq(sequences.get(i));
@@ -80,8 +76,10 @@ public class ParDRe {
 
 		timer.stop(T_TOTAL);
 
-		System.out.format(java.util.Locale.ENGLISH,"Print %d sequences in %.3f seconds\n", sequences.size(), timer.read(T_PRINT_SEQ));
-		System.out.format(java.util.Locale.ENGLISH,"Done in %.3f seconds\n", timer.read(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"Sequences read in %.3f seconds\n", timer.read(T_READ_SEQ));
+		System.out.format(java.util.Locale.ENGLISH,"Duplicates removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
+		System.out.format(java.util.Locale.ENGLISH,"Sequences written in %.3f seconds\n", timer.read(T_PRINT_SEQ));
+		System.out.format(java.util.Locale.ENGLISH,"Total: %.3f seconds\n", timer.read(T_TOTAL));
 		System.exit(0);
 	}
 }

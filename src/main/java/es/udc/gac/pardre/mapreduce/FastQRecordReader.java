@@ -26,7 +26,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 	private long pos = 0;
 	private int maxLineLength = Integer.MAX_VALUE;
 	private final Text endline = new Text("\n");
-	
+
 	@Override
 	public synchronized void close() throws IOException {
 		if (in != null) {
@@ -111,7 +111,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 				i = 0;
 				continue;
 			}
-			
+
 			if (found == true && i == linesToProcess) {
 				//System.out.println("nextKeyValue: last line and starting @ has been previously found");
 				value.append(newLine.getBytes(), 0, newLine.getLength());
