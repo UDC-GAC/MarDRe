@@ -33,6 +33,7 @@ public class Sequence implements Writable {
 	private long[] _compressSuffix;
 	private String _quals;
 	private float _avgQual;
+	private boolean _isFirstSeq;
 
 	public Sequence() {
 		_name = null;
@@ -42,6 +43,7 @@ public class Sequence implements Writable {
 		_avgQual = -1;
 		_length = -1;
 		_prefixLength = -1;
+		_isFirstSeq = false;
 	}
 
 	public Sequence(Sequence s) {
@@ -52,6 +54,7 @@ public class Sequence implements Writable {
 		_avgQual = s._avgQual;
 		_length = s._length;
 		_prefixLength = s._prefixLength;
+		_isFirstSeq = s._isFirstSeq;
 	}
 
 	public void set_name(String name) {
@@ -89,6 +92,14 @@ public class Sequence implements Writable {
 
 	public String get_name() {
 		return _name;
+	}
+
+	public boolean isFirstSeq() {
+		return _isFirstSeq;
+	}
+
+	public void setIsFirstSeq(boolean val) {
+		_isFirstSeq = val;
 	}
 
 	private short codePrefix(char ch) {
@@ -333,6 +344,7 @@ public class Sequence implements Writable {
 		out.writeUTF(_name);
 		out.writeUTF(_quals);
 		out.writeFloat(_avgQual);
+		out.writeBoolean(_isFirstSeq);
 		out.writeInt(_compressSuffix.length);
 
 		for (int i = 0; i < _compressSuffix.length; i++)
@@ -347,6 +359,7 @@ public class Sequence implements Writable {
 		_name = in.readUTF();
 		_quals = in.readUTF();
 		_avgQual = in.readFloat();
+		_isFirstSeq = in.readBoolean();
 		int compressSuffixLength = in.readInt();
 		_compressSuffix = new long[compressSuffixLength];
 
@@ -355,7 +368,7 @@ public class Sequence implements Writable {
 	}
 
 	public String toStringFull() {
-		return toString() + ", _compressSuffix.length=" + _compressSuffix.length
+		return toString() + ", isFirstSeq=" + _isFirstSeq + ", compressSuffix.length=" + _compressSuffix.length
 				+ ", prefixLength=" + _prefixLength;
 	}
 }
