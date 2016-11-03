@@ -17,7 +17,7 @@ public class Options {
 		_writeFileName1 = null;
 		_writeFileName2 = null;
 		_paired = false;
-		_minQual = 3;
+		_minQual = '0';
 		_missMatch = 0;
 		_prefixLength = 20;
 	}

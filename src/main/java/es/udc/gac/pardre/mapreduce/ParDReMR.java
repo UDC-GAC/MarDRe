@@ -100,10 +100,8 @@ public class ParDReMR {
 				Sequence seqi = sequences.get(i);
 
 				for (int j = i + 1; j < sequences.size(); j++) {
-					if (seqi.equal(sequences.get(j), missMatch, true)) {
-						// Delete the second one.
-						// In the future we must delete the one with the lowest
-						// priority
+					if (seqi.equal(sequences.get(j), missMatch, false)) {
+						// TODO: We must delete the one with the lowest priority
 						sequences.remove(j);
 						j--;
 					}
@@ -158,11 +156,9 @@ public class ParDReMR {
 				PairedSequence seqi = sequences.get(i);
 
 				for (int j = i + 1; j < sequences.size(); j++) {
-					if (seqi.getFirstSeq().equal(sequences.get(j).getFirstSeq(), missMatch, true)) {
-						if (seqi.getSecondSeq().equal(sequences.get(j).getSecondSeq(), missMatch, true)) {
-							// Delete the second one.
-							// In the future we must delete the one with the lowest
-							// priority
+					if (seqi.getFirstSeq().equal(sequences.get(j).getFirstSeq(), missMatch, false)) {
+						if (seqi.getSecondSeq().equal(sequences.get(j).getSecondSeq(), missMatch, false)) {
+							// TODO: We must delete the one with the lowest priority
 							sequences.remove(j);
 							j--;
 						}
