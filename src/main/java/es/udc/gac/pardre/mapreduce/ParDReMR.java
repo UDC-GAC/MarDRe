@@ -75,67 +75,40 @@ public class ParDReMR {
 		}
 	}
 
-	public static class ParDReMRJoinPairedSequencesMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
+	public static class ParDReMRSingleEndReducer extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
 
-		private Sequence seq = new Sequence();
-		private SeqStringParser parser;
-		private short prefixLength;
-		private char minQual;
-		private boolean isFirstInputPath = true;
-
-		@Override
-		public void setup(Context context) throws IOException {
-			Configuration job = context.getConfiguration();
-			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
-			minQual = (char) Integer.parseInt(job.get(MINQUAL));
-			parser = new SeqStringParser(prefixLength, minQual);
-			String inputPath1 = job.get(INPUT_PATH_1);
-			String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
-
-			if (!inputSplitPath.equals(inputPath1))
-				isFirstInputPath = false;
-		}
-
-		@Override
-		public void map(LongWritable key, Text value, Context context)
-				throws IOException, InterruptedException {
-
-			if (parser.getSeq(value.toString(), seq) != 0) {
-				seq.setIsFirstSeq(isFirstInputPath);
-				context.write(key, seq);
-			}
-		}
-	}
-
-	public static class ParDReMRJoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, LongWritable, PairedSequence> {
-
-		private PairedSequence pairedSeq = new PairedSequence();
-		private Sequence seq1 = new Sequence();
-		private Sequence seq2 = new Sequence();
-		private LongWritable longKey = new LongWritable();
-		private SeqStringParser parser;
-		private short prefixLength;
-		private char minQual;
+		private short missMatch;
+		private static final NullWritable nullKey = NullWritable.get();
 
 		@Override
 		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
-			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
-			minQual = (char) Integer.parseInt(job.get(MINQUAL));
-			parser = new SeqStringParser(prefixLength, minQual);
+			missMatch = Short.parseShort(job.get(MISSMATCH));
 		}
 
 		@Override
-		public void map(LongWritable key, TupleWritable value, Context context)
-				throws IOException, InterruptedException {
+		public void reduce(LongWritable key, Iterable<Sequence> values,
+				Context context) throws IOException, InterruptedException {
 
-			if (parser.getSeq(value.get(0).toString(), seq1) != 0) {
-				if (parser.getSeq(value.get(1).toString(), seq2) != 0) {
-					pairedSeq.setFirstSeq(seq1);
-					pairedSeq.setSecondSeq(seq2);
-					longKey.set(pairedSeq.getKey());
-					context.write(longKey, pairedSeq);
+			List<Sequence> sequences = new ArrayList<Sequence>();
+
+			for (Sequence seq : values) {
+				sequences.add(new Sequence(seq));
+			}
+
+			for (int i = 0; i < sequences.size(); i++) {
+				Sequence seqi = sequences.get(i);
+
+				for (int j = i + 1; j < sequences.size(); j++) {
+					if (seqi.equal(sequences.get(j), missMatch, true)) {
+						// Delete the second one.
+						// In the future we must delete the one with the lowest
+						// priority
+						sequences.remove(j);
+						j--;
+					}
 				}
+				context.write(nullKey, seqi);
 			}
 		}
 	}
@@ -201,6 +174,71 @@ public class ParDReMR {
 		}
 	}
 
+	public static class ParDReMRJoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, LongWritable, PairedSequence> {
+
+		private PairedSequence pairedSeq = new PairedSequence();
+		private Sequence seq1 = new Sequence();
+		private Sequence seq2 = new Sequence();
+		private LongWritable longKey = new LongWritable();
+		private SeqStringParser parser;
+		private short prefixLength;
+		private char minQual;
+
+		@Override
+		public void setup(Context context) {
+			Configuration job = context.getConfiguration();
+			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
+			minQual = (char) Integer.parseInt(job.get(MINQUAL));
+			parser = new SeqStringParser(prefixLength, minQual);
+		}
+
+		@Override
+		public void map(LongWritable key, TupleWritable value, Context context)
+				throws IOException, InterruptedException {
+
+			if (parser.getSeq(value.get(0).toString(), seq1) != 0) {
+				if (parser.getSeq(value.get(1).toString(), seq2) != 0) {
+					pairedSeq.setFirstSeq(seq1);
+					pairedSeq.setSecondSeq(seq2);
+					longKey.set(pairedSeq.getKey());
+					context.write(longKey, pairedSeq);
+				}
+			}
+		}
+	}
+
+	public static class ParDReMRJoinPairedSequencesMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
+
+		private Sequence seq = new Sequence();
+		private SeqStringParser parser;
+		private short prefixLength;
+		private char minQual;
+		private boolean isFirstInputPath = true;
+
+		@Override
+		public void setup(Context context) throws IOException {
+			Configuration job = context.getConfiguration();
+			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
+			minQual = (char) Integer.parseInt(job.get(MINQUAL));
+			parser = new SeqStringParser(prefixLength, minQual);
+			String inputPath1 = job.get(INPUT_PATH_1);
+			String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
+
+			if (!inputSplitPath.equals(inputPath1))
+				isFirstInputPath = false;
+		}
+
+		@Override
+		public void map(LongWritable key, Text value, Context context)
+				throws IOException, InterruptedException {
+
+			if (parser.getSeq(value.toString(), seq) != 0) {
+				seq.setIsFirstSeq(isFirstInputPath);
+				context.write(key, seq);
+			}
+		}
+	}
+
 	public static class ParDReMRJoinPairedSequencesReducer extends Reducer<LongWritable, Sequence, LongWritable, PairedSequence> {
 
 		private PairedSequence pairedSeq = new PairedSequence();
@@ -222,45 +260,8 @@ public class ParDReMR {
 		}
 	}
 
-	public static class ParDReMRSingleEndReducer extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
-
-		private short missMatch;
-		private static final NullWritable nullKey = NullWritable.get();
-
-		@Override
-		public void setup(Context context) {
-			Configuration job = context.getConfiguration();
-			missMatch = Short.parseShort(job.get(MISSMATCH));
-		}
-
-		@Override
-		public void reduce(LongWritable key, Iterable<Sequence> values,
-				Context context) throws IOException, InterruptedException {
-
-			List<Sequence> sequences = new ArrayList<Sequence>();
-
-			for (Sequence seq : values) {
-				sequences.add(new Sequence(seq));
-			}
-
-			for (int i = 0; i < sequences.size(); i++) {
-				Sequence seqi = sequences.get(i);
-
-				for (int j = i + 1; j < sequences.size(); j++) {
-					if (seqi.equal(sequences.get(j), missMatch, true)) {
-						// Delete the second one.
-						// In the future we must delete the one with the lowest
-						// priority
-						sequences.remove(j);
-						j--;
-					}
-				}
-				context.write(nullKey, seqi);
-			}
-		}
-	}
-
 	private static Job configureSingleEndJob(Configuration conf) throws IOException {
+
 		Job job = Job.getInstance(conf, "ParDRe-MR_SingleEnd");
 		job.setJarByClass(ParDReMR.class);
 
@@ -283,6 +284,7 @@ public class ParDReMR {
 	}
 
 	private static Job configurePairedEndJob(Configuration conf) throws IOException {
+
 		Job job = Job.getInstance(conf, "ParDRe-MR_PairedEnd");
 		job.setJarByClass(ParDReMR.class);
 
@@ -356,6 +358,7 @@ public class ParDReMR {
 		job.setOutputValueClass(PairedSequence.class);
 		return job;
 	}
+
 	/**
 	 * @param args
 	 * @throws Exception
@@ -373,12 +376,12 @@ public class ParDReMR {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 
-                // Print out the command line
+		// Print out the command line
 		System.out.print("ParDRe-MR: command line is ");
 		for (int i = 0; i < args.length; i++) {
 			System.out.print(args[i]+" ");
-                }
-                System.out.println();
+		}
+		System.out.println();
 
 		Options options = new Options();
 		if (!options.parse(otherArgs)) {
@@ -402,8 +405,13 @@ public class ParDReMR {
 		conf.setInt(MISSMATCH, options.get_missMatch());
 		conf.set(INPUT_PATH_1, inputPath1.toString());
 
+		System.out.print("ParDRe-MR: prefix length = "+options.get_prefixLength());
+		System.out.print("ParDRe-MR: quality threshold = "+options.get_minQual());
+		System.out.print("ParDRe-MR: allowed missmatches = "+options.get_missMatch());
+
 		if (options.isPaired()) {
 			System.out.println("ParDRe-MR: using paired-end mode");
+
 			// Paired-end mode reads (and writes) a second file
 			Path inputPath2 = fs.resolvePath(new Path(options.get_readFileName2()));
 			outputPath2 = new Path(options.get_writeFileName2());
@@ -412,12 +420,13 @@ public class ParDReMR {
 			tmpInputPath2 = new Path(TEMP_INPUT_PATH_2);
 			System.out.println("ParDRe-MR: input path = "+inputPath1);
 			System.out.println("ParDRe-MR: input path = "+inputPath2);
-			// Configure job to remove duplicate reads
+
+			// Configure job to remove duplicated reads
 			jobRemoveDuplicated = ParDReMR.configurePairedEndJob(conf);
 			FileOutputFormat.setOutputPath(jobRemoveDuplicated, tmpOutputPath1);
 			// Add additional output for the second file
 			MultipleOutputs.addNamedOutput(jobRemoveDuplicated, "output2", TextOutputFormat.class, NullWritable.class, Sequence.class);
-				
+
 			if (es.udc.gac.pardre.util.Configuration.PAIRED_JOIN) {
 				// Paired-end mode using a map-side join needs two map-only jobs to partition both input files
 				Job jobPairedSequences1 = ParDReMR.configureJoinPairedSequencesJob(conf);
@@ -429,7 +438,6 @@ public class ParDReMR {
 				// Map-side inner join of both partitioned files
 				String joinExpression = CompositeInputFormat.compose("inner", SequenceFileInputFormat.class, tmpInputPath1, tmpInputPath2);
 				jobRemoveDuplicated.getConfiguration().set("mapreduce.join.expr", joinExpression);
-				
 				timer.stop(T_INIT);
 
 				// Run first job
@@ -453,7 +461,6 @@ public class ParDReMR {
 				FileInputFormat.addInputPath(jobPairedSequences, inputPath2);
 				FileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
 				FileInputFormat.addInputPath(jobRemoveDuplicated, tmpInputPath1);
-
 				timer.stop(T_INIT);
 
 				// Run job
@@ -466,6 +473,7 @@ public class ParDReMR {
 		} else {
 			System.out.println("ParDRe-MR: using single-end mode");
 			System.out.println("ParDRe-MR: input path = "+inputPath1);
+
 			// Configure job
 			jobRemoveDuplicated = ParDReMR.configureSingleEndJob(conf);
 			FileInputFormat.addInputPath(jobRemoveDuplicated, inputPath1);
@@ -474,14 +482,12 @@ public class ParDReMR {
 		}
 
 		if (status) {
-			// Run job
+			// Run main job 
 			System.out.println("ParDRe-MR: removing duplicated reads...");
 			timer.start(T_REMOVE_DUP);
 			status = jobRemoveDuplicated.waitForCompletion(true);
 			timer.stop(T_REMOVE_DUP);
-		}
 
-		if (status) {
 			if (es.udc.gac.pardre.util.Configuration.MERGE) {
 				// Merge output files
 				timer.start(T_PRINT_SEQ);
@@ -502,7 +508,7 @@ public class ParDReMR {
 
 			// Cleanup
 			if (options.isPaired()) {
-                        	System.out.println("ParDRe-MR: output path = "+outputPath2);
+				System.out.println("ParDRe-MR: output path = "+outputPath2);
 				if (es.udc.gac.pardre.util.Configuration.DELETE_TEMP) {
 					fs.delete(tmpInputPath1, true);
 					fs.delete(tmpInputPath2, true);
@@ -521,6 +527,7 @@ public class ParDReMR {
 			System.out.format(java.util.Locale.ENGLISH,"\tDuplicated reads have been removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
 			if (es.udc.gac.pardre.util.Configuration.MERGE)
 				System.out.format(java.util.Locale.ENGLISH,"\tOutput files have been merged in %.3f seconds\n", timer.read(T_PRINT_SEQ));
+
 			System.exit(0);
 		}
 
