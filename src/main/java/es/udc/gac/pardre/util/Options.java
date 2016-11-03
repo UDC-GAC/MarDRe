@@ -1,7 +1,7 @@
 package es.udc.gac.pardre.util;
 
 public class Options {
-	
+
 	private String _readFileName1;
 	private String _readFileName2;
 	private String _writeFileName1;

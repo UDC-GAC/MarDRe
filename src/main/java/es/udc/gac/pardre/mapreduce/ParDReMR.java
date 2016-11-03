@@ -10,7 +10,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.SnappyCodec;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -79,7 +81,7 @@ public class ParDReMR {
 
 		private static final NullWritable nullKey = NullWritable.get();
 		private short missMatch;
-		
+
 		@Override
 		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
@@ -100,8 +102,10 @@ public class ParDReMR {
 				Sequence seqi = sequences.get(i);
 
 				for (int j = i + 1; j < sequences.size(); j++) {
-					if (seqi.equal(sequences.get(j), missMatch, false)) {
-						// TODO: We must delete the one with the lowest priority
+					if (seqi.equal(sequences.get(j), missMatch, true)) {
+						// Delete the second one.
+						// In the future we must delete the one with the lowest
+						// priority
 						sequences.remove(j);
 						j--;
 					}
@@ -129,7 +133,7 @@ public class ParDReMR {
 		private static final NullWritable nullKey = NullWritable.get();
 		private MultipleOutputs<NullWritable,Sequence> mos;
 		private short missMatch;	
-		
+
 		@Override
 		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
@@ -156,9 +160,11 @@ public class ParDReMR {
 				PairedSequence seqi = sequences.get(i);
 
 				for (int j = i + 1; j < sequences.size(); j++) {
-					if (seqi.getFirstSeq().equal(sequences.get(j).getFirstSeq(), missMatch, false)) {
-						if (seqi.getSecondSeq().equal(sequences.get(j).getSecondSeq(), missMatch, false)) {
-							// TODO: We must delete the one with the lowest priority
+					if (seqi.getFirstSeq().equal(sequences.get(j).getFirstSeq(), missMatch, true)) {
+						if (seqi.getSecondSeq().equal(sequences.get(j).getSecondSeq(), missMatch, true)) {
+							// Delete the second one.
+							// In the future we must delete the one with the lowest
+							// priority
 							sequences.remove(j);
 							j--;
 						}
@@ -320,6 +326,11 @@ public class ParDReMR {
 		job.setInputFormatClass(FastQInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
+		// Compress options
+		FileOutputFormat.setCompressOutput(job, true);
+		FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
+		SequenceFileOutputFormat.setOutputCompressionType(job, CompressionType.BLOCK);
+
 		// Mapper class
 		job.setMapperClass(ParDReMRJoinPairedSequencesMapper.class);
 
@@ -340,6 +351,11 @@ public class ParDReMR {
 		// I/O Format classes
 		job.setInputFormatClass(FastQInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
+
+		// Compress options
+		FileOutputFormat.setCompressOutput(job, true);
+		FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
+		SequenceFileOutputFormat.setOutputCompressionType(job, CompressionType.BLOCK);
 
 		// Mapper/Reducer classes
 		job.setMapperClass(ParDReMRJoinPairedSequencesMapper.class);
