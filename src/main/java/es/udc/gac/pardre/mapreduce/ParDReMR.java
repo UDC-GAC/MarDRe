@@ -394,52 +394,53 @@ public class ParDReMR {
 	}
 
 	private static FileFormat detectFileFormat(String fileName) throws IOException {
-		
+
 		BufferedReader reader = null;
 		FileFormat format = FileFormat.FILE_FORMAT_UNKNOWN;
-		
+
 		try {
 			reader = new BufferedReader(new FileReader(fileName));
 		} catch (FileNotFoundException e) {
 			System.out.println("ParDRe-MR: Unrecognized file format");
 			return format;
 		}
-		
+
 		// Read first line
 		String str = reader.readLine();
- 
-        // Look for the line where the sequence starts
-        while ((str != null) && (str.charAt(0) != '@') && (str.charAt(0) != '>')) {
-                str = reader.readLine();
-        }
 
-        if (str == null) {
-        	System.out.println("ParDRe-MR: Unrecognized file format");
-        } else if (str.charAt(0) == '@') {
-        	System.out.println("ParDRe-MR: FASTQ format identified");
-        	format = FileFormat.FILE_FORMAT_FASTQ;
-        } else if (str.charAt(0) == '>') {
-        	System.out.println("ParDRe-MR: FASTA format identified");
-        	format = FileFormat.FILE_FORMAT_FASTA;        	
-        } else {
-        	System.out.println("ParDRe-MR: Unrecognized file format");
-        }
-        
-        reader.close();
-        return format;
+		// Look for the line where the sequence starts
+		while ((str != null) && (str.charAt(0) != '@') && (str.charAt(0) != '>')) {
+			str = reader.readLine();
+		}
+
+		if (str == null) {
+			System.out.println("ParDRe-MR: Unrecognized file format");
+		} else if (str.charAt(0) == '@') {
+			System.out.println("ParDRe-MR: FASTQ format identified");
+			format = FileFormat.FILE_FORMAT_FASTQ;
+		} else if (str.charAt(0) == '>') {
+			System.out.println("ParDRe-MR: FASTA format identified");
+			format = FileFormat.FILE_FORMAT_FASTA;        	
+		} else {
+			System.out.println("ParDRe-MR: Unrecognized file format");
+		}
+
+		reader.close();
+		return format;
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
 
+		boolean status = true;
 		Timer timer = new Timer();
 
-		System.out.println("ParDRe-MR: starting from "+es.udc.gac.pardre.util.Configuration.PARDREMR_HOME);
-
 		timer.start(T_TOTAL);
+
+		System.out.println("ParDRe-MR: starting from "+es.udc.gac.pardre.util.Configuration.PARDREMR_HOME);
 
 		timer.start(T_INIT);
 		es.udc.gac.pardre.util.Configuration.loadConfiguration();
@@ -453,31 +454,32 @@ public class ParDReMR {
 		}
 		System.out.println();
 
+		// Parse command line options
 		Options options = new Options();
 		if (!options.parse(otherArgs)) {
 			options.printUsage(ParDReMR.class.getName());
 			return;
 		}
 
+		// FOA, detect the file format
 		FileSystem fs = FileSystem.get(conf);
 		Path inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
-		Path outputPath1 = new Path(options.getWriteFileName1());
-		Path outputPath2 = null;
-		Path tmpInputPath1 = null;
-		Path tmpInputPath2 = null;
-		Path tmpOutputPath1 = new Path(TEMP_OUTPUT_PATH_1);
-		Path tmpOutputPath2 = null;
-		Job jobRemoveDuplicated = null;
-		boolean status = true;
-
-		// FOA, detect the file format
-		System.out.println("Detecting file format of "+inputPath1);
+		System.out.println("ParDRe-MR: detecting file format of "+inputPath1);
 		FileFormat format = ParDReMR.detectFileFormat(options.getReadFileName1());
-		
+
 		if (format == FileFormat.FILE_FORMAT_UNKNOWN) {
 			System.exit(-1);
 		}
 
+		Path outputPath1 = new Path(options.getWriteFileName1());
+		Path tmpOutputPath1 = new Path(TEMP_OUTPUT_PATH_1);
+		Path outputPath2 = null;
+		Path tmpInputPath1 = null;
+		Path tmpInputPath2 = null;
+		Path tmpOutputPath2 = null;
+		Job jobRemoveDuplicated = null;
+
+		// Set parameters to be used for mapper/reducer classes
 		conf.setInt(PREFIXLENGTH, options.getPrefixLength());
 		conf.setInt(MINQUAL, options.getMinQual());
 		conf.setInt(MISSMATCH, options.getMissMatch());
@@ -550,6 +552,7 @@ public class ParDReMR {
 				timer.stop(T_PREPARE_PSEQ);
 			}
 		} else {
+			// Single-end mode reads (and writes) one file
 			System.out.println("ParDRe-MR: using single-end mode");
 			System.out.println("ParDRe-MR: input path = "+inputPath1);
 
@@ -580,8 +583,6 @@ public class ParDReMR {
 				outputPath2 = tmpOutputPath2;
 			}
 
-			timer.stop(T_TOTAL);
-
 			System.out.println("ParDRe-MR: completed successfully!");
 			System.out.println("ParDRe-MR: output path = "+outputPath1);
 
@@ -593,6 +594,8 @@ public class ParDReMR {
 					fs.delete(tmpInputPath2, true);
 				}
 			}
+
+			timer.stop(T_TOTAL);
 
 			// Get task counters
 			long inputSequences = jobRemoveDuplicated.getCounters().findCounter(TaskCounter.MAP_INPUT_RECORDS).getValue();
