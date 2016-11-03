@@ -367,7 +367,7 @@ public class ParDReMR {
 
 		Timer timer = new Timer();
 
-		System.out.println("ParDRe-MR: starting from $PARDREMR_HOME="+es.udc.gac.pardre.util.Configuration.PARDREMR_HOME);
+		System.out.println("ParDRe-MR: starting from "+es.udc.gac.pardre.util.Configuration.PARDREMR_HOME);
 
 		timer.start(T_TOTAL);
 
@@ -405,9 +405,9 @@ public class ParDReMR {
 		conf.setInt(MISSMATCH, options.getMissMatch());
 		conf.set(INPUT_PATH_1, inputPath1.toString());
 
-		System.out.print("ParDRe-MR: prefix length = "+options.getPrefixLength());
-		System.out.print("ParDRe-MR: quality threshold = "+options.getMinQual());
-		System.out.print("ParDRe-MR: allowed missmatches = "+options.getMissMatch());
+		System.out.println("ParDRe-MR: prefix length = "+options.getPrefixLength());
+		System.out.println("ParDRe-MR: quality threshold = "+options.getMinQual());
+		System.out.println("ParDRe-MR: allowed missmatches = "+options.getMissMatch());
 
 		if (options.isPaired()) {
 			System.out.println("ParDRe-MR: using paired-end mode");
