@@ -11,7 +11,8 @@ public class Configuration {
 	public static String PARDREMR_HOME = null;
 	public static boolean MERGE = true; 
 	public static boolean DELETE_TEMP = true;
-	public static boolean PAIRED_JOIN = true;
+	public static boolean PAIRED_JOIN = false;
+	public static boolean COMPRESS_TEMP = true;
 	private static String configFileName = null;
 	private static final String PARDREMR_CONFIGURATION_FILE = "pardre-mr.conf";
 	private static Properties properties = new Properties();
@@ -39,6 +40,7 @@ public class Configuration {
 		MERGE = Boolean.parseBoolean(properties.getProperty("mergeOutput"));
 		DELETE_TEMP = Boolean.parseBoolean(properties.getProperty("deleteTemp"));
 		PAIRED_JOIN = Boolean.parseBoolean(properties.getProperty("pairedJoin"));
+		COMPRESS_TEMP = Boolean.parseBoolean(properties.getProperty("compressTemp"));
 
 		if (MERGE == false)
 			DELETE_TEMP = false;

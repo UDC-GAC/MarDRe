@@ -327,9 +327,13 @@ public class ParDReMR {
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		// Compress options
-		FileOutputFormat.setCompressOutput(job, true);
-		FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
-		SequenceFileOutputFormat.setOutputCompressionType(job, CompressionType.BLOCK);
+		if (es.udc.gac.pardre.util.Configuration.COMPRESS_TEMP) {
+			FileOutputFormat.setCompressOutput(job, true);
+			FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
+			SequenceFileOutputFormat.setOutputCompressionType(job, CompressionType.BLOCK);
+		} else {
+			FileOutputFormat.setCompressOutput(job, false);
+		}
 
 		// Mapper class
 		job.setMapperClass(ParDReMRJoinPairedSequencesMapper.class);
@@ -353,9 +357,13 @@ public class ParDReMR {
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		// Compress options
-		FileOutputFormat.setCompressOutput(job, true);
-		FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
-		SequenceFileOutputFormat.setOutputCompressionType(job, CompressionType.BLOCK);
+		if (es.udc.gac.pardre.util.Configuration.COMPRESS_TEMP) {
+			FileOutputFormat.setCompressOutput(job, true);
+			FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
+			SequenceFileOutputFormat.setOutputCompressionType(job, CompressionType.BLOCK);
+		} else {
+			FileOutputFormat.setCompressOutput(job, false);
+		}
 
 		// Mapper/Reducer classes
 		job.setMapperClass(ParDReMRJoinPairedSequencesMapper.class);
