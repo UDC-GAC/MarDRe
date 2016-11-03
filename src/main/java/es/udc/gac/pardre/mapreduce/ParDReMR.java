@@ -1,5 +1,8 @@
 package es.udc.gac.pardre.mapreduce;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +39,10 @@ import es.udc.gac.pardre.util.Timer;
 
 public class ParDReMR {
 
+	public enum FileFormat {
+		FILE_FORMAT_FASTA, FILE_FORMAT_FASTQ, FILE_FORMAT_UNKNOWN
+	}
+
 	private static final int T_TOTAL = 0;
 	private static final int T_INIT = 1;
 	private static final int T_PREPARE_PSEQ = 2;
@@ -44,6 +51,7 @@ public class ParDReMR {
 	private static final String PREFIXLENGTH = "ParDRe-MR_prefixLength";
 	private static final String MINQUAL = "ParDRe-MR_minQual";
 	private static final String MISSMATCH = "ParDRe-MR_missMatch";
+	private static final String FILE_FORMAT = "ParDRe-MR_fileFormat";
 	private static final String INPUT_PATH_1 = "ParDRe-MR_inputPath1";
 	private static final String TEMP_INPUT_PATH_1 = "/ParDRe-MR/tmp/input1";
 	private static final String TEMP_INPUT_PATH_2 = "/ParDRe-MR/tmp/input2";
@@ -57,10 +65,12 @@ public class ParDReMR {
 		private SeqStringParser parser;
 		private short prefixLength;
 		private char minQual;
+		private FileFormat format;
 
 		@Override
 		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
+			format = FileFormat.values()[Integer.parseInt(job.get(FILE_FORMAT))];
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
 			minQual = (char) Integer.parseInt(job.get(MINQUAL));
 			parser = new SeqStringParser(prefixLength, minQual);
@@ -70,7 +80,7 @@ public class ParDReMR {
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
 
-			if (parser.getSeq(value.toString(), seq) != 0) {
+			if (parser.getSeq(format, value.toString(), seq) != 0) {
 				longKey.set(seq.getKey());
 				context.write(longKey, seq);
 			}
@@ -185,10 +195,12 @@ public class ParDReMR {
 		private SeqStringParser parser;
 		private short prefixLength;
 		private char minQual;
+		private FileFormat format;
 
 		@Override
 		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
+			format = FileFormat.values()[Integer.parseInt(job.get(FILE_FORMAT))];
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
 			minQual = (char) Integer.parseInt(job.get(MINQUAL));
 			parser = new SeqStringParser(prefixLength, minQual);
@@ -198,8 +210,8 @@ public class ParDReMR {
 		public void map(LongWritable key, TupleWritable value, Context context)
 				throws IOException, InterruptedException {
 
-			if (parser.getSeq(value.get(0).toString(), seq1) != 0) {
-				if (parser.getSeq(value.get(1).toString(), seq2) != 0) {
+			if (parser.getSeq(format, value.get(0).toString(), seq1) != 0) {
+				if (parser.getSeq(format, value.get(1).toString(), seq2) != 0) {
 					pairedSeq.setFirstSeq(seq1);
 					pairedSeq.setSecondSeq(seq2);
 					longKey.set(pairedSeq.getKey());
@@ -216,10 +228,12 @@ public class ParDReMR {
 		private short prefixLength;
 		private char minQual;
 		private boolean isFirstInputPath = true;
+		private FileFormat format;
 
 		@Override
 		public void setup(Context context) throws IOException {
 			Configuration job = context.getConfiguration();
+			format = FileFormat.values()[Integer.parseInt(job.get(FILE_FORMAT))];
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
 			minQual = (char) Integer.parseInt(job.get(MINQUAL));
 			parser = new SeqStringParser(prefixLength, minQual);
@@ -234,7 +248,7 @@ public class ParDReMR {
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
 
-			if (parser.getSeq(value.toString(), seq) != 0) {
+			if (parser.getSeq(format, value.toString(), seq) != 0) {
 				seq.setIsFirstSeq(isFirstInputPath);
 				context.write(key, seq);
 			}
@@ -379,6 +393,42 @@ public class ParDReMR {
 		return job;
 	}
 
+	private static FileFormat detectFileFormat(String fileName) throws IOException {
+		
+		BufferedReader reader = null;
+		FileFormat format = FileFormat.FILE_FORMAT_UNKNOWN;
+		
+		try {
+			reader = new BufferedReader(new FileReader(fileName));
+		} catch (FileNotFoundException e) {
+			System.out.println("ParDRe-MR: Unrecognized file format");
+			return format;
+		}
+		
+		// Read first line
+		String str = reader.readLine();
+ 
+        // Look for the line where the sequence starts
+        while ((str != null) && (str.charAt(0) != '@') && (str.charAt(0) != '>')) {
+                str = reader.readLine();
+        }
+
+        if (str == null) {
+        	System.out.println("ParDRe-MR: Unrecognized file format");
+        } else if (str.charAt(0) == '@') {
+        	System.out.println("ParDRe-MR: FASTQ format identified");
+        	format = FileFormat.FILE_FORMAT_FASTQ;
+        } else if (str.charAt(0) == '>') {
+        	System.out.println("ParDRe-MR: FASTA format identified");
+        	format = FileFormat.FILE_FORMAT_FASTA;        	
+        } else {
+        	System.out.println("ParDRe-MR: Unrecognized file format");
+        }
+        
+        reader.close();
+        return format;
+	}
+	
 	/**
 	 * @param args
 	 * @throws Exception
@@ -420,9 +470,18 @@ public class ParDReMR {
 		Job jobRemoveDuplicated = null;
 		boolean status = true;
 
+		// FOA, detect the file format
+		System.out.println("Detecting file format of "+inputPath1);
+		FileFormat format = ParDReMR.detectFileFormat(options.getReadFileName1());
+		
+		if (format == FileFormat.FILE_FORMAT_UNKNOWN) {
+			System.exit(-1);
+		}
+
 		conf.setInt(PREFIXLENGTH, options.getPrefixLength());
 		conf.setInt(MINQUAL, options.getMinQual());
 		conf.setInt(MISSMATCH, options.getMissMatch());
+		conf.setInt(FILE_FORMAT, format.ordinal());
 		conf.set(INPUT_PATH_1, inputPath1.toString());
 
 		System.out.println("ParDRe-MR: prefix length = "+options.getPrefixLength());
