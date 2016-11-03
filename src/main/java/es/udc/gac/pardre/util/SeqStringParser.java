@@ -28,7 +28,7 @@ public class SeqStringParser {
 
 		// Read the sequence name
 		// Everything but the @
-		seq.set_name(str.substring(1));
+		seq.setName(str.substring(1));
 
 		// Read the sequence bases
 		if (!st.hasMoreTokens())
@@ -51,12 +51,12 @@ public class SeqStringParser {
 					+ ": no qualities available");
 		strQuals = st.nextToken();
 
-		seq.set_length(str.length());
-		seq.set_prefix_length(_prefixLength);
-		seq.set_quals(strQuals);
+		seq.setLength(str.length());
+		seq.setPrefixLength(_prefixLength);
+		seq.setQuals(strQuals);
 		seq.setKey(str, _minQual);
 		seq.setSuffix(str, _minQual);
 
-		return seq.get_length();
+		return seq.getLength();
 	}
 }

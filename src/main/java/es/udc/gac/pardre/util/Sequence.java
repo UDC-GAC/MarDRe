@@ -57,11 +57,11 @@ public class Sequence implements Writable {
 		_isFirstSeq = s._isFirstSeq;
 	}
 
-	public void set_name(String name) {
+	public void setName(String name) {
 		_name = name;
 	}
 
-	public void set_quals(String quals) {
+	public void setQuals(String quals) {
 		if (quals.length() != _length) {
 			throw new IllegalArgumentException(
 					"The number of qualities should be " + _length + " but are "
@@ -74,23 +74,23 @@ public class Sequence implements Writable {
 		_quals = null;
 	}
 
-	public void set_length(int length) {
+	public void setLength(int length) {
 		_length = length;
 	}
 
-	public int get_length() {
+	public int getLength() {
 		return _length;
 	}
 
-	public void set_prefix_length(short length) {
+	public void setPrefixLength(short length) {
 		_prefixLength = length;
 	}
 
-	public short get_prefix_length() {
+	public short getPrefixLength() {
 		return _prefixLength;
 	}
 
-	public String get_name() {
+	public String getName() {
 		return _name;
 	}
 
@@ -206,7 +206,7 @@ public class Sequence implements Writable {
 		}
 	}
 
-	public float get_avgQual() {
+	public float getAvgQual() {
 		if ((_avgQual == -1) && (!_quals.isEmpty())) {
 			_avgQual = 0;
 

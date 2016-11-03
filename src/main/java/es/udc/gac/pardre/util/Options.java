@@ -22,35 +22,35 @@ public class Options {
 		_prefixLength = 20;
 	}
 
-	public String get_readFileName1() {
+	public String getReadFileName1() {
 		return _readFileName1;
 	}
 
-	public void set_readFileName1(String readFileName) {
+	public void setReadFileName1(String readFileName) {
 		_readFileName1 = readFileName;
 	}
 
-	public String get_readFileName2() {
+	public String getReadFileName2() {
 		return _readFileName2;
 	}
 
-	public void set_readFileName2(String readFileName) {
+	public void setReadFileName2(String readFileName) {
 		_readFileName2 = readFileName;
 	}
 
-	public String get_writeFileName1() {
+	public String getWriteFileName1() {
 		return _writeFileName1;
 	}
 
-	public void set_writeFileName1(String writeFileName) {
+	public void setWriteFileName1(String writeFileName) {
 		_writeFileName1 = writeFileName;
 	}
 
-	public String get_writeFileName2() {
+	public String getWriteFileName2() {
 		return _writeFileName2;
 	}
 
-	public void set_writeFileName2(String writeFileName) {
+	public void setWriteFileName2(String writeFileName) {
 		_writeFileName2 = writeFileName;
 	}
 
@@ -58,27 +58,27 @@ public class Options {
 		return _paired;
 	}
 
-	public char get_minQual() {
+	public char getMinQual() {
 		return _minQual;
 	}
 
-	public void set_minQual(char minQual) {
+	public void setMinQual(char minQual) {
 		_minQual = minQual;
 	}
 
-	public short get_missMatch() {
+	public short getMissMatch() {
 		return _missMatch;
 	}
 
-	public void set_missMatch(short missMatch) {
+	public void setMissMatch(short missMatch) {
 		_missMatch = missMatch;
 	}
 
-	public short get_prefixLength() {
+	public short getPrefixLength() {
 		return _prefixLength;
 	}
 
-	public void set_prefixLength(short prefixLength) {
+	public void setPrefixLength(short prefixLength) {
 		_prefixLength = prefixLength;
 	}
 

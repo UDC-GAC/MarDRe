@@ -77,9 +77,9 @@ public class ParDReMR {
 
 	public static class ParDReMRSingleEndReducer extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
 
-		private short missMatch;
 		private static final NullWritable nullKey = NullWritable.get();
-
+		private short missMatch;
+		
 		@Override
 		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
@@ -128,10 +128,10 @@ public class ParDReMR {
 
 	public static class ParDReMRPairedEndReducer extends Reducer<LongWritable, PairedSequence, NullWritable, Sequence> {
 
-		private short missMatch;	
 		private static final NullWritable nullKey = NullWritable.get();
 		private MultipleOutputs<NullWritable,Sequence> mos;
-
+		private short missMatch;	
+		
 		@Override
 		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
@@ -390,8 +390,8 @@ public class ParDReMR {
 		}
 
 		FileSystem fs = FileSystem.get(conf);
-		Path inputPath1 = fs.resolvePath(new Path(options.get_readFileName1()));
-		Path outputPath1 = new Path(options.get_writeFileName1());
+		Path inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
+		Path outputPath1 = new Path(options.getWriteFileName1());
 		Path outputPath2 = null;
 		Path tmpInputPath1 = null;
 		Path tmpInputPath2 = null;
@@ -400,21 +400,21 @@ public class ParDReMR {
 		Job jobRemoveDuplicated = null;
 		boolean status = true;
 
-		conf.setInt(PREFIXLENGTH, options.get_prefixLength());
-		conf.setInt(MINQUAL, options.get_minQual());
-		conf.setInt(MISSMATCH, options.get_missMatch());
+		conf.setInt(PREFIXLENGTH, options.getPrefixLength());
+		conf.setInt(MINQUAL, options.getMinQual());
+		conf.setInt(MISSMATCH, options.getMissMatch());
 		conf.set(INPUT_PATH_1, inputPath1.toString());
 
-		System.out.print("ParDRe-MR: prefix length = "+options.get_prefixLength());
-		System.out.print("ParDRe-MR: quality threshold = "+options.get_minQual());
-		System.out.print("ParDRe-MR: allowed missmatches = "+options.get_missMatch());
+		System.out.print("ParDRe-MR: prefix length = "+options.getPrefixLength());
+		System.out.print("ParDRe-MR: quality threshold = "+options.getMinQual());
+		System.out.print("ParDRe-MR: allowed missmatches = "+options.getMissMatch());
 
 		if (options.isPaired()) {
 			System.out.println("ParDRe-MR: using paired-end mode");
 
 			// Paired-end mode reads (and writes) a second file
-			Path inputPath2 = fs.resolvePath(new Path(options.get_readFileName2()));
-			outputPath2 = new Path(options.get_writeFileName2());
+			Path inputPath2 = fs.resolvePath(new Path(options.getReadFileName2()));
+			outputPath2 = new Path(options.getWriteFileName2());
 			tmpOutputPath2 = new Path(TEMP_OUTPUT_PATH_2);
 			tmpInputPath1 = new Path(TEMP_INPUT_PATH_1);
 			tmpInputPath2 = new Path(TEMP_INPUT_PATH_2);
