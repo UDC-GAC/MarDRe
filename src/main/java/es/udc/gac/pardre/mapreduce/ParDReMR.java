@@ -2,7 +2,7 @@ package es.udc.gac.pardre.mapreduce;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -393,13 +393,15 @@ public class ParDReMR {
 		return job;
 	}
 
-	private static FileFormat detectFileFormat(String fileName) throws IOException {
+	private static FileFormat detectFileFormat(FileSystem fs, Path file) throws IOException {
 
 		BufferedReader reader = null;
 		FileFormat format = FileFormat.FILE_FORMAT_UNKNOWN;
 
+		System.out.println("ParDRe-MR: detecting file format from "+file);
+
 		try {
-			reader = new BufferedReader(new FileReader(fileName));
+			reader = new BufferedReader(new InputStreamReader(fs.open(file)));
 		} catch (FileNotFoundException e) {
 			throw e;
 		}
@@ -463,8 +465,7 @@ public class ParDReMR {
 		// FOA, detect the file format
 		FileSystem fs = FileSystem.get(conf);
 		Path inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
-		System.out.println("ParDRe-MR: detecting file format in "+inputPath1);
-		FileFormat format = ParDReMR.detectFileFormat(options.getReadFileName1());
+		FileFormat format = ParDReMR.detectFileFormat(fs, inputPath1);
 
 		if (format == FileFormat.FILE_FORMAT_UNKNOWN) {
 			System.exit(-1);
