@@ -73,6 +73,7 @@ public class SeqStringParser {
 	}
 
 	private int getFastASeq(String s, Sequence seq) {
+		
 		if (s.equals("")) {
 			System.out.println("Found empty string " + s);
 			return 0;

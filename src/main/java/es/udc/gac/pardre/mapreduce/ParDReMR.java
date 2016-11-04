@@ -401,8 +401,7 @@ public class ParDReMR {
 		try {
 			reader = new BufferedReader(new FileReader(fileName));
 		} catch (FileNotFoundException e) {
-			System.out.println("ParDRe-MR: Unrecognized file format");
-			return format;
+			throw e;
 		}
 
 		// Read first line
@@ -464,7 +463,7 @@ public class ParDReMR {
 		// FOA, detect the file format
 		FileSystem fs = FileSystem.get(conf);
 		Path inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
-		System.out.println("ParDRe-MR: detecting file format of "+inputPath1);
+		System.out.println("ParDRe-MR: detecting file format in "+inputPath1);
 		FileFormat format = ParDReMR.detectFileFormat(options.getReadFileName1());
 
 		if (format == FileFormat.FILE_FORMAT_UNKNOWN) {
