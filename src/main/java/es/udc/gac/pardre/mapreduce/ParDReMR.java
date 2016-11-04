@@ -584,11 +584,11 @@ public class ParDReMR {
 			}
 
 			System.out.println("ParDRe-MR: completed successfully!");
-			System.out.println("ParDRe-MR: output path = "+outputPath1);
+			System.out.println("ParDRe-MR: output path = "+fs.getUri()+outputPath1);
 
 			// Cleanup
 			if (options.isPaired()) {
-				System.out.println("ParDRe-MR: output path = "+outputPath2);
+				System.out.println("ParDRe-MR: output path = "++fs.getUri()+outputPath2);
 				if (es.udc.gac.pardre.util.Configuration.DELETE_TEMP) {
 					fs.delete(tmpInputPath1, true);
 					fs.delete(tmpInputPath2, true);
