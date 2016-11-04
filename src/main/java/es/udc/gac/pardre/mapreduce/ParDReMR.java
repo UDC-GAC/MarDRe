@@ -490,6 +490,9 @@ public class ParDReMR {
 		System.out.println("ParDRe-MR: quality threshold = "+options.getMinQual());
 		System.out.println("ParDRe-MR: allowed missmatches = "+options.getMissMatch());
 
+		if (es.udc.gac.pardre.util.Configuration.COMPRESS_TEMP)
+			System.out.println("ParDRe-MR: using Snappy compression");
+
 		if (options.isPaired()) {
 			System.out.println("ParDRe-MR: using paired-end mode");
 
@@ -588,7 +591,7 @@ public class ParDReMR {
 
 			// Cleanup
 			if (options.isPaired()) {
-				System.out.println("ParDRe-MR: output path = "++fs.getUri()+outputPath2);
+				System.out.println("ParDRe-MR: output path = "+fs.getUri()+outputPath2);
 				if (es.udc.gac.pardre.util.Configuration.DELETE_TEMP) {
 					fs.delete(tmpInputPath1, true);
 					fs.delete(tmpInputPath2, true);
