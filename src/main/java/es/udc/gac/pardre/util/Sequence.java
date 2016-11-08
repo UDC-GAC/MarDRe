@@ -66,7 +66,7 @@ public class Sequence implements Writable {
 	private String _quals;
 	private float _avgQual;
 
-	Sequence() {
+	public Sequence() {
 		_name = null;
 		_key = 0;
 		_compressSuffix = null;
@@ -77,7 +77,7 @@ public class Sequence implements Writable {
 		_avgQual = -1;
 	}
 
-	Sequence(Sequence s) {
+	public Sequence(Sequence s) {
 		_name = s._name;
 		_key = s._key;
 		_compressSuffix = s._compressSuffix;
@@ -168,12 +168,21 @@ public class Sequence implements Writable {
 		if (_prefixLength > length)
 			limit = length;
 
-		for (int i = 0; i < limit; i++) {
-			_key *= 5;
-			if (_quals.charAt(i) < minQual)
-				_key += 4;
-			else
+		if (_quals == null) {
+			// FastA sequence
+			for (int i = 0; i < limit; i++) {
+				_key *= 5;
 				_key += Sequence.codePrefix(bases.charAt(i));
+			}
+		} else {
+			// FastQ sequence
+			for (int i = 0; i < limit; i++) {
+				_key *= 5;
+				if (_quals.charAt(i) < minQual)
+					_key += 4;
+				else
+					_key += Sequence.codePrefix(bases.charAt(i));
+			}
 		}
 
 		return _key;
@@ -199,15 +208,14 @@ public class Sequence implements Writable {
 
 		_compressSuffix = new long[compressLength];
 
-
 		for (int i = 0; i < suffixLength / 16; i++) {
 			_compressSuffix[i] = 0;
 
 			for (int j = 0; j < 16; j++) {
 				_compressSuffix[i] <<= 4;
 
-				if (_quals.charAt(iterBases) >= minQual)
-					_compressSuffix[i] += code(bases.charAt(iterBases));
+				if (_quals == null || _quals.charAt(iterBases) >= minQual)
+						_compressSuffix[i] += code(bases.charAt(iterBases));
 
 				iterBases++;
 			}
@@ -219,7 +227,7 @@ public class Sequence implements Writable {
 			for (int i = 0; i < suffixLength % 16; i++) {
 				_compressSuffix[compressLength - 1] <<= 4;
 
-				if (_quals.charAt(iterBases) >= minQual)
+				if (_quals == null || _quals.charAt(iterBases) >= minQual)
 					_compressSuffix[compressLength - 1] += code(bases.charAt(iterBases));
 
 				iterBases++;
@@ -262,7 +270,14 @@ public class Sequence implements Writable {
 	}
 
 	public void print(BufferedWriter writer) throws IOException {
-		writer.write("@");
+		
+		if (_quals == null)
+			// FastA sequence
+			writer.write(">");
+		else
+			// FastQ sequence
+			writer.write("@");
+		
 		writer.write(_name, 0, _name.length());
 		writer.newLine();
 		int limit = _prefixLength;
@@ -321,7 +336,7 @@ public class Sequence implements Writable {
 		writer.write(bases);
 		writer.newLine();
 
-		if (!_quals.isEmpty()) {
+		if (_quals != null && !_quals.isEmpty()) {
 			writer.write('+');
 			writer.newLine();
 			writer.write(_quals, 0, _quals.length());
@@ -351,7 +366,7 @@ public class Sequence implements Writable {
 		out.writeShort(_prefixLength);
 		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
-		out.writeInt(_compressSuffix.length);
+		out.writeInt(_compressSuffix.length);		
 		out.writeUTF(_quals);
 		out.writeFloat(_avgQual);
 

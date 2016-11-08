@@ -17,40 +17,4 @@ public class SequenceFactory {
 		else
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
 	}
-
-	public static Sequence createSequence(FileFormat format) {
-
-		if (format != FileFormat.FILE_FORMAT_FASTQ && format != FileFormat.FILE_FORMAT_FASTA)
-			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
-
-		return new Sequence();
-	}
-
-	public static Sequence createSequence(FileFormat format, Sequence seq) {
-
-		if (format != FileFormat.FILE_FORMAT_FASTQ && format != FileFormat.FILE_FORMAT_FASTA)
-			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
-
-		return new Sequence(seq);
-	}
-
-	public static PairedSequence createPairedSequence(FileFormat format) {
-
-		if (format != FileFormat.FILE_FORMAT_FASTQ && format != FileFormat.FILE_FORMAT_FASTA)
-			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
-
-		PairedSequence pairedSeq = new PairedSequence();
-		pairedSeq.setFormat(format);
-		return pairedSeq;
-	}
-
-	public static PairedSequence createPairedSequence(FileFormat format, Sequence first, Sequence second) {
-
-		if (format != FileFormat.FILE_FORMAT_FASTQ && format != FileFormat.FILE_FORMAT_FASTA)
-			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
-
-		PairedSequence pairedSeq = new PairedSequence(first, second);
-		pairedSeq.setFormat(format);
-		return pairedSeq;
-	}
 }

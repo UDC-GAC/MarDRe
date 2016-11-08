@@ -6,20 +6,17 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
 
-import es.udc.gac.pardre.util.SequenceFactory.FileFormat;
-
 public class PairedSequence implements Writable {
 
 	private Sequence firstSeq;
 	private Sequence secondSeq;
-	private FileFormat format;
 
-	PairedSequence() {
+	public PairedSequence() {
 		this.firstSeq = null;
 		this.secondSeq = null;
 	}
 
-	PairedSequence(Sequence first, Sequence second) {
+	public PairedSequence(Sequence first, Sequence second) {
 		this.firstSeq = first;
 		this.secondSeq = second;
 	}
@@ -38,14 +35,6 @@ public class PairedSequence implements Writable {
 
 	public void setSecondSeq(Sequence secondSeq) {
 		this.secondSeq = secondSeq;
-	}
-
-	public FileFormat getFormat() {
-		return format;
-	}
-
-	public void setFormat(FileFormat format) {
-		this.format = format;
 	}
 
 	public long getKey() {
