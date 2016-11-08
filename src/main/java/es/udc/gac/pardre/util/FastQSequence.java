@@ -5,7 +5,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class FastQSequence extends Sequence {
+import org.apache.hadoop.io.Writable;
+
+public class FastQSequence extends Sequence implements Writable {
 
 	private String _quals;
 	private float _avgQual;

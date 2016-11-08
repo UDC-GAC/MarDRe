@@ -507,9 +507,6 @@ public class ParDReMR {
 		System.out.println("ParDRe-MR: quality threshold = "+options.getMinQual());
 		System.out.println("ParDRe-MR: allowed missmatches = "+options.getMissMatch());
 
-		if (es.udc.gac.pardre.util.Configuration.COMPRESS_TEMP)
-			System.out.println("ParDRe-MR: using Snappy compression");
-
 		if (options.isPaired()) {
 			System.out.println("ParDRe-MR: using paired-end mode");
 
@@ -521,6 +518,9 @@ public class ParDReMR {
 			tmpInputPath2 = new Path(TEMP_INPUT_PATH_2);
 			System.out.println("ParDRe-MR: input path = "+inputPath1);
 			System.out.println("ParDRe-MR: input path = "+inputPath2);
+
+			if (es.udc.gac.pardre.util.Configuration.COMPRESS_TEMP)
+				System.out.println("ParDRe-MR: using Snappy compression");
 
 			// Configure job to remove duplicated reads
 			jobRemoveDuplicated = ParDReMR.configurePairedEndJob(conf);
@@ -589,51 +589,53 @@ public class ParDReMR {
 			timer.start(T_REMOVE_DUP);
 			status = jobRemoveDuplicated.waitForCompletion(true);
 			timer.stop(T_REMOVE_DUP);
-
-			if (es.udc.gac.pardre.util.Configuration.MERGE) {
-				// Merge output files
-				timer.start(T_PRINT_SEQ);
-				System.out.println("ParDRe-MR: merging output files...");
-				status = FileUtil.copyMerge(fs, tmpOutputPath1, fs, outputPath1, es.udc.gac.pardre.util.Configuration.DELETE_TEMP, conf, null);
-				if (options.isPaired())
-					status = FileUtil.copyMerge(fs, tmpOutputPath2, fs, outputPath2, es.udc.gac.pardre.util.Configuration.DELETE_TEMP, conf, null);
-				timer.stop(T_PRINT_SEQ);
-			} else {
-				outputPath1 = tmpOutputPath1;
-				outputPath2 = tmpOutputPath2;
-			}
-
-			System.out.println("ParDRe-MR: completed successfully!");
-			System.out.println("ParDRe-MR: output path = "+fs.getUri()+outputPath1);
-
-			// Cleanup
-			if (options.isPaired()) {
-				System.out.println("ParDRe-MR: output path = "+fs.getUri()+outputPath2);
-				if (es.udc.gac.pardre.util.Configuration.DELETE_TEMP) {
-					fs.delete(tmpInputPath1, true);
-					fs.delete(tmpInputPath2, true);
-				}
-			}
-
-			timer.stop(T_TOTAL);
-
-			// Get task counters
-			long inputSequences = jobRemoveDuplicated.getCounters().findCounter(TaskCounter.MAP_INPUT_RECORDS).getValue();
-			long outputSequences = jobRemoveDuplicated.getCounters().findCounter(TaskCounter.REDUCE_OUTPUT_RECORDS).getValue();
-
-			System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR: non duplicated paired reads %d/%d\n", outputSequences, inputSequences);
-			System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR: execution time was %.3f seconds\n", timer.read(T_TOTAL));
-			System.out.format(java.util.Locale.ENGLISH,"\tInitialization has taken %.3f seconds\n", timer.read(T_INIT));
-			if (options.isPaired())
-				System.out.format(java.util.Locale.ENGLISH,"\tPaired sequences have been setup in %.3f seconds\n", timer.read(T_PREPARE_PSEQ));
-			System.out.format(java.util.Locale.ENGLISH,"\tDuplicated reads have been removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
-			if (es.udc.gac.pardre.util.Configuration.MERGE)
-				System.out.format(java.util.Locale.ENGLISH,"\tOutput files have been merged in %.3f seconds\n", timer.read(T_PRINT_SEQ));
-
-			System.exit(0);
 		}
 
-		System.out.println("ParDRe-MR: failed to complete successfully");
-		System.exit(-1);
+		if (!status) {
+			System.out.println("ParDRe-MR: failed to complete successfully");
+			System.exit(-1);
+		}
+
+		if (es.udc.gac.pardre.util.Configuration.MERGE) {
+			// Merge output files
+			timer.start(T_PRINT_SEQ);
+			System.out.println("ParDRe-MR: merging output files...");
+			status = FileUtil.copyMerge(fs, tmpOutputPath1, fs, outputPath1, es.udc.gac.pardre.util.Configuration.DELETE_TEMP, conf, null);
+			if (options.isPaired())
+				status = FileUtil.copyMerge(fs, tmpOutputPath2, fs, outputPath2, es.udc.gac.pardre.util.Configuration.DELETE_TEMP, conf, null);
+			timer.stop(T_PRINT_SEQ);
+		} else {
+			outputPath1 = tmpOutputPath1;
+			outputPath2 = tmpOutputPath2;
+		}
+
+		System.out.println("ParDRe-MR: completed successfully!");
+		System.out.println("ParDRe-MR: output path = "+fs.getUri()+outputPath1);
+
+		// Cleanup
+		if (options.isPaired()) {
+			System.out.println("ParDRe-MR: output path = "+fs.getUri()+outputPath2);
+			if (es.udc.gac.pardre.util.Configuration.DELETE_TEMP) {
+				fs.delete(tmpInputPath1, true);
+				fs.delete(tmpInputPath2, true);
+			}
+		}
+
+		timer.stop(T_TOTAL);
+
+		// Get task counters
+		long inputSequences = jobRemoveDuplicated.getCounters().findCounter(TaskCounter.MAP_INPUT_RECORDS).getValue();
+		long outputSequences = jobRemoveDuplicated.getCounters().findCounter(TaskCounter.REDUCE_OUTPUT_RECORDS).getValue();
+
+		System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR: non duplicated paired reads %d/%d\n", outputSequences, inputSequences);
+		System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR: execution time was %.3f seconds\n", timer.read(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"\tInitialization has taken %.3f seconds\n", timer.read(T_INIT));
+		if (options.isPaired())
+			System.out.format(java.util.Locale.ENGLISH,"\tPaired sequences have been setup in %.3f seconds\n", timer.read(T_PREPARE_PSEQ));
+		System.out.format(java.util.Locale.ENGLISH,"\tDuplicated reads have been removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
+		if (es.udc.gac.pardre.util.Configuration.MERGE)
+			System.out.format(java.util.Locale.ENGLISH,"\tOutput files have been merged in %.3f seconds\n", timer.read(T_PRINT_SEQ));
+
+		System.exit(0);
 	}
 }

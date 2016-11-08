@@ -6,9 +6,25 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.StringWriter;
 
+import org.apache.hadoop.io.GenericWritable;
 import org.apache.hadoop.io.Writable;
 
-public abstract class Sequence implements Writable {
+@SuppressWarnings("unchecked")
+public abstract class Sequence extends GenericWritable {
+
+	private static Class<? extends Writable>[] CLASSES = null;
+
+	static {
+		CLASSES = (Class<? extends Writable>[]) new Class[] {
+				FastQSequence.class, 
+				FastASequence.class,
+		};
+	}
+
+	@Override
+	protected Class<? extends Writable>[] getTypes() {
+		return CLASSES;
+	}
 
 	protected static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
 
