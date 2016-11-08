@@ -2,6 +2,8 @@ package es.udc.gac.pardre.util;
 
 import java.util.StringTokenizer;
 
+import es.udc.gac.pardre.util.SequenceFactory.FileFormat;
+
 public class FastASeqStringParser extends SeqStringParser {
 
 	public FastASeqStringParser(short prefixLength, char minQual) {
@@ -17,7 +19,7 @@ public class FastASeqStringParser extends SeqStringParser {
 		}
 
 		String bases = null, name = null;
-		
+
 		StringTokenizer st = new StringTokenizer(s, "\n");
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
@@ -38,6 +40,7 @@ public class FastASeqStringParser extends SeqStringParser {
 		while(st.hasMoreTokens())
 			bases += st.nextToken();
 
+		seq.setFormat(FileFormat.FILE_FORMAT_FASTA);
 		seq.setLength(bases.length());
 		seq.setPrefixLength(this.get_prefixLength());
 		seq.setKey(bases, this.get_minQual());

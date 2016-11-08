@@ -89,7 +89,7 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 		while(true) {
 			read = in.readLine(newLine, maxLineLength);
 			this.pos += read;
-	
+
 			System.out.println("nextKeyValue: read "+read+", start "+start+", pos "+pos+", end "+end);
 
 			if (read == 0) {
@@ -114,7 +114,7 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 					found = true;
 				}
 			}
-			
+
 			value.append(newLine.getBytes(), 0, newLine.getLength());
 			value.append(endline.getBytes(), 0, endline.getLength());
 		}

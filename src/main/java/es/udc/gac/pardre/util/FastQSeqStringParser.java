@@ -2,6 +2,8 @@ package es.udc.gac.pardre.util;
 
 import java.util.StringTokenizer;
 
+import es.udc.gac.pardre.util.SequenceFactory.FileFormat;
+
 public class FastQSeqStringParser extends SeqStringParser {
 
 	public FastQSeqStringParser(short prefixLength, char minQual) {
@@ -48,6 +50,7 @@ public class FastQSeqStringParser extends SeqStringParser {
 					+ ": no qualities available");
 		strQuals = st.nextToken();
 
+		seq.setFormat(FileFormat.FILE_FORMAT_FASTQ);
 		seq.setLength(str.length());
 		seq.setPrefixLength(this.get_prefixLength());
 		seq.setQuals(strQuals);
