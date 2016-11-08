@@ -11,6 +11,11 @@ public class FastQSeqStringParser extends SeqStringParser {
 	@Override
 	public int getSeq(String s, Sequence seq) {
 
+		if (!(seq instanceof FastQSequence)) {
+			throw new IllegalArgumentException(
+					"Wrong Sequence format for string " + s);
+		}
+		
 		if (s.equals("")) {
 			System.out.println("Found empty string " + s);
 			return 0;
@@ -50,7 +55,7 @@ public class FastQSeqStringParser extends SeqStringParser {
 
 		seq.setLength(str.length());
 		seq.setPrefixLength(this.get_prefixLength());
-		seq.setQuals(strQuals);
+		((FastQSequence)seq).setQuals(strQuals);
 		seq.setKey(str, this.get_minQual());
 		seq.setSuffix(str, this.get_minQual());
 

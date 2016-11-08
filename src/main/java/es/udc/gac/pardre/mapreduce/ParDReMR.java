@@ -33,10 +33,10 @@ import org.apache.hadoop.util.GenericOptionsParser;
 
 import es.udc.gac.pardre.util.Options;
 import es.udc.gac.pardre.util.SeqStringParser;
-import es.udc.gac.pardre.util.SeqStringParserFactory.FileFormat;
-import es.udc.gac.pardre.util.SeqStringParserFactory;
+import es.udc.gac.pardre.util.SequenceFactory.FileFormat;
 import es.udc.gac.pardre.util.PairedSequence;
 import es.udc.gac.pardre.util.Sequence;
+import es.udc.gac.pardre.util.SequenceFactory;
 import es.udc.gac.pardre.util.Timer;
 
 public class ParDReMR {
@@ -58,7 +58,7 @@ public class ParDReMR {
 
 	public static class ParDReMRSingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
 
-		private Sequence seq = new Sequence();
+		private Sequence seq;
 		private LongWritable longKey = new LongWritable();
 		private SeqStringParser parser;
 		private short prefixLength;
@@ -71,7 +71,8 @@ public class ParDReMR {
 			format = FileFormat.values()[Integer.parseInt(job.get(FILE_FORMAT))];
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
 			minQual = (char) Integer.parseInt(job.get(MINQUAL));
-			parser = SeqStringParserFactory.createSeqStringParser(format, prefixLength, minQual); 
+			seq = SequenceFactory.createSequence(format);
+			parser = SequenceFactory.createParser(format, prefixLength, minQual);
 		}
 
 		@Override
@@ -89,10 +90,12 @@ public class ParDReMR {
 
 		private static final NullWritable nullKey = NullWritable.get();
 		private short missMatch;
+		private FileFormat format;
 
 		@Override
 		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
+			format = FileFormat.values()[Integer.parseInt(job.get(FILE_FORMAT))];
 			missMatch = Short.parseShort(job.get(MISSMATCH));
 		}
 
@@ -103,7 +106,7 @@ public class ParDReMR {
 			List<Sequence> sequences = new ArrayList<Sequence>();
 
 			for (Sequence seq : values) {
-				sequences.add(new Sequence(seq));
+				sequences.add(seq = SequenceFactory.createSequence(format, seq));
 			}
 
 			for (int i = 0; i < sequences.size(); i++) {
@@ -141,10 +144,12 @@ public class ParDReMR {
 		private static final NullWritable nullKey = NullWritable.get();
 		private MultipleOutputs<NullWritable,Sequence> mos;
 		private short missMatch;	
+		private FileFormat format;
 
 		@Override
 		public void setup(Context context) {
 			Configuration job = context.getConfiguration();
+			format = FileFormat.values()[Integer.parseInt(job.get(FILE_FORMAT))];
 			missMatch = Short.parseShort(job.get(MISSMATCH));
 			mos = new MultipleOutputs<NullWritable,Sequence>(context);
 		}
@@ -161,7 +166,7 @@ public class ParDReMR {
 			List<PairedSequence> sequences = new ArrayList<PairedSequence>();
 
 			for (PairedSequence seq : values) {
-				sequences.add(new PairedSequence(seq.getFirstSeq(), seq.getSecondSeq()));
+				sequences.add(SequenceFactory.createPairedSequence(format, seq.getFirstSeq(), seq.getSecondSeq()));
 			}
 
 			for (int i = 0; i < sequences.size(); i++) {
@@ -186,9 +191,9 @@ public class ParDReMR {
 
 	public static class ParDReMRJoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, LongWritable, PairedSequence> {
 
-		private PairedSequence pairedSeq = new PairedSequence();
-		private Sequence seq1 = new Sequence();
-		private Sequence seq2 = new Sequence();
+		private PairedSequence pairedSeq;
+		private Sequence seq1;
+		private Sequence seq2;
 		private LongWritable longKey = new LongWritable();
 		private SeqStringParser parser;
 		private short prefixLength;
@@ -201,7 +206,10 @@ public class ParDReMR {
 			format = FileFormat.values()[Integer.parseInt(job.get(FILE_FORMAT))];
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
 			minQual = (char) Integer.parseInt(job.get(MINQUAL));
-			parser = SeqStringParserFactory.createSeqStringParser(format, prefixLength, minQual);
+			seq1 = SequenceFactory.createSequence(format);
+			seq2 = SequenceFactory.createSequence(format);
+			pairedSeq = SequenceFactory.createPairedSequence(format);
+			parser = SequenceFactory.createParser(format, prefixLength, minQual);
 		}
 
 		@Override
@@ -221,7 +229,7 @@ public class ParDReMR {
 
 	public static class ParDReMRJoinPairedSequencesMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
 
-		private Sequence seq = new Sequence();
+		private Sequence seq;
 		private SeqStringParser parser;
 		private short prefixLength;
 		private char minQual;
@@ -234,7 +242,8 @@ public class ParDReMR {
 			format = FileFormat.values()[Integer.parseInt(job.get(FILE_FORMAT))];
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
 			minQual = (char) Integer.parseInt(job.get(MINQUAL));
-			parser = SeqStringParserFactory.createSeqStringParser(format, prefixLength, minQual);
+			seq = SequenceFactory.createSequence(format);
+			parser = SequenceFactory.createParser(format, prefixLength, minQual);
 			String inputPath1 = job.get(INPUT_PATH_1);
 			String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
 
@@ -255,18 +264,28 @@ public class ParDReMR {
 
 	public static class ParDReMRJoinPairedSequencesReducer extends Reducer<LongWritable, Sequence, LongWritable, PairedSequence> {
 
-		private PairedSequence pairedSeq = new PairedSequence();
+		private PairedSequence pairedSeq;
 		private LongWritable longKey = new LongWritable();
+		private FileFormat format;
+
+		@Override
+		public void setup(Context context) {
+			Configuration job = context.getConfiguration();
+			format = FileFormat.values()[Integer.parseInt(job.get(FILE_FORMAT))];
+			pairedSeq = SequenceFactory.createPairedSequence(format);
+		}
 
 		@Override
 		public void reduce(LongWritable key, Iterable<Sequence> values,
 				Context context) throws IOException, InterruptedException {
 
 			for (Sequence seq : values) {
+				Sequence newSeq = SequenceFactory.createSequence(format, seq);
+
 				if (seq.isFirstSeq()) {
-					pairedSeq.setFirstSeq(new Sequence(seq));
+					pairedSeq.setFirstSeq(newSeq);
 				} else {
-					pairedSeq.setSecondSeq(new Sequence(seq));
+					pairedSeq.setSecondSeq(newSeq);
 				}
 			}
 			longKey.set(pairedSeq.getKey());
