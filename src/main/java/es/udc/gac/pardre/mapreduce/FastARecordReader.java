@@ -72,13 +72,12 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 
 	@Override
 	public boolean nextKeyValue() throws IOException {
-		int i = 0;
 		long read = 0;
 		boolean found = false;
 		newLine.clear();
 		value.clear();
 
-		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
+		System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
 
 		if (this.pos >= this.end) {
 			//System.out.println("nextKeyValue: not in chunk");
@@ -90,28 +89,26 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 		while(true) {
 			read = in.readLine(newLine, maxLineLength);
 			this.pos += read;
-			i++;
-
-			System.out.println("nextKeyValue: line "+i+", read "+read+", start "+start+", pos "+pos+", end "+end);
+	
+			System.out.println("nextKeyValue: read "+read+", start "+start+", pos "+pos+", end "+end);
 
 			if (read == 0) {
 				System.out.println("nextKeyValue: EOF");
 				return false;
 			}
 
-			System.out.println("nextKeyValue: value <"+newLine.toString()+">");
+			System.out.println("nextKeyValue: value <'"+newLine.toString()+"'>");
 
 			if (newLine.getLength() == 0) {
 				System.out.println("nextKeyValue: newline char has been read (ignore)");
-				i = 0;
 				continue;
 			}
 
 			if (newLine.charAt(0) == '>') {
-				System.out.println("nextKeyValue: starting > has been found at line "+i);
+				System.out.println("nextKeyValue: starting '>' has been found");
 
 				if (found == true) {
-					System.out.println("nextKeyValue: new record");
+					System.out.println("nextKeyValue: new record detected, return previous data");
 					break;
 				} else {
 					found = true;

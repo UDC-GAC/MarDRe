@@ -104,7 +104,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 				return false;
 			}
 
-			//System.out.println("nextKeyValue: value <"+newLine.toString()+">");
+			//System.out.println("nextKeyValue: value <'"+newLine.toString()+"'>");
 
 			if (newLine.getLength() == 0) {
 				//System.out.println("nextKeyValue: newline char has been read (ignore)");
@@ -113,14 +113,14 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 			}
 
 			if (found == true && i == linesToProcess) {
-				//System.out.println("nextKeyValue: last line and starting @ has been previously found");
+				//System.out.println("nextKeyValue: last line and starting '@' has been previously found");
 				value.append(newLine.getBytes(), 0, newLine.getLength());
 				value.append(endline.getBytes(), 0, endline.getLength());
 				continue;
 			}
 
 			if (newLine.charAt(0) == '@') {
-				//System.out.println("nextKeyValue: starting @ has been found at line "+i);
+				//System.out.println("nextKeyValue: starting '@' has been found at line "+i);
 				found = true;
 
 				secondRead = in.readLine(temp, maxLineLength);
@@ -135,13 +135,13 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 				//System.out.println("nextKeyValue: next line (read "+secondRead+") "+temp);
 
 				if (temp.charAt(0) != '@') {
-					//System.out.println("nextKeyValue: next line has no starting @ (new record)");
+					//System.out.println("nextKeyValue: next line has no starting '@' (new record)");
 					key.set(this.pos-(firstRead+secondRead));
 					i = 2;
 					newLine.append(endline.getBytes(), 0, endline.getLength());
 					newLine.append(temp.getBytes(), 0, temp.getLength());
 				} else {
-					//System.out.println("nextKeyValue: next line has starting @ (new record, discard previous data)");
+					//System.out.println("nextKeyValue: next line has starting '@' (new record, discard previous data)");
 					key.set(this.pos);
 					i = 1;
 					value.append(temp.getBytes(), 0, temp.getLength());
@@ -151,7 +151,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 			}
 
 			if (found == false && i == linesToProcess) {
-				//System.out.println("nextKeyValue: last line and no starting @ has been found (discard previous data)");
+				//System.out.println("nextKeyValue: last line and no starting '@' has been found (discard previous data)");
 				value.clear();
 				key.set(this.pos);
 				i = 0;

@@ -13,7 +13,7 @@ public class SequenceFactory {
 		if (format == FileFormat.FILE_FORMAT_FASTQ)
 			return new FastQSeqStringParser(prefixLength, minQual);
 		else if (format == FileFormat.FILE_FORMAT_FASTA)
-			return new FastQSeqStringParser(prefixLength, minQual);
+			return new FastASeqStringParser(prefixLength, minQual);
 		else
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
 	}
