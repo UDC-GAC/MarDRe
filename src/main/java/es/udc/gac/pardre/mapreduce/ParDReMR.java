@@ -78,7 +78,8 @@ public class ParDReMR {
 		@Override
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
-
+System.out.println("Key:"+key);
+System.out.println("Value:"+value);
 			if (parser.getSeq(value.toString(), seq) != 0) {
 				longKey.set(seq.getKey());
 				context.write(longKey, seq);

@@ -18,8 +18,7 @@ public class Sequence implements Writable {
 			4, 4, 4, 4, 4 // V->Z
 	};
 
-	private static final short[] decodeTab = { 'N', 'A', 'C', 'N', 'G', 'N', 'N',
-			'N', 'T' };
+	private static final short[] decodeTab = { 'N', 'A', 'C', 'N', 'G', 'N', 'N', 'N', 'T' };
 
 	private static final short[] codeTab = { 1, 0, 2, 0, 0, 0, 4, // A -> G
 			0, 0, 0, 0, 0, 0, 0, // H->N
@@ -35,8 +34,8 @@ public class Sequence implements Writable {
 		} else if ((ch >= 'a') && (ch <= 'z')) {
 			aux -= 'a';
 		} else {
-			throw new IllegalArgumentException("Unexpected chararter " + ch
-					+ " in the bases of fastq file");
+			throw new IllegalArgumentException("Unexpected character " + ch
+					+ " in the bases");
 		}
 
 		return Sequence.codePrefixTab[aux];
@@ -50,8 +49,8 @@ public class Sequence implements Writable {
 		} else if ((ch >= 'a') && (ch <= 'z')) {
 			aux -= 'a';
 		} else {
-			throw new IllegalArgumentException("Unexpected chararter " + ch
-					+ " in the bases of fastq file");
+			throw new IllegalArgumentException("Unexpected character " + ch
+					+ " in the bases");
 		}
 
 		return Sequence.codeTab[aux];
