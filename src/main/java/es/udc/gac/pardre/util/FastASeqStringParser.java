@@ -16,16 +16,18 @@ public class FastASeqStringParser extends SeqStringParser {
 			return 0;
 		}
 
+		String bases = null, name = null;
+		
 		StringTokenizer st = new StringTokenizer(s, "\n");
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
 					+ ": no name available");
-		String str = st.nextToken();
+		name = st.nextToken();
 
 		// Read the sequence name
 		// Everything but the '>'
-		seq.setName(str.substring(1));
+		seq.setName(name.substring(1));
 
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
@@ -33,13 +35,13 @@ public class FastASeqStringParser extends SeqStringParser {
 					+ ": only name available");
 
 		// Read the sequence bases
-		while(st.hasMoreTokens()) 
-			str += st.nextToken();
+		while(st.hasMoreTokens())
+			bases += st.nextToken();
 
-		seq.setLength(str.length());
+		seq.setLength(bases.length());
 		seq.setPrefixLength(this.get_prefixLength());
-		seq.setKey(str, this.get_minQual());
-		seq.setSuffix(str, this.get_minQual());
+		seq.setKey(bases, this.get_minQual());
+		seq.setSuffix(bases, this.get_minQual());
 
 		return seq.getLength();
 	}
