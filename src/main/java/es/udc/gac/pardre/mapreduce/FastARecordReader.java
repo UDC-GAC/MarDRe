@@ -113,10 +113,10 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 				} else {
 					found = true;
 				}
-
-				value.append(newLine.getBytes(), 0, newLine.getLength());
-				value.append(endline.getBytes(), 0, endline.getLength());
 			}
+			
+			value.append(newLine.getBytes(), 0, newLine.getLength());
+			value.append(endline.getBytes(), 0, endline.getLength());
 		}
 
 		System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
