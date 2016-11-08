@@ -6,39 +6,28 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.StringWriter;
 
-import org.apache.hadoop.io.GenericWritable;
+import org.apache.hadoop.io.Writable;
 
-@SuppressWarnings({ "rawtypes", "unchecked" })
-public abstract class Sequence extends GenericWritable {
+public class Sequence implements Writable {
 
-	private static Class[] CLASSES = {
-			FastQSequence.class, 
-			FastASequence.class,
-	};
+	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
 
-	@Override
-	protected Class[] getTypes() {
-		return CLASSES;
-	}
-
-	protected static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
-
-	protected static final  short[] codePrefixTab = { 0, 4, 1, 4, 4, 4, 2, // A -> G
+	private static final  short[] codePrefixTab = { 0, 4, 1, 4, 4, 4, 2, // A -> G
 			4, 4, 4, 4, 4, 4, 4, // H->N
 			4, 4, 4, 4, 4, 3, 4, // O->U
 			4, 4, 4, 4, 4 // V->Z
 	};
 
-	protected static final short[] decodeTab = { 'N', 'A', 'C', 'N', 'G', 'N', 'N',
+	private static final short[] decodeTab = { 'N', 'A', 'C', 'N', 'G', 'N', 'N',
 			'N', 'T' };
 
-	protected static final short[] codeTab = { 1, 0, 2, 0, 0, 0, 4, // A -> G
+	private static final short[] codeTab = { 1, 0, 2, 0, 0, 0, 4, // A -> G
 			0, 0, 0, 0, 0, 0, 0, // H->N
 			0, 0, 0, 0, 0, 8, 0, // O->U
 			0, 0, 0, 0, 0 // V->Z
 	};
 
-	protected static short codePrefix(char ch) {
+	private static short codePrefix(char ch) {
 		short aux = (short) ch;
 
 		if ((ch >= 'A') && (ch <= 'Z')) {
@@ -53,7 +42,7 @@ public abstract class Sequence extends GenericWritable {
 		return Sequence.codePrefixTab[aux];
 	}
 
-	protected static short code(char ch) {
+	private static short code(char ch) {
 		short aux = (short) ch;
 
 		if ((ch >= 'A') && (ch <= 'Z')) {
@@ -68,12 +57,14 @@ public abstract class Sequence extends GenericWritable {
 		return Sequence.codeTab[aux];
 	}
 
-	protected String _name;
-	protected int _length;
-	protected short _prefixLength;
-	protected long _key;
-	protected long[] _compressSuffix;
-	protected boolean _isFirstSeq;
+	private String _name;
+	private int _length;
+	private short _prefixLength;
+	private long _key;
+	private long[] _compressSuffix;
+	private boolean _isFirstSeq;
+	private String _quals;
+	private float _avgQual;
 
 	Sequence() {
 		_name = null;
@@ -82,6 +73,8 @@ public abstract class Sequence extends GenericWritable {
 		_length = -1;
 		_prefixLength = -1;
 		_isFirstSeq = false;
+		_quals = null;
+		_avgQual = -1;
 	}
 
 	Sequence(Sequence s) {
@@ -91,6 +84,8 @@ public abstract class Sequence extends GenericWritable {
 		_length = s._length;
 		_prefixLength = s._prefixLength;
 		_isFirstSeq = s._isFirstSeq;
+		_quals = s.getQuals();
+		_avgQual = s.getAvgQual();
 	}
 
 	public void setName(String name) {
@@ -125,12 +120,111 @@ public abstract class Sequence extends GenericWritable {
 		return _isFirstSeq;
 	}
 
+	public String getQuals() {
+		return _quals;
+	}
+
+	public void setQuals(String quals) {
+		_quals = quals;
+	}
+
+	public void releaseQuals() {
+		_quals = null;
+	}
+
+	public void setAvgQual(float avgQual) {
+		_avgQual = avgQual;
+	}
+
+	public float getAvgQual() {
+		if ((_avgQual == -1) && (!_quals.isEmpty())) {
+			_avgQual = 0;
+
+			for (int i = 0; i < _length; i++) {
+				_avgQual += _quals.charAt(i);
+			}
+			_avgQual /= (float) _length;
+		}
+
+		return _avgQual;
+	}
+
 	public long getKey() {
+		return _key;
+	}
+
+	public long setKey(String bases, char minQual) {
+		_key = 0;
+
+		int length = bases.length();
+
+		if (_length != length) {
+			throw new IllegalArgumentException("The number of bases should be "
+					+ _length + " but are " + length);
+		}
+
+		int limit = _prefixLength;
+
+		if (_prefixLength > length)
+			limit = length;
+
+		for (int i = 0; i < limit; i++) {
+			_key *= 5;
+			if (_quals.charAt(i) < minQual)
+				_key += 4;
+			else
+				_key += Sequence.codePrefix(bases.charAt(i));
+		}
+
 		return _key;
 	}
 
 	public long[] getSufix() {
 		return _compressSuffix;
+	}
+
+	public void setSuffix(String bases, char minQual) {
+		int limit = _prefixLength;
+
+		if (_prefixLength > _length)
+			limit = _length;
+
+		// 16 bases per element
+		int suffixLength = _length - limit;
+		int compressLength = suffixLength / 16;
+		int iterBases = limit;
+
+		if ((suffixLength % 16) > 0)
+			compressLength++;
+
+		_compressSuffix = new long[compressLength];
+
+
+		for (int i = 0; i < suffixLength / 16; i++) {
+			_compressSuffix[i] = 0;
+
+			for (int j = 0; j < 16; j++) {
+				_compressSuffix[i] <<= 4;
+
+				if (_quals.charAt(iterBases) >= minQual)
+					_compressSuffix[i] += code(bases.charAt(iterBases));
+
+				iterBases++;
+			}
+		}
+
+		if ((suffixLength % 16) > 0) {
+			_compressSuffix[compressLength - 1] = 0;
+
+			for (int i = 0; i < suffixLength % 16; i++) {
+				_compressSuffix[compressLength - 1] <<= 4;
+
+				if (_quals.charAt(iterBases) >= minQual)
+					_compressSuffix[compressLength - 1] += code(bases.charAt(iterBases));
+
+				iterBases++;
+			}
+		}
 	}
 
 	// The boolean parameter indicates if we need to compare the prefixes too ->
@@ -167,6 +261,73 @@ public abstract class Sequence extends GenericWritable {
 		return true;
 	}
 
+	public void print(BufferedWriter writer) throws IOException {
+		writer.write("@");
+		writer.write(_name, 0, _name.length());
+		writer.newLine();
+		int limit = _prefixLength;
+
+		if (_prefixLength > _length)
+			limit = _length;
+
+		// Decode the bases
+		// First the prefix
+		char[] bases = new char[_length];
+		int iterBases = limit - 1;
+		long auxKey = _key;
+
+		for (int i = 0; i < limit; i++) {
+			bases[iterBases] = (char) Sequence.decodePrefixTab[(int) (auxKey % 5)];
+			auxKey /= 5;
+			iterBases--;
+		}
+
+		// Now the suffix
+		// 16 bases per element
+		int suffixLength = _length - limit;
+		int compressLength = suffixLength / 16;
+
+		if ((suffixLength % 16) > 0)
+			compressLength++;
+
+		iterBases = _length - 1;
+		int iterSuffix = compressLength - 1;
+		long auxCompress;
+		int numDecoded = 0;
+
+		if ((suffixLength % 16) > 0) {
+			auxCompress = _compressSuffix[compressLength - 1];
+
+			for (int i = 0; i < (suffixLength % 16); i++) {
+				bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
+				auxCompress >>= 4;
+			iterBases--;
+			}
+			iterSuffix--;
+			numDecoded++;
+		}
+
+		for (; numDecoded < compressLength; numDecoded++) {
+			auxCompress = _compressSuffix[iterSuffix];
+
+			for (int j = 0; j < 16; j++) {
+				bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
+				auxCompress >>= 4;
+			iterBases--;
+			}
+			iterSuffix--;
+		}
+
+		writer.write(bases);
+		writer.newLine();
+
+		if (!_quals.isEmpty()) {
+			writer.write('+');
+			writer.newLine();
+			writer.write(_quals, 0, _quals.length());
+		}
+	}
+
 	@Override
 	public String toString() {
 		StringWriter sw = new StringWriter();
@@ -191,6 +352,8 @@ public abstract class Sequence extends GenericWritable {
 		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
 		out.writeInt(_compressSuffix.length);
+		out.writeUTF(_quals);
+		out.writeFloat(_avgQual);
 
 		for (int i = 0; i < _compressSuffix.length; i++)
 			out.writeLong(_compressSuffix[i]);
@@ -205,6 +368,8 @@ public abstract class Sequence extends GenericWritable {
 		_isFirstSeq = in.readBoolean();
 		int compressSuffixLength = in.readInt();
 		_compressSuffix = new long[compressSuffixLength];
+		_quals = in.readUTF();
+		_avgQual = in.readFloat();
 
 		for (int i = 0; i < compressSuffixLength; i++)
 			_compressSuffix[i] = in.readLong();
@@ -214,10 +379,4 @@ public abstract class Sequence extends GenericWritable {
 		return toString() + ", isFirstSeq=" + _isFirstSeq + ", compressSuffix.length=" + _compressSuffix.length
 				+ ", prefixLength=" + _prefixLength;
 	}
-
-	public abstract long setKey(String bases, char minQual);
-
-	public abstract void setSuffix(String bases, char minQual);
-
-	public abstract void print(BufferedWriter writer) throws IOException;
 }

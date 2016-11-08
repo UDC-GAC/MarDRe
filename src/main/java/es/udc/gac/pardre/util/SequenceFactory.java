@@ -6,10 +6,8 @@ public class SequenceFactory {
 		FILE_FORMAT_FASTA, FILE_FORMAT_FASTQ, FILE_FORMAT_UNKNOWN
 	}
 
-	private SequenceFactory() {
-		
-	}
-	
+	private SequenceFactory() {}
+
 	public static SeqStringParser createParser(FileFormat format, short prefixLength, char minQual) {
 
 		if (format == FileFormat.FILE_FORMAT_FASTQ)
@@ -22,50 +20,36 @@ public class SequenceFactory {
 
 	public static Sequence createSequence(FileFormat format) {
 
-		if (format == FileFormat.FILE_FORMAT_FASTQ)
-			return new FastQSequence();
-		else if (format == FileFormat.FILE_FORMAT_FASTA)
-			return new FastQSequence();
-		else
+		if (format != FileFormat.FILE_FORMAT_FASTQ || format != FileFormat.FILE_FORMAT_FASTA)
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
+
+		return new Sequence();
 	}
 
 	public static Sequence createSequence(FileFormat format, Sequence seq) {
 
-		if (format == FileFormat.FILE_FORMAT_FASTQ)
-			return new FastQSequence((FastQSequence) seq);
-		else if (format == FileFormat.FILE_FORMAT_FASTA)
-			return new FastQSequence((FastQSequence) seq);
-		else
+		if (format != FileFormat.FILE_FORMAT_FASTQ || format != FileFormat.FILE_FORMAT_FASTA)
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
+
+		return new Sequence(seq);
 	}
 
 	public static PairedSequence createPairedSequence(FileFormat format) {
 
-		PairedSequence pairedSeq;
-
-		if (format == FileFormat.FILE_FORMAT_FASTQ)
-			pairedSeq = new PairedSequence();
-		else if (format == FileFormat.FILE_FORMAT_FASTA)
-			pairedSeq = new PairedSequence();
-		else
+		if (format != FileFormat.FILE_FORMAT_FASTQ || format != FileFormat.FILE_FORMAT_FASTA)
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
 
+		PairedSequence pairedSeq = new PairedSequence();
 		pairedSeq.setFormat(format);
 		return pairedSeq;
 	}
 
 	public static PairedSequence createPairedSequence(FileFormat format, Sequence first, Sequence second) {
 
-		PairedSequence pairedSeq;
-
-		if (format == FileFormat.FILE_FORMAT_FASTQ)
-			pairedSeq = new PairedSequence(first, second);
-		else if (format == FileFormat.FILE_FORMAT_FASTA)
-			pairedSeq = new PairedSequence(first, second);
-		else
+		if (format != FileFormat.FILE_FORMAT_FASTQ || format != FileFormat.FILE_FORMAT_FASTA)
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
 
+		PairedSequence pairedSeq = new PairedSequence(first, second);
 		pairedSeq.setFormat(format);
 		return pairedSeq;
 	}
