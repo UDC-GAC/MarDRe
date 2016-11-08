@@ -20,7 +20,7 @@ public class SequenceFactory {
 
 	public static Sequence createSequence(FileFormat format) {
 
-		if (format != FileFormat.FILE_FORMAT_FASTQ || format != FileFormat.FILE_FORMAT_FASTA)
+		if (format != FileFormat.FILE_FORMAT_FASTQ && format != FileFormat.FILE_FORMAT_FASTA)
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
 
 		return new Sequence();
@@ -28,7 +28,7 @@ public class SequenceFactory {
 
 	public static Sequence createSequence(FileFormat format, Sequence seq) {
 
-		if (format != FileFormat.FILE_FORMAT_FASTQ || format != FileFormat.FILE_FORMAT_FASTA)
+		if (format != FileFormat.FILE_FORMAT_FASTQ && format != FileFormat.FILE_FORMAT_FASTA)
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
 
 		return new Sequence(seq);
@@ -36,7 +36,7 @@ public class SequenceFactory {
 
 	public static PairedSequence createPairedSequence(FileFormat format) {
 
-		if (format != FileFormat.FILE_FORMAT_FASTQ || format != FileFormat.FILE_FORMAT_FASTA)
+		if (format != FileFormat.FILE_FORMAT_FASTQ && format != FileFormat.FILE_FORMAT_FASTA)
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
 
 		PairedSequence pairedSeq = new PairedSequence();
@@ -46,7 +46,7 @@ public class SequenceFactory {
 
 	public static PairedSequence createPairedSequence(FileFormat format, Sequence first, Sequence second) {
 
-		if (format != FileFormat.FILE_FORMAT_FASTQ || format != FileFormat.FILE_FORMAT_FASTA)
+		if (format != FileFormat.FILE_FORMAT_FASTQ && format != FileFormat.FILE_FORMAT_FASTA)
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
 
 		PairedSequence pairedSeq = new PairedSequence(first, second);

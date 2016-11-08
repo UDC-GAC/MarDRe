@@ -54,8 +54,8 @@ public class PairedSequence implements Writable {
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		this.firstSeq = SequenceFactory.createSequence(format);
-		this.secondSeq = SequenceFactory.createSequence(format);
+		this.firstSeq = new Sequence();
+		this.secondSeq = new Sequence();
 		this.firstSeq.readFields(in);
 		this.secondSeq.readFields(in);
 	}
