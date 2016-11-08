@@ -14,7 +14,7 @@ public class Sequence implements Writable {
 
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
 
-	private static final  short[] codePrefixTab = { 0, 4, 1, 4, 4, 4, 2, // A -> G
+	private static final short[] codePrefixTab = { 0, 4, 1, 4, 4, 4, 2, // A -> G
 			4, 4, 4, 4, 4, 4, 4, // H->N
 			4, 4, 4, 4, 4, 3, 4, // O->U
 			4, 4, 4, 4, 4 // V->Z
@@ -27,6 +27,18 @@ public class Sequence implements Writable {
 			0, 0, 0, 0, 0, 8, 0, // O->U
 			0, 0, 0, 0, 0 // V->Z
 	};
+	
+	private static short codePrefix(char ch) {
+		short aux = (short) ch;
+		aux -= 'A';
+		return Sequence.codePrefixTab[aux];
+	}
+
+	private static short code(char ch) {
+		short aux = (short) ch;
+		aux -= 'A';
+		return Sequence.codeTab[aux];
+	}
 
 	private String _name;
 	private int _length;
@@ -150,20 +162,18 @@ public class Sequence implements Writable {
 		if (_prefixLength > length)
 			limit = length;
 
-		if (_quals == null) {
-			// FastA sequence
+		if (_format == FileFormat.FILE_FORMAT_FASTA) {
 			for (int i = 0; i < limit; i++) {
 				_key *= 5;
-				_key += Sequence.codePrefixTab[bases.charAt(i)];
+				_key += Sequence.codePrefix(bases.charAt(i));
 			}
 		} else {
-			// FastQ sequence
 			for (int i = 0; i < limit; i++) {
 				_key *= 5;
 				if (_quals.charAt(i) < minQual)
 					_key += 4;
 				else
-					_key += Sequence.codePrefixTab[bases.charAt(i)];
+					_key += Sequence.codePrefix(bases.charAt(i));
 			}
 		}
 
@@ -196,8 +206,8 @@ public class Sequence implements Writable {
 			for (int j = 0; j < 16; j++) {
 				_compressSuffix[i] <<= 4;
 
-				if (_quals == null || _quals.charAt(iterBases) >= minQual)
-					_compressSuffix[i] += Sequence.codeTab[bases.charAt(iterBases)];
+				if (_format == FileFormat.FILE_FORMAT_FASTA || _quals.charAt(iterBases) >= minQual)
+					_compressSuffix[i] += Sequence.code(bases.charAt(iterBases));
 
 				iterBases++;
 			}
@@ -209,8 +219,8 @@ public class Sequence implements Writable {
 			for (int i = 0; i < suffixLength % 16; i++) {
 				_compressSuffix[compressLength - 1] <<= 4;
 
-				if (_quals == null || _quals.charAt(iterBases) >= minQual)
-					_compressSuffix[compressLength - 1] += Sequence.codeTab[bases.charAt(iterBases)];
+				if (_format == FileFormat.FILE_FORMAT_FASTA || _quals.charAt(iterBases) >= minQual)
+					_compressSuffix[compressLength - 1] += Sequence.code(bases.charAt(iterBases));
 
 				iterBases++;
 			}
@@ -253,11 +263,9 @@ public class Sequence implements Writable {
 
 	public void print(BufferedWriter writer) throws IOException {
 
-		if (_quals == null)
-			// FastA sequence
+		if (_format == FileFormat.FILE_FORMAT_FASTA)
 			writer.write(">");
 		else
-			// FastQ sequence
 			writer.write("@");
 
 		writer.write(_name, 0, _name.length());
@@ -318,7 +326,7 @@ public class Sequence implements Writable {
 		writer.write(bases);
 		writer.newLine();
 
-		if (_quals != null && !_quals.isEmpty()) {
+		if (_format == FileFormat.FILE_FORMAT_FASTQ && !_quals.isEmpty()) {
 			writer.write('+');
 			writer.newLine();
 			writer.write(_quals, 0, _quals.length());
