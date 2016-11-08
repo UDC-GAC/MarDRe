@@ -22,6 +22,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.TaskCounter;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
@@ -276,13 +277,13 @@ public class ParDReMR {
 		}
 	}
 
-	private static Job configureSingleEndJob(Configuration conf) throws IOException {
+	private static Job configureSingleEndJob(Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
 
 		Job job = Job.getInstance(conf, "ParDRe-MR_SingleEnd");
 		job.setJarByClass(ParDReMR.class);
 
 		// I/O Format classes
-		job.setInputFormatClass(FastQInputFormat.class);
+		job.setInputFormatClass(inputFormatClass);
 		job.setOutputFormatClass(TextOutputFormat.class);
 
 		// Mapper and Reducer classes
@@ -329,7 +330,7 @@ public class ParDReMR {
 		return job;
 	}
 
-	private static Job configureJoinPairedSequencesJob(Configuration conf) throws IOException {
+	private static Job configureJoinPairedSequencesJob(Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
 		Job job = Job.getInstance(conf, "ParDRe-MR_JoinPairedSequences");
 		job.setJarByClass(ParDReMR.class);
 
@@ -337,7 +338,7 @@ public class ParDReMR {
 		job.setNumReduceTasks(0);
 
 		// I/O Format classes
-		job.setInputFormatClass(FastQInputFormat.class);
+		job.setInputFormatClass(inputFormatClass);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		// Compress options
@@ -362,12 +363,12 @@ public class ParDReMR {
 		return job;
 	}
 
-	private static Job configurePairedSequencesJob(Configuration conf) throws IOException {
+	private static Job configurePairedSequencesJob(Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
 		Job job = Job.getInstance(conf, "ParDRe-MR_PairedSequences");
 		job.setJarByClass(ParDReMR.class);
 
 		// I/O Format classes
-		job.setInputFormatClass(FastQInputFormat.class);
+		job.setInputFormatClass(inputFormatClass);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		// Compress options
@@ -467,8 +468,15 @@ public class ParDReMR {
 		Path inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
 		FileFormat format = ParDReMR.detectFileFormat(fs, inputPath1);
 
-		if (format == FileFormat.FILE_FORMAT_UNKNOWN) {
-			System.exit(-1);
+		// Set input format class
+		Class<? extends TextInputFormat> inputFormatClass = null;
+
+		if (format == FileFormat.FILE_FORMAT_FASTQ) {
+			inputFormatClass = FastQInputFormat.class;
+		} else if (format == FileFormat.FILE_FORMAT_FASTA) {
+			inputFormatClass = FastAInputFormat.class;
+		} else {
+			System.exit(-1);			
 		}
 
 		Path outputPath1 = new Path(options.getWriteFileName1());
@@ -513,8 +521,8 @@ public class ParDReMR {
 
 			if (es.udc.gac.pardre.util.Configuration.PAIRED_JOIN) {
 				// Paired-end mode using a map-side join needs two map-only jobs to partition both input files
-				Job jobPairedSequences1 = ParDReMR.configureJoinPairedSequencesJob(conf);
-				Job jobPairedSequences2 = ParDReMR.configureJoinPairedSequencesJob(conf);
+				Job jobPairedSequences1 = ParDReMR.configureJoinPairedSequencesJob(conf, inputFormatClass);
+				Job jobPairedSequences2 = ParDReMR.configureJoinPairedSequencesJob(conf, inputFormatClass);
 				FileInputFormat.addInputPath(jobPairedSequences1, inputPath1);
 				FileInputFormat.addInputPath(jobPairedSequences2, inputPath2);
 				FileOutputFormat.setOutputPath(jobPairedSequences1, tmpInputPath1);
@@ -540,7 +548,7 @@ public class ParDReMR {
 				}
 			} else {
 				// Paired-end mode without using a map-side join only needs one job
-				Job jobPairedSequences = ParDReMR.configurePairedSequencesJob(conf);
+				Job jobPairedSequences = ParDReMR.configurePairedSequencesJob(conf, inputFormatClass);
 				FileInputFormat.addInputPath(jobPairedSequences, inputPath1);
 				FileInputFormat.addInputPath(jobPairedSequences, inputPath2);
 				FileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
@@ -560,7 +568,7 @@ public class ParDReMR {
 			System.out.println("ParDRe-MR: input path = "+inputPath1);
 
 			// Configure job
-			jobRemoveDuplicated = ParDReMR.configureSingleEndJob(conf);
+			jobRemoveDuplicated = ParDReMR.configureSingleEndJob(conf, inputFormatClass);
 			FileInputFormat.addInputPath(jobRemoveDuplicated, inputPath1);
 			FileOutputFormat.setOutputPath(jobRemoveDuplicated, tmpOutputPath1);
 			timer.stop(T_INIT);

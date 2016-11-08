@@ -15,7 +15,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 public class FastQRecordReader extends RecordReader<LongWritable, Text> {
-	
+
 	private int linesToProcess;
 	private LineReader in;
 	private LongWritable key;
@@ -82,7 +82,6 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 		newLine.clear();
 		temp.clear();
 		value.clear();
-		temp.clear();
 
 		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
 
