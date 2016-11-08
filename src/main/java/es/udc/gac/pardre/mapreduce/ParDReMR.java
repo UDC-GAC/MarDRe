@@ -33,15 +33,13 @@ import org.apache.hadoop.util.GenericOptionsParser;
 
 import es.udc.gac.pardre.util.Options;
 import es.udc.gac.pardre.util.SeqStringParser;
+import es.udc.gac.pardre.util.SeqStringParserFactory.FileFormat;
+import es.udc.gac.pardre.util.SeqStringParserFactory;
 import es.udc.gac.pardre.util.PairedSequence;
 import es.udc.gac.pardre.util.Sequence;
 import es.udc.gac.pardre.util.Timer;
 
 public class ParDReMR {
-
-	public enum FileFormat {
-		FILE_FORMAT_FASTA, FILE_FORMAT_FASTQ, FILE_FORMAT_UNKNOWN
-	}
 
 	private static final int T_TOTAL = 0;
 	private static final int T_INIT = 1;
@@ -73,14 +71,14 @@ public class ParDReMR {
 			format = FileFormat.values()[Integer.parseInt(job.get(FILE_FORMAT))];
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
 			minQual = (char) Integer.parseInt(job.get(MINQUAL));
-			parser = new SeqStringParser(prefixLength, minQual);
+			parser = SeqStringParserFactory.createSeqStringParser(format, prefixLength, minQual); 
 		}
 
 		@Override
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
 
-			if (parser.getSeq(format, value.toString(), seq) != 0) {
+			if (parser.getSeq(value.toString(), seq) != 0) {
 				longKey.set(seq.getKey());
 				context.write(longKey, seq);
 			}
@@ -203,15 +201,15 @@ public class ParDReMR {
 			format = FileFormat.values()[Integer.parseInt(job.get(FILE_FORMAT))];
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
 			minQual = (char) Integer.parseInt(job.get(MINQUAL));
-			parser = new SeqStringParser(prefixLength, minQual);
+			parser = SeqStringParserFactory.createSeqStringParser(format, prefixLength, minQual);
 		}
 
 		@Override
 		public void map(LongWritable key, TupleWritable value, Context context)
 				throws IOException, InterruptedException {
 
-			if (parser.getSeq(format, value.get(0).toString(), seq1) != 0) {
-				if (parser.getSeq(format, value.get(1).toString(), seq2) != 0) {
+			if (parser.getSeq(value.get(0).toString(), seq1) != 0) {
+				if (parser.getSeq(value.get(1).toString(), seq2) != 0) {
 					pairedSeq.setFirstSeq(seq1);
 					pairedSeq.setSecondSeq(seq2);
 					longKey.set(pairedSeq.getKey());
@@ -236,7 +234,7 @@ public class ParDReMR {
 			format = FileFormat.values()[Integer.parseInt(job.get(FILE_FORMAT))];
 			prefixLength = Short.parseShort(job.get(PREFIXLENGTH));
 			minQual = (char) Integer.parseInt(job.get(MINQUAL));
-			parser = new SeqStringParser(prefixLength, minQual);
+			parser = SeqStringParserFactory.createSeqStringParser(format, prefixLength, minQual);
 			String inputPath1 = job.get(INPUT_PATH_1);
 			String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
 
@@ -248,7 +246,7 @@ public class ParDReMR {
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
 
-			if (parser.getSeq(format, value.toString(), seq) != 0) {
+			if (parser.getSeq(value.toString(), seq) != 0) {
 				seq.setIsFirstSeq(isFirstInputPath);
 				context.write(key, seq);
 			}
