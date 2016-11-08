@@ -7,22 +7,17 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 import org.apache.hadoop.io.GenericWritable;
-import org.apache.hadoop.io.Writable;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public abstract class Sequence extends GenericWritable {
 
-	private static Class<? extends Writable>[] CLASSES = null;
-
-	static {
-		CLASSES = (Class<? extends Writable>[]) new Class[] {
-				FastQSequence.class, 
-				FastASequence.class,
-		};
-	}
+	private static Class[] CLASSES = {
+			FastQSequence.class, 
+			FastASequence.class,
+	};
 
 	@Override
-	protected Class<? extends Writable>[] getTypes() {
+	protected Class[] getTypes() {
 		return CLASSES;
 	}
 
