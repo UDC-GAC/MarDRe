@@ -32,9 +32,9 @@ public class Sequence implements Writable {
 		short aux = (short) ch;
 
 		if (ch >= 'A' && ch <= 'Z') {
-			ch -= 'A';
+			aux -= 'A';
 		} else if (ch >= 'a' && ch <= 'z') {
-			ch -= 'a';
+			aux -= 'a';
 		} else {
 			throw new IllegalArgumentException("Unexpected character " + ch 
 					+ " in the bases");
@@ -46,9 +46,9 @@ public class Sequence implements Writable {
 		short aux = (short) ch;
 
 		if (ch >= 'A' && ch <= 'Z') {
-			ch -= 'A';
+			aux -= 'A';
 		} else if (ch >= 'a' && ch <= 'z') {
-			ch -= 'a';
+			aux -= 'a';
 		} else {
 			throw new IllegalArgumentException("Unexpected character " + ch 
 					+ " in the bases");
