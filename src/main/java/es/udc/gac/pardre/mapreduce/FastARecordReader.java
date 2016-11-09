@@ -68,7 +68,7 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 		this.end = start + split.getLength();
 		FSDataInputStream filein = fs.open(file);
 		filein.seek(start);
-		this.in = new LineReader(filein, conf);
+		this.in = new LineReader(filein);
 	}
 
 	@Override

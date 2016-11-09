@@ -72,7 +72,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 		this.end = start + split.getLength();
 		FSDataInputStream fileIn = fs.open(file);
 		fileIn.seek(start);
-		this.in = new LineReader(fileIn, conf);
+		this.in = new LineReader(fileIn);
 	}
 
 	@Override
