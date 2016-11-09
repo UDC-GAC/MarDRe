@@ -2,7 +2,6 @@ package es.udc.gac.pardre.mapreduce;
 
 import java.io.IOException;
 
-import org.apache.hadoop.util.LineReader;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -13,6 +12,8 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+
+import es.udc.gac.pardre.util.LineReader;
 
 public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 

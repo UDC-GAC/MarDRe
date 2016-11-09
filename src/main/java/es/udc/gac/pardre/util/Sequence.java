@@ -27,16 +27,32 @@ public class Sequence implements Writable {
 			0, 0, 0, 0, 0, 8, 0, // O->U
 			0, 0, 0, 0, 0 // V->Z
 	};
-	
+
 	private static short codePrefix(char ch) {
 		short aux = (short) ch;
-		aux -= 'A';
+
+		if (ch >= 'A' && ch <= 'Z') {
+			ch -= 'A';
+		} else if (ch >= 'a' && ch <= 'z') {
+			ch -= 'a';
+		} else {
+			throw new IllegalArgumentException("Unexpected character " + ch 
+					+ " in the bases");
+		}
 		return Sequence.codePrefixTab[aux];
 	}
 
 	private static short code(char ch) {
 		short aux = (short) ch;
-		aux -= 'A';
+
+		if (ch >= 'A' && ch <= 'Z') {
+			ch -= 'A';
+		} else if (ch >= 'a' && ch <= 'z') {
+			ch -= 'a';
+		} else {
+			throw new IllegalArgumentException("Unexpected character " + ch 
+					+ " in the bases");
+		}
 		return Sequence.codeTab[aux];
 	}
 

@@ -584,7 +584,7 @@ public class ParDReMR {
 		}
 
 		if (!status) {
-			System.out.println("ParDRe-MR: failed to complete successfully");
+			System.out.println("ParDRe-MR: job failed!");
 			System.exit(-1);
 		}
 
@@ -601,7 +601,7 @@ public class ParDReMR {
 			outputPath2 = tmpOutputPath2;
 		}
 
-		System.out.println("ParDRe-MR: completed successfully!");
+		System.out.println("ParDRe-MR: job completed successfully!");
 		System.out.println("ParDRe-MR: output path = "+fs.getUri()+outputPath1);
 
 		// Cleanup
