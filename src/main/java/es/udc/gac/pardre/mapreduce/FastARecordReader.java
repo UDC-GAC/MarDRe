@@ -73,7 +73,6 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 	public boolean nextKeyValue() throws IOException {
 		long read = 0;
 		boolean found = false;
-		newLine.clear();
 		value.clear();
 
 		System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);

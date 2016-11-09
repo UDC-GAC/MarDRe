@@ -78,8 +78,6 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 		int i = 0;
 		long firstRead = 0, secondRead = 0;
 		boolean found = false;
-		newLine.clear();
-		temp.clear();
 		value.clear();
 
 		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
