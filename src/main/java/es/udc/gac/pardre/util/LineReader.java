@@ -17,10 +17,8 @@ public class LineReader implements Closeable {
 	// the current position in the buffer
 	private int bufferPosn = 0;
 
-	// Line delimiters
-	private static final byte CR = '\r';
+	// Line delimiter
 	private static final byte LF = '\n';
-	private static final byte[] LF_end = { '\n' };
 
 	public LineReader(InputStream in) {
 		this(in, DEFAULT_BUFFER_SIZE);
@@ -65,53 +63,33 @@ public class LineReader implements Closeable {
 		return readDefaultLine(str, Integer.MAX_VALUE, Integer.MAX_VALUE);
 	}
 
-	public int getBufferPosn() {
-		return bufferPosn;
-	}
-
-	public int getBufferSize() {
-		return bufferSize;
-	}
-
 	private int fillBuffer(InputStream in, byte[] buffer)
 			throws IOException {
 		return in.read(buffer);
 	}
 
 	/**
-	 * Read a line terminated by one of CR, LF, or CRLF.
+	 * Read a line terminated by LF.
 	 */
 	private int readDefaultLine(Text str, int maxLineLength, int maxBytesToConsume)
 			throws IOException {
 		/* We're reading data from in, but the head of the stream may be
-		 * already buffered, so we have several cases:
+		 * already buffered, so we have two cases:
 		 * 1. No newline characters are in the buffer, so we need to copy
 		 *    everything and read another buffer from the stream.
 		 * 2. An unambiguously terminated line is in buffer, so we just
 		 *    copy to str.
-		 * 3. Ambiguously terminated line is in buffer, i.e. buffer ends
-		 *    in CR.  In this case we copy everything up to CR to str, but
-		 *    we also need to see what follows CR: if it's LF, then we
-		 *    need consume LF as well, so next call to readLine will read
-		 *    from after that.
-		 * We use a flag prevCharCR to signal if previous character was CR
-		 * and, if it happens to be at the end of the buffer, delay
-		 * consuming it until we have a chance to look at the char that
-		 * follows.
 		 */
 		str.clear();
 		int txtLength = 0; //tracks str.getLength(), as an optimization
 		int newlineLength = 0; //length of terminating newline
-		boolean prevCharCR = false; //true of prev char was CR
 		long bytesConsumed = 0;
+		int readLength = 0;
 
 		do {
 			int startPosn = bufferPosn; //starting from where we left off the last time
 			if (bufferPosn >= bufferLength) {
 				startPosn = bufferPosn = 0;
-				if (prevCharCR) {
-					++bytesConsumed; //account for CR from previous read
-				}
 				bufferLength = fillBuffer(in, buffer);
 				if (bufferLength <= 0) {
 					break; // EOF
@@ -119,36 +97,24 @@ public class LineReader implements Closeable {
 			}
 			for (; bufferPosn < bufferLength; ++bufferPosn) { //search for newline
 				if (buffer[bufferPosn] == LF) {
-					newlineLength = (prevCharCR) ? 2 : 1;
+					newlineLength = 1;
 					++bufferPosn; // at next invocation proceed from following byte
 					break;
 				}
-				if (prevCharCR) { //CR + notLF, we are at notLF
-					newlineLength = 1;
-					break;
-				}
-				prevCharCR = (buffer[bufferPosn] == CR);
 			}
-			int readLength = bufferPosn - startPosn;
-			if (prevCharCR && newlineLength == 0) {
-				--readLength; //CR at the end of the buffer
-			}
+			readLength = bufferPosn - startPosn;
 			bytesConsumed += readLength;
-			int appendLength = readLength - newlineLength;
-			if (appendLength > maxLineLength - txtLength) {
-				appendLength = maxLineLength - txtLength;
+			if (readLength > maxLineLength - txtLength) {
+				readLength = maxLineLength - txtLength;
 			}
-			if (appendLength > 0) {
-				str.append(buffer, startPosn, appendLength);
-				txtLength += appendLength;
+			if (readLength > 0) {
+				str.append(buffer, startPosn, readLength);
+				txtLength += readLength;
 			}
 		} while (newlineLength == 0 && bytesConsumed < maxBytesToConsume);
 
-		// Newline
-		str.append(LF_end, 0, 1);
-
 		if (bytesConsumed > Integer.MAX_VALUE) {
-			throw new IOException("Too many bytes before newline: " + bytesConsumed);
+			throw new IOException("Too many bytes before newline: " +bytesConsumed);
 		}
 		return (int)bytesConsumed;
 	}
