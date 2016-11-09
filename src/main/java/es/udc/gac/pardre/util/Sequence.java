@@ -340,9 +340,9 @@ public class Sequence implements Writable {
 		}
 
 		writer.write(bases);
-		writer.newLine();
 
 		if (_format == FileFormat.FILE_FORMAT_FASTQ && !_quals.isEmpty()) {
+			writer.newLine();
 			writer.write('+');
 			writer.newLine();
 			writer.write(_quals, 0, _quals.length());

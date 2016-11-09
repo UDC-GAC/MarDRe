@@ -75,7 +75,7 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 		boolean found = false;
 		value.clear();
 
-		System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
+		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
 
 		if (this.pos >= this.end) {
 			//System.out.println("nextKeyValue: not in chunk");
@@ -88,25 +88,30 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 			read = in.readLine(newLine);
 			this.pos += read;
 
-			System.out.println("nextKeyValue: read "+read+", start "+start+", pos "+pos+", end "+end);
+			//System.out.println("nextKeyValue: read "+read+", start "+start+", pos "+pos+", end "+end);
 
 			if (read == 0) {
-				System.out.println("nextKeyValue: EOF");
+				//System.out.println("nextKeyValue: EOF");
+				if (found)
+					break;
 				return false;
 			}
 
-			System.out.println("nextKeyValue: value <'"+newLine.toString()+"'>");
+			//System.out.println("nextKeyValue:");
+			//System.out.print(newLine.toString());
 
 			if (newLine.getLength() == 0) {
-				System.out.println("nextKeyValue: newline char has been read (ignore)");
+				System.out.println("nextKeyValue: newline char has been read (ignored)");
 				continue;
 			}
 
 			if (newLine.charAt(0) == '>') {
-				System.out.println("nextKeyValue: starting '>' has been found");
+				//System.out.println("nextKeyValue: starting '>' has been found");
 
-				if (found == true) {
-					System.out.println("nextKeyValue: new record detected, return previous data");
+				if (found) {
+					//System.out.println("nextKeyValue: new record detected, return previous data");
+					in.seek(in.getPos()-read);
+					this.pos -= read;
 					break;
 				} else {
 					found = true;
@@ -116,7 +121,7 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 			value.append(newLine.getBytes(), 0, newLine.getLength());
 		}
 
-		System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
+		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
 
 		return true;
 	}

@@ -101,10 +101,11 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 				return false;
 			}
 
-			//System.out.println("nextKeyValue: value <'"+newLine.toString()+"'>");
+			//System.out.println("nextKeyValue:");
+                        //System.out.print(newLine.toString());
 
 			if (newLine.getLength() == 0) {
-				//System.out.println("nextKeyValue: newline char has been read (ignore)");
+				System.out.println("nextKeyValue: newline char has been read (ignored)");
 				i = 0;
 				continue;
 			}
