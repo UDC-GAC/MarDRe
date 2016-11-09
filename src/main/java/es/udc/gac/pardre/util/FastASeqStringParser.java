@@ -18,14 +18,12 @@ public class FastASeqStringParser extends SeqStringParser {
 			return 0;
 		}
 
-		String bases = null, name = null;
-
 		StringTokenizer st = new StringTokenizer(s, "\n");
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
 					+ ": no name available");
-		name = st.nextToken();
+		String name = st.nextToken();
 
 		// Read the sequence name
 		// Everything but the '>'
@@ -37,6 +35,7 @@ public class FastASeqStringParser extends SeqStringParser {
 					+ ": only name available");
 
 		// Read the sequence bases
+		String bases = new String();
 		while(st.hasMoreTokens())
 			bases += st.nextToken();
 
