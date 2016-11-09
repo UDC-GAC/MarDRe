@@ -15,7 +15,7 @@ public class LineReader implements Closeable {
 	// the number of bytes of real data in the buffer
 	private int bufferLength = 0;
 	// the current position in the buffer
-	private int bufferPosn = 0;
+	private int bufferPos = 0;
 
 	// Line delimiter
 	private static final byte LF = '\n';
@@ -32,6 +32,29 @@ public class LineReader implements Closeable {
 
 	public void close() throws IOException {
 		in.close();
+	}
+
+	/**
+	 * Seek to the given offset.
+	 *
+	 * @param pos offset to seek to
+	 *
+	 * @throws IOException
+	 */
+	public void seek(long pos) throws IOException {
+		if (pos < 0 || pos >= bufferSize)
+			throw new IOException("Incorrect position: "+pos);
+
+		this.bufferPos = (int) pos;
+	}
+
+	/**
+ 	 * Return the current offset from the start of the file
+ 	 *
+ 	 * @throws IOException
+ 	 */
+	public long getPos() throws IOException {
+		return bufferPos;
 	}
 
 	/**
@@ -85,24 +108,26 @@ public class LineReader implements Closeable {
 		int newlineLength = 0; //length of terminating newline
 		long bytesConsumed = 0;
 		int readLength = 0;
-
+System.out.println("Init: bufferPos="+bufferPos);
 		do {
-			int startPosn = bufferPosn; //starting from where we left off the last time
-			if (bufferPosn >= bufferLength) {
-				startPosn = bufferPosn = 0;
+			int startPosn = bufferPos; //starting from where we left off the last time
+			if (bufferPos >= bufferLength) {
+				startPosn = bufferPos = 0;
 				bufferLength = fillBuffer(in, buffer);
 				if (bufferLength <= 0) {
 					break; // EOF
 				}
 			}
-			for (; bufferPosn < bufferLength; ++bufferPosn) { //search for newline
-				if (buffer[bufferPosn] == LF) {
+System.out.println("Before for: bufferPos="+bufferPos);
+			for (; bufferPos < bufferLength; ++bufferPos) { //search for newline
+				if (buffer[bufferPos] == LF) {
 					newlineLength = 1;
-					++bufferPosn; // at next invocation proceed from following byte
+					++bufferPos; // at next invocation proceed from following byte
 					break;
 				}
 			}
-			readLength = bufferPosn - startPosn;
+System.out.println("After for: bufferPos="+bufferPos);
+			readLength = bufferPos - startPosn;
 			bytesConsumed += readLength;
 			if (readLength > maxLineLength - txtLength) {
 				readLength = maxLineLength - txtLength;
@@ -112,7 +137,7 @@ public class LineReader implements Closeable {
 				txtLength += readLength;
 			}
 		} while (newlineLength == 0 && bytesConsumed < maxBytesToConsume);
-
+System.out.println("End: bufferPos="+bufferPos);
 		if (bytesConsumed > Integer.MAX_VALUE) {
 			throw new IOException("Too many bytes before newline: " +bytesConsumed);
 		}
