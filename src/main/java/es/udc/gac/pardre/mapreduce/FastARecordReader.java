@@ -24,8 +24,6 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 	private long start = 0;
 	private long end = 0;
 	private long pos = 0;
-	private int maxLineLength = Integer.MAX_VALUE;
-	private final Text endline = new Text("\n");
 
 	@Override
 	public synchronized void close() throws IOException {
@@ -88,7 +86,7 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 		key.set(this.pos);
 
 		while(true) {
-			read = in.readLine(newLine, maxLineLength);
+			read = in.readLine(newLine);
 			this.pos += read;
 
 			System.out.println("nextKeyValue: read "+read+", start "+start+", pos "+pos+", end "+end);
@@ -117,7 +115,6 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 			}
 
 			value.append(newLine.getBytes(), 0, newLine.getLength());
-			value.append(endline.getBytes(), 0, endline.getLength());
 		}
 
 		System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);

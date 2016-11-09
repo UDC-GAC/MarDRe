@@ -20,6 +20,7 @@ public class LineReader implements Closeable {
 	// Line delimiters
 	private static final byte CR = '\r';
 	private static final byte LF = '\n';
+	private static final byte[] LF_end = { '\n' };
 
 	public LineReader(InputStream in) {
 		this(in, DEFAULT_BUFFER_SIZE);
@@ -38,33 +39,30 @@ public class LineReader implements Closeable {
 	/**
 	 * Read one line from the InputStream into the given Text.
 	 *
-	 * @param str the object to store the given line (without newline)
+	 * @param str the object to store the given line (including the newline)
 	 * @param maxLineLength the maximum number of bytes to store into str;
 	 *  the rest of the line is silently discarded.
-	 * @param maxBytesToConsume the maximum number of bytes to consume
-	 *  in this call.  This is only a hint, because if the line cross
-	 *  this threshold, we allow it to happen.  It can overshoot
-	 *  potentially by as much as one buffer length.
 	 *
 	 * @return the number of bytes read including the (longest) newline
 	 * found.
 	 *
 	 * @throws IOException if the underlying stream throws
 	 */
-	public int readLine(Text str, int maxLineLength,
-			int maxBytesToConsume) throws IOException {
-		return readDefaultLine(str, maxLineLength, maxBytesToConsume);
+	public int readLine(Text str, int maxLineLength) throws IOException {
+		return readDefaultLine(str, maxLineLength, Integer.MAX_VALUE);
 	}
 
 	/**
 	 * Read from the InputStream into the given Text.
-	 * @param str the object to store the given line
-	 * @param maxLineLength the maximum number of bytes to store into str.
+	 *
+	 * @param str the object to store the given line (including the newline) 
+	 *
 	 * @return the number of bytes read including the newline
+	 *
 	 * @throws IOException if the underlying stream throws
 	 */
-	public int readLine(Text str, int maxLineLength) throws IOException {
-		return readLine(str, maxLineLength, Integer.MAX_VALUE);
+	public int readLine(Text str) throws IOException {
+		return readDefaultLine(str, Integer.MAX_VALUE, Integer.MAX_VALUE);
 	}
 
 	public int getBufferPosn() {
@@ -75,7 +73,7 @@ public class LineReader implements Closeable {
 		return bufferSize;
 	}
 
-	private int fillBuffer(InputStream in, byte[] buffer, boolean inDelimiter)
+	private int fillBuffer(InputStream in, byte[] buffer)
 			throws IOException {
 		return in.read(buffer);
 	}
@@ -86,7 +84,7 @@ public class LineReader implements Closeable {
 	private int readDefaultLine(Text str, int maxLineLength, int maxBytesToConsume)
 			throws IOException {
 		/* We're reading data from in, but the head of the stream may be
-		 * already buffered in buffer, so we have several cases:
+		 * already buffered, so we have several cases:
 		 * 1. No newline characters are in the buffer, so we need to copy
 		 *    everything and read another buffer from the stream.
 		 * 2. An unambiguously terminated line is in buffer, so we just
@@ -106,6 +104,7 @@ public class LineReader implements Closeable {
 		int newlineLength = 0; //length of terminating newline
 		boolean prevCharCR = false; //true of prev char was CR
 		long bytesConsumed = 0;
+
 		do {
 			int startPosn = bufferPosn; //starting from where we left off the last time
 			if (bufferPosn >= bufferLength) {
@@ -113,7 +112,7 @@ public class LineReader implements Closeable {
 				if (prevCharCR) {
 					++bytesConsumed; //account for CR from previous read
 				}
-				bufferLength = fillBuffer(in, buffer, prevCharCR);
+				bufferLength = fillBuffer(in, buffer);
 				if (bufferLength <= 0) {
 					break; // EOF
 				}
@@ -144,6 +143,9 @@ public class LineReader implements Closeable {
 				txtLength += appendLength;
 			}
 		} while (newlineLength == 0 && bytesConsumed < maxBytesToConsume);
+
+		// Newline
+		str.append(LF_end, 0, 1);
 
 		if (bytesConsumed > Integer.MAX_VALUE) {
 			throw new IOException("Too many bytes before newline: " + bytesConsumed);

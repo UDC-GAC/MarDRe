@@ -26,8 +26,6 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 	private long start = 0;
 	private long end = 0;
 	private long pos = 0;
-	private int maxLineLength = Integer.MAX_VALUE;
-	private final Text endline = new Text("\n");
 
 	@Override
 	public synchronized void close() throws IOException {
@@ -94,7 +92,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 		key.set(this.pos);
 
 		while(i < linesToProcess) {
-			firstRead = in.readLine(newLine, maxLineLength);
+			firstRead = in.readLine(newLine);
 			this.pos += firstRead;
 			i++;
 
@@ -116,7 +114,6 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 			if (found == true && i == linesToProcess) {
 				//System.out.println("nextKeyValue: last line and starting '@' has been previously found");
 				value.append(newLine.getBytes(), 0, newLine.getLength());
-				value.append(endline.getBytes(), 0, endline.getLength());
 				continue;
 			}
 
@@ -124,7 +121,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 				//System.out.println("nextKeyValue: starting '@' has been found at line "+i);
 				found = true;
 
-				secondRead = in.readLine(temp, maxLineLength);
+				secondRead = in.readLine(temp);
 				value.clear();
 				this.pos += secondRead;
 
@@ -139,14 +136,12 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 					//System.out.println("nextKeyValue: next line has no starting '@' (new record)");
 					key.set(this.pos-(firstRead+secondRead));
 					i = 2;
-					newLine.append(endline.getBytes(), 0, endline.getLength());
 					newLine.append(temp.getBytes(), 0, temp.getLength());
 				} else {
 					//System.out.println("nextKeyValue: next line has starting '@' (new record, discard previous data)");
 					key.set(this.pos);
 					i = 1;
 					value.append(temp.getBytes(), 0, temp.getLength());
-					value.append(endline.getBytes(), 0, endline.getLength());
 					continue;
 				}
 			}
@@ -160,7 +155,6 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 			} 
 
 			value.append(newLine.getBytes(), 0, newLine.getLength());
-			value.append(endline.getBytes(), 0, endline.getLength());
 		}
 
 		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
