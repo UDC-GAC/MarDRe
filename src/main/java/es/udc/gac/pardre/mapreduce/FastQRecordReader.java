@@ -102,7 +102,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 			}
 
 			//System.out.println("nextKeyValue:");
-                        //System.out.print(newLine.toString());
+			//System.out.print(newLine.toString());
 
 			if (found == true && i == linesToProcess) {
 				//System.out.println("nextKeyValue: last line and starting '@' has been previously found");

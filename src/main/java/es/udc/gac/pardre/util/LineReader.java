@@ -49,10 +49,10 @@ public class LineReader implements Closeable {
 	}
 
 	/**
- 	 * Return the current offset from the start of the file
- 	 *
- 	 * @throws IOException
- 	 */
+	 * Return the current offset from the start of the file
+	 *
+	 * @throws IOException
+	 */
 	public long getPos() throws IOException {
 		return bufferPos;
 	}
