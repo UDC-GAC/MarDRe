@@ -77,10 +77,8 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 
 		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
 
-		if (this.pos >= this.end) {
-			//System.out.println("nextKeyValue: not in chunk");
+		if (this.pos >= this.end)
 			return false;
-		}
 
 		key.set(this.pos);
 
@@ -91,7 +89,7 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 			//System.out.println("nextKeyValue: read "+read+", start "+start+", pos "+pos+", end "+end);
 
 			if (read == 0) {
-				//System.out.println("nextKeyValue: EOF");
+				// EOF
 				if (found)
 					break;
 				return false;
@@ -100,16 +98,10 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 			//System.out.println("nextKeyValue:");
 			//System.out.print(newLine.toString());
 
-			if (newLine.getLength() == 0) {
-				System.out.println("nextKeyValue: newline char has been read (ignored)");
-				continue;
-			}
-
 			if (newLine.charAt(0) == '>') {
 				//System.out.println("nextKeyValue: starting '>' has been found");
 
 				if (found) {
-					//System.out.println("nextKeyValue: new record detected, return previous data");
 					in.seek(in.getPos()-read);
 					this.pos -= read;
 					break;

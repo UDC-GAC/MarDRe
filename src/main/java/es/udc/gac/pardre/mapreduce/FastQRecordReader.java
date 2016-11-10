@@ -82,10 +82,8 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 
 		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
 
-		if (this.pos >= this.end) {
-			//System.out.println("nextKeyValue: not in chunk");
+		if (this.pos >= this.end)
 			return false;
-		}
 
 		key.set(this.pos);
 
@@ -97,23 +95,19 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 			//System.out.println("nextKeyValue: line "+i+", read "+firstRead+", start "+start+", pos "+pos+", end "+end);
 
 			if (firstRead == 0) {
-				//System.out.println("nextKeyValue: EOF");
+				// EOF
+				if (found)
+					break;
 				return false;
 			}
 
 			//System.out.println("nextKeyValue:");
                         //System.out.print(newLine.toString());
 
-			if (newLine.getLength() == 0) {
-				System.out.println("nextKeyValue: newline char has been read (ignored)");
-				i = 0;
-				continue;
-			}
-
 			if (found == true && i == linesToProcess) {
 				//System.out.println("nextKeyValue: last line and starting '@' has been previously found");
 				value.append(newLine.getBytes(), 0, newLine.getLength());
-				continue;
+				break;
 			}
 
 			if (newLine.charAt(0) == '@') {
@@ -125,19 +119,19 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 				this.pos += secondRead;
 
 				if (secondRead == 0) {
-					//System.out.println("nextKeyValue: next line is EOF");
+					// EOF
+					if (found)
+						break;
 					return false;
 				}
 
 				//System.out.println("nextKeyValue: next line (read "+secondRead+") "+temp);
 
 				if (temp.charAt(0) != '@') {
-					//System.out.println("nextKeyValue: next line has no starting '@' (new record)");
 					key.set(this.pos-(firstRead+secondRead));
 					i = 2;
 					newLine.append(temp.getBytes(), 0, temp.getLength());
 				} else {
-					//System.out.println("nextKeyValue: next line has starting '@' (new record, discard previous data)");
 					key.set(this.pos);
 					i = 1;
 					value.append(temp.getBytes(), 0, temp.getLength());

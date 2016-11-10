@@ -58,23 +58,7 @@ public class LineReader implements Closeable {
 	}
 
 	/**
-	 * Read one line from the InputStream into the given Text.
-	 *
-	 * @param str the object to store the given line (including the newline)
-	 * @param maxLineLength the maximum number of bytes to store into str;
-	 *  the rest of the line is silently discarded.
-	 *
-	 * @return the number of bytes read including the (longest) newline
-	 * found.
-	 *
-	 * @throws IOException if the underlying stream throws
-	 */
-	public int readLine(Text str, int maxLineLength) throws IOException {
-		return readDefaultLine(str, maxLineLength, Integer.MAX_VALUE);
-	}
-
-	/**
-	 * Read from the InputStream into the given Text.
+	 * Read a line from the InputStream terminated by LF into the given Text.
 	 *
 	 * @param str the object to store the given line (including the newline) 
 	 *
@@ -83,19 +67,6 @@ public class LineReader implements Closeable {
 	 * @throws IOException if the underlying stream throws
 	 */
 	public int readLine(Text str) throws IOException {
-		return readDefaultLine(str, Integer.MAX_VALUE, Integer.MAX_VALUE);
-	}
-
-	private int fillBuffer(InputStream in, byte[] buffer)
-			throws IOException {
-		return in.read(buffer);
-	}
-
-	/**
-	 * Read a line terminated by LF.
-	 */
-	private int readDefaultLine(Text str, int maxLineLength, int maxBytesToConsume)
-			throws IOException {
 		/* We're reading data from in, but the head of the stream may be
 		 * already buffered, so we have two cases:
 		 * 1. No newline characters are in the buffer, so we need to copy
@@ -108,12 +79,13 @@ public class LineReader implements Closeable {
 		boolean newLine = false;
 		long bytesConsumed = 0;
 		int readLength = 0;
+		int startPos = 0;
 
 		do {
-			int startPosn = bufferPos; //starting from where we left off the last time
+			startPos = bufferPos; //starting from where we left off the last time
 			if (bufferPos >= bufferLength) {
-				startPosn = bufferPos = 0;
-				bufferLength = fillBuffer(in, buffer);
+				startPos = bufferPos = 0;
+				bufferLength = in.read(buffer);
 				if (bufferLength <= 0) {
 					break; // EOF
 				}
@@ -125,21 +97,17 @@ public class LineReader implements Closeable {
 					break;
 				}
 			}
-			readLength = bufferPos - startPosn;
+			readLength = bufferPos - startPos;
 			bytesConsumed += readLength;
-			//readLength--; //This is to exclude the line delimiter (LF)
-			if (readLength > maxLineLength - txtLength) {
-				readLength = maxLineLength - txtLength;
-			}
-			if (readLength > 0) {
-				str.append(buffer, startPosn, readLength);
+			if (readLength == 1 && newLine && txtLength == 0) {
+				// Only one byte was read and it is the line delimiter (LF)
+				newLine = false;
+			} else {
+				str.append(buffer, startPos, readLength);
 				txtLength += readLength;
 			}
-		} while (!newLine && bytesConsumed < maxBytesToConsume);
+		} while (!newLine);
 
-		if (bytesConsumed > Integer.MAX_VALUE) {
-			throw new IOException("Too many bytes before newline: " +bytesConsumed);
-		}
 		return (int)bytesConsumed;
 	}
 }
