@@ -8,8 +8,7 @@ import org.apache.hadoop.io.Text;
 
 public class LineReader implements Closeable {
 
-	private static final int DEFAULT_BUFFER_SIZE = 64 * 1024;	//64 KB
-	private int bufferSize = DEFAULT_BUFFER_SIZE;
+	private int bufferSize;
 	private InputStream in;
 	private byte[] buffer;
 	// the number of bytes of real data in the buffer
@@ -19,10 +18,6 @@ public class LineReader implements Closeable {
 
 	// Line delimiter
 	private static final byte LF = '\n';
-
-	public LineReader(InputStream in) {
-		this(in, DEFAULT_BUFFER_SIZE);
-	}
 
 	public LineReader(InputStream in, int bufferSize) {
 		this.in = in;

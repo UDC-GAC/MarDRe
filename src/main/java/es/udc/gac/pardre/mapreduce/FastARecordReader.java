@@ -2,7 +2,6 @@ package es.udc.gac.pardre.mapreduce;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -13,6 +12,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
+import es.udc.gac.pardre.util.Configuration;
 import es.udc.gac.pardre.util.LineReader;
 
 public class FastARecordReader extends RecordReader<LongWritable, Text> {
@@ -56,7 +56,7 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 	public void initialize(InputSplit genericSplit, TaskAttemptContext context) throws IOException {
 		FileSplit split = (FileSplit) genericSplit;
 		final Path file = split.getPath();
-		Configuration conf = context.getConfiguration();
+		org.apache.hadoop.conf.Configuration conf = context.getConfiguration();
 		FileSystem fs = file.getFileSystem(conf);
 		this.key = new LongWritable();
 		this.value = new Text();
@@ -64,9 +64,10 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 		this.start = split.getStart();
 		this.pos = this.start;
 		this.end = start + split.getLength();
-		FSDataInputStream filein = fs.open(file);
-		filein.seek(start);
-		this.in = new LineReader(filein);
+		FSDataInputStream fileIn = fs.open(file);
+		fileIn.seek(start);
+                int bufferSize = Integer.parseInt(conf.get(Configuration.IO_BUFFER_SIZE_PARAM));
+                this.in = new LineReader(fileIn, bufferSize);
 	}
 
 	@Override
