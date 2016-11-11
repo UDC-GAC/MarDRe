@@ -15,16 +15,16 @@ public class Configuration {
 	public static boolean COMPRESS_TEMP;
 	public static int IO_FILE_BUFFER_SIZE;
 
-        public static final String PREFIXLENGTH = "ParDRe-MR_prefixLength";
-        public static final String MINQUAL = "ParDRe-MR_minQual";
-        public static final String MISSMATCH = "ParDRe-MR_missMatch";
-        public static final String FILE_FORMAT = "ParDRe-MR_fileFormat";
-        public static final String INPUT_PATH_1 = "ParDRe-MR_inputPath1";
-        public static final String IO_BUFFER_SIZE_PARAM = "ParDRe-MR_ioBufferSize";
-        public static final String TEMP_INPUT_PATH_1 = "/ParDRe-MR/tmp/input1";
-        public static final String TEMP_INPUT_PATH_2 = "/ParDRe-MR/tmp/input2";
-        public static final String TEMP_OUTPUT_PATH_1 = "/ParDRe-MR/tmp/output1";
-        public static final String TEMP_OUTPUT_PATH_2 = "/ParDRe-MR/tmp/output2";
+	public static final String PREFIXLENGTH = "ParDRe-MR_prefixLength";
+	public static final String MINQUAL = "ParDRe-MR_minQual";
+	public static final String MISSMATCH = "ParDRe-MR_missMatch";
+	public static final String FILE_FORMAT = "ParDRe-MR_fileFormat";
+	public static final String INPUT_PATH_1 = "ParDRe-MR_inputPath1";
+	public static final String IO_BUFFER_SIZE_PARAM = "ParDRe-MR_ioBufferSize";
+	public static final String TEMP_INPUT_PATH_1 = "/ParDRe-MR/tmp/input1";
+	public static final String TEMP_INPUT_PATH_2 = "/ParDRe-MR/tmp/input2";
+	public static final String TEMP_OUTPUT_PATH_1 = "/ParDRe-MR/tmp/output1";
+	public static final String TEMP_OUTPUT_PATH_2 = "/ParDRe-MR/tmp/output2";
 
 	private static String configFileName = null;
 	private static final String PARDREMR_CONFIGURATION_FILE = "pardre-mr.conf";

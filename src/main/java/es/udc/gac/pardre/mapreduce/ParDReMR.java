@@ -47,7 +47,7 @@ public class ParDReMR {
 	private static final int T_PREPARE_PSEQ = 2;
 	private static final int T_REMOVE_DUP = 3;
 	private static final int T_PRINT_SEQ = 4;
-	
+
 	public static class ParDReMRSingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
 
 		private Sequence seq = new Sequence();
