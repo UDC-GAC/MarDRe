@@ -92,25 +92,26 @@ public class ParDReMR {
 		public void reduce(LongWritable key, Iterable<Sequence> values,
 				Context context) throws IOException, InterruptedException {
 
+			boolean insert;
 			List<Sequence> sequences = new ArrayList<Sequence>();
 
-			for (Sequence seq : values) {
-				sequences.add(new Sequence(seq));
-			}
-
-			for (int i = 0; i < sequences.size(); i++) {
-				Sequence seqi = sequences.get(i);
-
-				for (int j = i + 1; j < sequences.size(); j++) {
-					if (seqi.equal(sequences.get(j), missMatch, true)) {
-						// Delete the second one.
-						// In the future we must delete the one with the lowest
-						// priority
-						sequences.remove(j);
-						j--;
+			for (Sequence new_seq : values) {
+				insert = true;
+				
+				for (int i = 0; i < sequences.size(); i++) {
+					if (new_seq.equal(sequences.get(i), missMatch, true)) {
+						insert = false;
+						break;
 					}
 				}
-				context.write(nullKey, seqi);
+				if (insert)
+					sequences.add(new Sequence(new_seq));
+			}
+
+			System.out.println("Key "+key+", Group size "+sequences.size());
+
+			for (Sequence seq : sequences) {
+				context.write(nullKey, seq);
 			}
 		}
 	}
@@ -150,28 +151,29 @@ public class ParDReMR {
 		public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
 				throws IOException, InterruptedException {
 
+			boolean insert;
 			List<PairedSequence> sequences = new ArrayList<PairedSequence>();
 
-			for (PairedSequence seq : values) {
-				sequences.add(new PairedSequence(seq.getFirstSeq(), seq.getSecondSeq()));
-			}
-
-			for (int i = 0; i < sequences.size(); i++) {
-				PairedSequence seqi = sequences.get(i);
-
-				for (int j = i + 1; j < sequences.size(); j++) {
-					if (seqi.getFirstSeq().equal(sequences.get(j).getFirstSeq(), missMatch, true)) {
-						if (seqi.getSecondSeq().equal(sequences.get(j).getSecondSeq(), missMatch, true)) {
-							// Delete the second one.
-							// In the future we must delete the one with the lowest
-							// priority
-							sequences.remove(j);
-							j--;
+			for (PairedSequence new_seq : values) {
+				insert = true;
+				
+				for (int i = 0; i < sequences.size(); i++) {
+					if (new_seq.getFirstSeq().equal(sequences.get(i).getFirstSeq(), missMatch, true)) {
+						if (new_seq.getSecondSeq().equal(sequences.get(i).getSecondSeq(), missMatch, true)) {
+							insert = false;
+							break;
 						}
 					}
 				}
-				context.write(nullKey, seqi.getFirstSeq());
-				mos.write("output2", nullKey, seqi.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2+"/part");
+				if (insert)
+					sequences.add(new PairedSequence(new_seq.getFirstSeq(), new_seq.getSecondSeq()));
+			}
+
+			System.out.println("Key "+key+", Group size "+sequences.size());
+
+			for (PairedSequence seq : sequences) {
+				context.write(nullKey, seq.getFirstSeq());
+				mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2+"/part");
 			}
 		}
 	}
