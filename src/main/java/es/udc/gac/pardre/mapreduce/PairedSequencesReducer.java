@@ -8,7 +8,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import es.udc.gac.pardre.util.PairedSequence;
 import es.udc.gac.pardre.util.Sequence;
 
-public class JoinSequencesReducer extends Reducer<LongWritable, Sequence, LongWritable, PairedSequence> {
+public class PairedSequencesReducer extends Reducer<LongWritable, Sequence, LongWritable, PairedSequence> {
 
 	private PairedSequence pairedSeq = new PairedSequence();
 	private LongWritable longKey = new LongWritable();

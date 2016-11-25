@@ -33,6 +33,7 @@ import es.udc.gac.pardre.util.Timer;
 
 public class ParDReMR {
 
+	// Timers
 	private static final int T_TOTAL = 0;
 	private static final int T_INIT = 1;
 	private static final int T_PREPARE_PSEQ = 2;
@@ -144,7 +145,7 @@ public class ParDReMR {
 
 		// Mapper/Reducer classes
 		job.setMapperClass(ParseSequencesMapper.class);
-		job.setReducerClass(JoinSequencesReducer.class);
+		job.setReducerClass(PairedSequencesReducer.class);
 
 		// Mapper output K/V classes
 		job.setMapOutputKeyClass(LongWritable.class);
@@ -302,7 +303,7 @@ public class ParDReMR {
 					status = false;
 				}
 			} else {
-				// Paired-end mode using a manual join only needs one job
+				// Paired-end mode using a manual join only needs one job processing both input files
 				Job jobPairedSequences = ParDReMR.configureJoinSequencesJob(conf, inputFormatClass);
 				FileInputFormat.addInputPath(jobPairedSequences, inputPath1);
 				FileInputFormat.addInputPath(jobPairedSequences, inputPath2);
