@@ -4,8 +4,6 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileSystem;
@@ -13,31 +11,24 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.SnappyCodec;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.TaskCounter;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
-import org.apache.hadoop.mapreduce.lib.join.TupleWritable;
 import org.apache.hadoop.mapreduce.lib.join.CompositeInputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
 import es.udc.gac.pardre.util.Configuration;
 import es.udc.gac.pardre.util.Options;
-import es.udc.gac.pardre.util.SeqStringParser;
 import es.udc.gac.pardre.util.SequenceFactory.FileFormat;
 import es.udc.gac.pardre.util.PairedSequence;
 import es.udc.gac.pardre.util.Sequence;
-import es.udc.gac.pardre.util.SequenceFactory;
 import es.udc.gac.pardre.util.Timer;
 
 public class ParDReMR {
@@ -47,228 +38,6 @@ public class ParDReMR {
 	private static final int T_PREPARE_PSEQ = 2;
 	private static final int T_REMOVE_DUP = 3;
 	private static final int T_PRINT_SEQ = 4;
-
-	public static class ParDReMRSingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
-
-		private Sequence seq = new Sequence();
-		private LongWritable longKey = new LongWritable();
-		private SeqStringParser parser;
-		private short prefixLength;
-		private char minQual;
-		private FileFormat format;
-
-		@Override
-		public void setup(Context context) {
-			org.apache.hadoop.conf.Configuration job = context.getConfiguration();
-			format = FileFormat.values()[Integer.parseInt(job.get(Configuration.FILE_FORMAT))];
-			prefixLength = Short.parseShort(job.get(Configuration.PREFIXLENGTH));
-			minQual = (char) Integer.parseInt(job.get(Configuration.MINQUAL));
-			parser = SequenceFactory.createParser(format, prefixLength, minQual);
-		}
-
-		@Override
-		public void map(LongWritable key, Text value, Context context)
-				throws IOException, InterruptedException {
-
-			if (parser.getSeq(value.toString(), seq) != 0) {
-				longKey.set(seq.getKey());
-				context.write(longKey, seq);
-			}
-		}
-	}
-
-	public static class ParDReMRSingleEndReducer extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
-
-		private static final NullWritable nullKey = NullWritable.get();
-		private short missMatch;
-
-		@Override
-		public void setup(Context context) {
-			org.apache.hadoop.conf.Configuration job = context.getConfiguration();
-			missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
-		}
-
-		@Override
-		public void reduce(LongWritable key, Iterable<Sequence> values,
-				Context context) throws IOException, InterruptedException {
-
-			boolean insert;
-			List<Sequence> sequences = new ArrayList<Sequence>();
-
-			for (Sequence new_seq : values) {
-				insert = true;
-				
-				for (int i = 0; i < sequences.size(); i++) {
-					if (new_seq.equal(sequences.get(i), missMatch, true)) {
-						insert = false;
-						break;
-					}
-				}
-				if (insert)
-					sequences.add(new Sequence(new_seq));
-			}
-
-			System.out.println("Key "+key+", Group size "+sequences.size());
-
-			for (Sequence seq : sequences) {
-				context.write(nullKey, seq);
-			}
-		}
-	}
-
-	public static class ParDReMRPairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWritable, PairedSequence> {
-
-		private LongWritable longKey = new LongWritable();
-
-		@Override
-		public void map(LongWritable key, PairedSequence value, Context context)
-				throws IOException, InterruptedException {
-
-			longKey.set(value.getKey());
-			context.write(longKey, value);
-		}
-	}
-
-	public static class ParDReMRPairedEndReducer extends Reducer<LongWritable, PairedSequence, NullWritable, Sequence> {
-
-		private static final NullWritable nullKey = NullWritable.get();
-		private MultipleOutputs<NullWritable,Sequence> mos;
-		private short missMatch;	
-
-		@Override
-		public void setup(Context context) {
-			org.apache.hadoop.conf.Configuration job = context.getConfiguration();
-			missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
-			mos = new MultipleOutputs<NullWritable,Sequence>(context);
-		}
-
-		@Override
-		public void cleanup(Context context ) throws IOException, InterruptedException {
-			mos.close();
-		}
-
-		@Override
-		public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
-				throws IOException, InterruptedException {
-
-			boolean insert;
-			List<PairedSequence> sequences = new ArrayList<PairedSequence>();
-
-			for (PairedSequence new_seq : values) {
-				insert = true;
-				
-				for (int i = 0; i < sequences.size(); i++) {
-					if (new_seq.getFirstSeq().equal(sequences.get(i).getFirstSeq(), missMatch, true)) {
-						if (new_seq.getSecondSeq().equal(sequences.get(i).getSecondSeq(), missMatch, true)) {
-							insert = false;
-							break;
-						}
-					}
-				}
-				if (insert)
-					sequences.add(new PairedSequence(new_seq.getFirstSeq(), new_seq.getSecondSeq()));
-			}
-
-			System.out.println("Key "+key+", Group size "+sequences.size());
-
-			for (PairedSequence seq : sequences) {
-				context.write(nullKey, seq.getFirstSeq());
-				mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2+"/part");
-			}
-		}
-	}
-
-	public static class ParDReMRJoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, LongWritable, PairedSequence> {
-
-		private PairedSequence pairedSeq = new PairedSequence();
-		private Sequence seq1 = new Sequence();
-		private Sequence seq2 = new Sequence();
-		private LongWritable longKey = new LongWritable();
-		private SeqStringParser parser;
-		private short prefixLength;
-		private char minQual;
-		private FileFormat format;
-
-		@Override
-		public void setup(Context context) {
-			org.apache.hadoop.conf.Configuration job = context.getConfiguration();
-			format = FileFormat.values()[Integer.parseInt(job.get(Configuration.FILE_FORMAT))];
-			prefixLength = Short.parseShort(job.get(Configuration.PREFIXLENGTH));
-			minQual = (char) Integer.parseInt(job.get(Configuration.MINQUAL));
-			parser = SequenceFactory.createParser(format, prefixLength, minQual);
-		}
-
-		@Override
-		public void map(LongWritable key, TupleWritable value, Context context)
-				throws IOException, InterruptedException {
-
-			if (parser.getSeq(value.get(0).toString(), seq1) != 0) {
-				if (parser.getSeq(value.get(1).toString(), seq2) != 0) {
-					pairedSeq.setFirstSeq(seq1);
-					pairedSeq.setSecondSeq(seq2);
-					longKey.set(pairedSeq.getKey());
-					context.write(longKey, pairedSeq);
-				}
-			}
-		}
-	}
-
-	public static class ParDReMRJoinPairedSequencesMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
-
-		private Sequence seq = new Sequence();
-		private SeqStringParser parser;
-		private short prefixLength;
-		private char minQual;
-		private boolean isFirstInputPath = true;
-		private FileFormat format;
-
-		@Override
-		public void setup(Context context) throws IOException {
-			org.apache.hadoop.conf.Configuration job = context.getConfiguration();
-			format = FileFormat.values()[Integer.parseInt(job.get(Configuration.FILE_FORMAT))];
-			prefixLength = Short.parseShort(job.get(Configuration.PREFIXLENGTH));
-			minQual = (char) Integer.parseInt(job.get(Configuration.MINQUAL));
-			parser = SequenceFactory.createParser(format, prefixLength, minQual);
-			String inputPath1 = job.get(Configuration.INPUT_PATH_1);
-			String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
-
-			if (!inputSplitPath.equals(inputPath1))
-				isFirstInputPath = false;
-		}
-
-		@Override
-		public void map(LongWritable key, Text value, Context context)
-				throws IOException, InterruptedException {
-
-			if (parser.getSeq(value.toString(), seq) != 0) {
-				seq.setIsFirstSeq(isFirstInputPath);
-				context.write(key, seq);
-			}
-		}
-	}
-
-	public static class ParDReMRJoinPairedSequencesReducer extends Reducer<LongWritable, Sequence, LongWritable, PairedSequence> {
-
-		private PairedSequence pairedSeq = new PairedSequence();
-		private LongWritable longKey = new LongWritable();
-
-		@Override
-		public void reduce(LongWritable key, Iterable<Sequence> values,
-				Context context) throws IOException, InterruptedException {
-
-			for (Sequence seq : values) {
-				Sequence newSeq = new Sequence(seq);
-
-				if (seq.isFirstSeq()) {
-					pairedSeq.setFirstSeq(newSeq);
-				} else {
-					pairedSeq.setSecondSeq(newSeq);
-				}
-			}
-			longKey.set(pairedSeq.getKey());
-			context.write(longKey, pairedSeq);
-		}
-	}
 
 	private static Job configureSingleEndJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
 
@@ -280,8 +49,8 @@ public class ParDReMR {
 		job.setOutputFormatClass(TextOutputFormat.class);
 
 		// Mapper and Reducer classes
-		job.setMapperClass(ParDReMRSingleEndMapper.class);
-		job.setReducerClass(ParDReMRSingleEndReducer.class);
+		job.setMapperClass(SingleEndMapper.class);
+		job.setReducerClass(SingleEndReducer.class);
 
 		// Mapper output K/V classes
 		job.setMapOutputKeyClass(LongWritable.class);
@@ -304,14 +73,14 @@ public class ParDReMR {
 		// Mapper and Input format classes
 		if (Configuration.PAIRED_JOIN) {
 			job.setInputFormatClass(CompositeInputFormat.class);
-			job.setMapperClass(ParDReMRJoinPairedEndMapper.class);
+			job.setMapperClass(JoinPairedEndMapper.class);
 		} else {
 			job.setInputFormatClass(SequenceFileInputFormat.class);
-			job.setMapperClass(ParDReMRPairedEndMapper.class);
+			job.setMapperClass(PairedEndMapper.class);
 		}
 
 		// Reducer class
-		job.setReducerClass(ParDReMRPairedEndReducer.class);
+		job.setReducerClass(PairedEndReducer.class);
 
 		// Mapper output K/V classes
 		job.setMapOutputKeyClass(LongWritable.class);
@@ -323,8 +92,8 @@ public class ParDReMR {
 		return job;
 	}
 
-	private static Job configureJoinPairedSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
-		Job job = Job.getInstance(conf, "ParDRe-MR_JoinPairedSequences");
+	private static Job configureHadoopJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
+		Job job = Job.getInstance(conf, "ParDRe-MR_HadoopJoinSequences");
 		job.setJarByClass(ParDReMR.class);
 
 		// This is a map-only job
@@ -344,7 +113,7 @@ public class ParDReMR {
 		}
 
 		// Mapper class
-		job.setMapperClass(ParDReMRJoinPairedSequencesMapper.class);
+		job.setMapperClass(ParseSequencesMapper.class);
 
 		// Mapper output K/V classes
 		job.setMapOutputKeyClass(LongWritable.class);
@@ -356,8 +125,8 @@ public class ParDReMR {
 		return job;
 	}
 
-	private static Job configurePairedSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
-		Job job = Job.getInstance(conf, "ParDRe-MR_PairedSequences");
+	private static Job configureJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
+		Job job = Job.getInstance(conf, "ParDRe-MR_JoinSequences");
 		job.setJarByClass(ParDReMR.class);
 
 		// I/O Format classes
@@ -374,8 +143,8 @@ public class ParDReMR {
 		}
 
 		// Mapper/Reducer classes
-		job.setMapperClass(ParDReMRJoinPairedSequencesMapper.class);
-		job.setReducerClass(ParDReMRJoinPairedSequencesReducer.class);
+		job.setMapperClass(ParseSequencesMapper.class);
+		job.setReducerClass(JoinSequencesReducer.class);
 
 		// Mapper output K/V classes
 		job.setMapOutputKeyClass(LongWritable.class);
@@ -507,9 +276,9 @@ public class ParDReMR {
 			MultipleOutputs.addNamedOutput(jobRemoveDuplicated, "output2", TextOutputFormat.class, NullWritable.class, Sequence.class);
 
 			if (Configuration.PAIRED_JOIN) {
-				// Paired-end mode using a map-side join needs two map-only jobs to partition both input files
-				Job jobPairedSequences1 = ParDReMR.configureJoinPairedSequencesJob(conf, inputFormatClass);
-				Job jobPairedSequences2 = ParDReMR.configureJoinPairedSequencesJob(conf, inputFormatClass);
+				// Paired-end mode using a map-side Hadooop join needs two map-only jobs to partition both input files
+				Job jobPairedSequences1 = ParDReMR.configureHadoopJoinSequencesJob(conf, inputFormatClass);
+				Job jobPairedSequences2 = ParDReMR.configureHadoopJoinSequencesJob(conf, inputFormatClass);
 				FileInputFormat.addInputPath(jobPairedSequences1, inputPath1);
 				FileInputFormat.addInputPath(jobPairedSequences2, inputPath2);
 				FileOutputFormat.setOutputPath(jobPairedSequences1, tmpInputPath1);
@@ -533,8 +302,8 @@ public class ParDReMR {
 					status = false;
 				}
 			} else {
-				// Paired-end mode without using a map-side join only needs one job
-				Job jobPairedSequences = ParDReMR.configurePairedSequencesJob(conf, inputFormatClass);
+				// Paired-end mode using a manual join only needs one job
+				Job jobPairedSequences = ParDReMR.configureJoinSequencesJob(conf, inputFormatClass);
 				FileInputFormat.addInputPath(jobPairedSequences, inputPath1);
 				FileInputFormat.addInputPath(jobPairedSequences, inputPath2);
 				FileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
