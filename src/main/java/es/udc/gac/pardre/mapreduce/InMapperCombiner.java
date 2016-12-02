@@ -32,7 +32,6 @@ public class InMapperCombiner<KEY extends WritableComparable, VALUE extends Writ
 			// Initial capacity is calculated trying to avoid any rehashing operation
 			int initialCapacity = (int) Math.ceil((this.maxCacheCapacity+1)/LOAD_FACTOR);
 			cache = new LinkedHashMap<KEY, List<VALUE>>(initialCapacity, LOAD_FACTOR);
-			System.out.println("InMapperCombiner cache size = "+this.maxCacheCapacity);
 		}
 		return cache;
 	}

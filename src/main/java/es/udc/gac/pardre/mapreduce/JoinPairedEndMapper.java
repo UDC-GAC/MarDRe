@@ -1,6 +1,8 @@
 package es.udc.gac.pardre.mapreduce;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -22,7 +24,34 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	private SeqStringParser parser;
 	private short prefixLength;
 	private char minQual;
+	private short missMatch;
 	private FileFormat format;
+
+	private final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
+			new CombiningFunction<LongWritable, PairedSequence>() {
+				@Override
+				public void combine(Map<LongWritable, List<PairedSequence>> cache, List<PairedSequence> seqsInCache, PairedSequence newSeq) {
+
+					boolean insert = true;
+
+					for (PairedSequence seq : seqsInCache) {
+						if (newSeq.getFirstSeq().equal(seq.getFirstSeq(), missMatch, true)) {
+							if (newSeq.getSecondSeq().equal(seq.getSecondSeq(), missMatch, true)) {
+								insert = false;
+								break;
+							}
+						}
+					}
+
+					if (insert) {
+						// Put the sequence into the cache
+						seqsInCache.add(newSeq);
+						longKey.set(newSeq.getKey());
+						cache.put(longKey, seqsInCache);
+					}
+				}
+			}
+			);
 
 	@Override
 	public void setup(Context context) {
@@ -31,6 +60,21 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 		prefixLength = Short.parseShort(job.get(Configuration.PREFIXLENGTH));
 		minQual = (char) Integer.parseInt(job.get(Configuration.MINQUAL));
 		parser = SequenceFactory.createParser(format, prefixLength, minQual);
+		missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
+
+		if (Boolean.parseBoolean(job.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
+			// Disable the in-Mapper combiner
+			combiner.setCombiningFunction(null);
+		}
+		else {
+			int cacheCapacity = Integer.parseInt(job.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
+			combiner.setMaxCacheCapacity(cacheCapacity);
+		}
+	}
+
+	@Override
+	protected void cleanup(Context context) throws IOException, InterruptedException {
+		combiner.flush(context, true);
 	}
 
 	@Override
@@ -42,8 +86,10 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 				pairedSeq.setFirstSeq(seq1);
 				pairedSeq.setSecondSeq(seq2);
 				longKey.set(pairedSeq.getKey());
-				context.write(longKey, pairedSeq);
+				combiner.write(longKey, pairedSeq, context);
 			}
 		}
+
+		combiner.flush(context, false);		
 	}
 }
