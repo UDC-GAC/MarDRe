@@ -14,30 +14,31 @@ import org.apache.hadoop.mapreduce.Mapper.Context;
 @SuppressWarnings("rawtypes")
 public class InMapperCombiner<KEY extends WritableComparable, VALUE extends Writable> {
 
-	private static final int CACHE_CAPACITY = 32768;
+	public static final Integer CACHE_SIZE = 32768;
 	private static final float LOAD_FACTOR = .75F;
 
 	private int maxCacheCapacity;
-	private int initialCapacity;
 	private Map<KEY, List<VALUE>> cache;
 	private CombiningFunction combiningFunction;
 
-	private InMapperCombiner(int cacheCapacity, CombiningFunction combiningFunction) {
-		this.combiningFunction = combiningFunction;
-		this.maxCacheCapacity = cacheCapacity;
-		// Initial capacity is calculated trying to avoid any rehashing operation
-		this.initialCapacity = (int) Math.ceil((this.maxCacheCapacity+1)/LOAD_FACTOR);
-		cache = null;
-	}
-
 	public InMapperCombiner(CombiningFunction combiningFunction) {
-		this(CACHE_CAPACITY, combiningFunction);
+		this.maxCacheCapacity = CACHE_SIZE;
+		this.combiningFunction = combiningFunction;
+		this.cache = null;
 	}
 
 	private Map<KEY, List<VALUE>> getMap() {
-		if(cache == null) //lazy loading
+		if(cache == null) { //lazy loading
+			// Initial capacity is calculated trying to avoid any rehashing operation
+			int initialCapacity = (int) Math.ceil((this.maxCacheCapacity+1)/LOAD_FACTOR);
 			cache = new LinkedHashMap<KEY, List<VALUE>>(initialCapacity, LOAD_FACTOR);
+			System.out.println("InMapperCombiner cache size = "+this.maxCacheCapacity);
+		}
 		return cache;
+	}
+
+	public void setMaxCacheCapacity(int maxCacheCapacity) {
+		this.maxCacheCapacity = maxCacheCapacity;
 	}
 
 	public void setCombiningFunction(CombiningFunction combiningFunction) {

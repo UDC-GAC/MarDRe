@@ -57,9 +57,14 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 		parser = SequenceFactory.createParser(format, prefixLength, minQual);
 		missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
 
-		if (Boolean.parseBoolean(job.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false)
+		if (Boolean.parseBoolean(job.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
 			// Disable the in-Mapper combiner
 			combiner.setCombiningFunction(null);
+		}
+		else {
+			int cacheCapacity = Integer.parseInt(job.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
+			combiner.setMaxCacheCapacity(cacheCapacity);
+		}
 	}
 
 	@Override
