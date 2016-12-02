@@ -97,9 +97,6 @@ public class ParDReMR {
 		Job job = Job.getInstance(conf, "ParDRe-MR_HadoopJoinSequences");
 		job.setJarByClass(ParDReMR.class);
 
-		// This is a map-only job
-		job.setNumReduceTasks(0);
-
 		// I/O Format classes
 		job.setInputFormatClass(inputFormatClass);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
@@ -115,6 +112,9 @@ public class ParDReMR {
 
 		// Mapper class
 		job.setMapperClass(ParseSequencesMapper.class);
+
+		// This is a map-only job
+		job.setNumReduceTasks(0);
 
 		// Mapper output K/V classes
 		job.setMapOutputKeyClass(LongWritable.class);
@@ -145,7 +145,7 @@ public class ParDReMR {
 
 		// Mapper/Reducer classes
 		job.setMapperClass(ParseSequencesMapper.class);
-		job.setReducerClass(PairedSequencesReducer.class);
+		job.setReducerClass(GroupSequencesReducer.class);
 
 		// Mapper output K/V classes
 		job.setMapOutputKeyClass(LongWritable.class);
