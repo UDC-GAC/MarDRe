@@ -38,19 +38,19 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		boolean insert;
 		List<PairedSequence> sequences = new ArrayList<PairedSequence>();
 
-		for (PairedSequence new_seq : values) {
+		for (PairedSequence newSeq : values) {
 			insert = true;
 
 			for (PairedSequence seq : sequences) {
-				if (new_seq.getFirstSeq().equal(seq.getFirstSeq(), missMatch, true)) {
-					if (new_seq.getSecondSeq().equal(seq.getSecondSeq(), missMatch, true)) {
+				if (newSeq.getFirstSeq().equal(seq.getFirstSeq(), missMatch, true)) {
+					if (newSeq.getSecondSeq().equal(seq.getSecondSeq(), missMatch, true)) {
 						insert = false;
 						break;
 					}
 				}
 			}
 			if (insert)
-				sequences.add(new PairedSequence(new_seq.getFirstSeq(), new_seq.getSecondSeq()));
+				sequences.add(new PairedSequence(newSeq.getFirstSeq(), newSeq.getSecondSeq()));
 		}
 
 		for (PairedSequence seq : sequences) {

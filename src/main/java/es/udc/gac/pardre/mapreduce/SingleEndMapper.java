@@ -27,12 +27,12 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 	private final InMapperCombiner<LongWritable, Sequence> combiner = new InMapperCombiner<LongWritable, Sequence>(
 			new CombiningFunction<LongWritable, Sequence>() {
 				@Override
-				public void combine(Map<LongWritable, List<Sequence>> cache, List<Sequence> sequencesInCache, Sequence newSequence) {
+				public void combine(Map<LongWritable, List<Sequence>> cache, List<Sequence> seqsInCache, Sequence newSeq) {
 
 					boolean insert = true;
 
-					for (Sequence seq : sequencesInCache) {
-						if (newSequence.equal(seq, missMatch, true)) {
+					for (Sequence seq : seqsInCache) {
+						if (newSeq.equal(seq, missMatch, true)) {
 							insert = false;
 							break;
 						}
@@ -40,9 +40,9 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 
 					if (insert) {
 						// Put the sequence into the cache
-						sequencesInCache.add(newSequence);
-						longKey.set(newSequence.getKey());
-						cache.put(longKey, sequencesInCache);
+						seqsInCache.add(newSeq);
+						longKey.set(newSeq.getKey());
+						cache.put(longKey, seqsInCache);
 					}
 				}
 			}
