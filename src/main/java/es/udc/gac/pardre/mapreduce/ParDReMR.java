@@ -249,11 +249,13 @@ public class ParDReMR {
 		conf.setInt(Configuration.FILE_FORMAT, format.ordinal());
 		conf.set(Configuration.INPUT_PATH_1, inputPath1.toString());
 		conf.setInt(Configuration.IO_BUFFER_SIZE_PARAM, Configuration.IO_FILE_BUFFER_SIZE);
+		conf.setBoolean(Configuration.IN_MAPPER_COMBINER_PARAM, Configuration.IN_MAPPER_COMBINER);
 
 		System.out.println("ParDRe-MR: prefix length = "+options.getPrefixLength());
 		System.out.println("ParDRe-MR: quality threshold = "+options.getMinQual());
 		System.out.println("ParDRe-MR: allowed missmatches = "+options.getMissMatch());
 		System.out.println("ParDRe-MR: input buffer size = "+Configuration.IO_FILE_BUFFER_SIZE);
+		System.out.println("ParDRe-MR: in-Mapper combiner = "+Configuration.IN_MAPPER_COMBINER);
 
 		if (options.isPaired()) {
 			System.out.println("ParDRe-MR: using paired-end mode");

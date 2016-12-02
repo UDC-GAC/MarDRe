@@ -14,6 +14,7 @@ public class Configuration {
 	public static boolean PAIRED_JOIN;
 	public static boolean COMPRESS_TEMP;
 	public static int IO_FILE_BUFFER_SIZE;
+	public static boolean IN_MAPPER_COMBINER;
 
 	public static final String PREFIXLENGTH = "ParDRe-MR_prefixLength";
 	public static final String MINQUAL = "ParDRe-MR_minQual";
@@ -21,6 +22,7 @@ public class Configuration {
 	public static final String FILE_FORMAT = "ParDRe-MR_fileFormat";
 	public static final String INPUT_PATH_1 = "ParDRe-MR_inputPath1";
 	public static final String IO_BUFFER_SIZE_PARAM = "ParDRe-MR_ioBufferSize";
+	public static final String IN_MAPPER_COMBINER_PARAM = "ParDRe-MR_inMapperCombiner";
 	public static final String TEMP_INPUT_PATH_1 = "/ParDRe-MR/tmp/input1";
 	public static final String TEMP_INPUT_PATH_2 = "/ParDRe-MR/tmp/input2";
 	public static final String TEMP_OUTPUT_PATH_1 = "/ParDRe-MR/tmp/output1";
@@ -55,6 +57,7 @@ public class Configuration {
 		PAIRED_JOIN = Boolean.parseBoolean(properties.getProperty("pairedJoin", "false"));
 		COMPRESS_TEMP = Boolean.parseBoolean(properties.getProperty("compressTemp", "false"));
 		IO_FILE_BUFFER_SIZE = Integer.parseInt(properties.getProperty("ioBufferSize", "65536"));
+		IN_MAPPER_COMBINER = Boolean.parseBoolean(properties.getProperty("inMapperCombiner", "false"));
 
 		if (MERGE == false)
 			DELETE_TEMP = false;

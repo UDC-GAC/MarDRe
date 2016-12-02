@@ -41,9 +41,9 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		for (PairedSequence new_seq : values) {
 			insert = true;
 
-			for (int i = 0; i < sequences.size(); i++) {
-				if (new_seq.getFirstSeq().equal(sequences.get(i).getFirstSeq(), missMatch, true)) {
-					if (new_seq.getSecondSeq().equal(sequences.get(i).getSecondSeq(), missMatch, true)) {
+			for (PairedSequence seq : sequences) {
+				if (new_seq.getFirstSeq().equal(seq.getFirstSeq(), missMatch, true)) {
+					if (new_seq.getSecondSeq().equal(seq.getSecondSeq(), missMatch, true)) {
 						insert = false;
 						break;
 					}
@@ -52,8 +52,6 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			if (insert)
 				sequences.add(new PairedSequence(new_seq.getFirstSeq(), new_seq.getSecondSeq()));
 		}
-
-		System.out.println("Key "+key+", Group size "+sequences.size());
 
 		for (PairedSequence seq : sequences) {
 			context.write(nullKey, seq.getFirstSeq());

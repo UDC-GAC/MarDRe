@@ -32,8 +32,8 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		for (Sequence new_seq : values) {
 			insert = true;
 
-			for (int i = 0; i < sequences.size(); i++) {
-				if (new_seq.equal(sequences.get(i), missMatch, true)) {
+			for (Sequence seq : sequences) {
+				if (new_seq.equal(seq, missMatch, true)) {
 					insert = false;
 					break;
 				}
@@ -41,8 +41,6 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			if (insert)
 				sequences.add(new Sequence(new_seq));
 		}
-
-		System.out.println("Key "+key+", Group size "+sequences.size());
 
 		for (Sequence seq : sequences) {
 			context.write(nullKey, seq);

@@ -23,6 +23,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 	private char minQual;
 	private short missMatch;
 	private FileFormat format;
+	private boolean inMapperCombiner;
 
 	private final InMapperCombiner<LongWritable, Sequence> combiner = new InMapperCombiner<LongWritable, Sequence>(
 			new CombiningFunction<LongWritable, Sequence>() {
@@ -39,7 +40,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 					}
 					
 					if (insert) {
-						// Cache the sequence
+						// Put the sequence into the cache
 						sequencesInCache.add(newSequence);
 						longKey.set(newSequence.getKey());
 						cache.put(longKey, sequencesInCache);
@@ -56,21 +57,28 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 		minQual = (char) Integer.parseInt(job.get(Configuration.MINQUAL));
 		parser = SequenceFactory.createParser(format, prefixLength, minQual);
 		missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
+
+		if (Boolean.parseBoolean(job.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false)
+			// Disable the in-Mapper combiner
+			combiner.setCombiningFunction(null);
+		else
+			// Set context when combiner is used
+			combiner.setContext(context);
 	}
 
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
-		combiner.flush(context);
+		combiner.flush(context, true);
 	}
 
 	@Override
-	public void map(LongWritable key, Text value, Context context)
-			throws IOException, InterruptedException {
+	public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 
 		if (parser.getSeq(value.toString(), seq) != 0) {
 			longKey.set(seq.getKey());
-			//context.write(longKey, seq);
 			combiner.write(longKey, seq, context);
 		}
+
+		combiner.flush(context, false);
 	}
 }
