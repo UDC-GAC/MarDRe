@@ -23,7 +23,6 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 	private char minQual;
 	private short missMatch;
 	private FileFormat format;
-	private boolean inMapperCombiner;
 
 	private final InMapperCombiner<LongWritable, Sequence> combiner = new InMapperCombiner<LongWritable, Sequence>(
 			new CombiningFunction<LongWritable, Sequence>() {
@@ -31,14 +30,14 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 				public void combine(Map<LongWritable, List<Sequence>> cache, List<Sequence> sequencesInCache, Sequence newSequence) {
 
 					boolean insert = true;
-					
+
 					for (Sequence seq : sequencesInCache) {
 						if (newSequence.equal(seq, missMatch, true)) {
 							insert = false;
 							break;
 						}
 					}
-					
+
 					if (insert) {
 						// Put the sequence into the cache
 						sequencesInCache.add(newSequence);
@@ -61,9 +60,6 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 		if (Boolean.parseBoolean(job.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false)
 			// Disable the in-Mapper combiner
 			combiner.setCombiningFunction(null);
-		else
-			// Set context when combiner is used
-			combiner.setContext(context);
 	}
 
 	@Override

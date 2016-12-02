@@ -17,35 +17,38 @@ public class InMapperCombiner<KEY extends WritableComparable, VALUE extends Writ
 	private static final int CACHE_CAPACITY = 32768;
 	private static final float LOAD_FACTOR = .75F;
 
-	private final int maxCacheCapacity;
-	private final Map<KEY, List<VALUE>> cache;
+	private int maxCacheCapacity;
+	private int initialCapacity;
+	private Map<KEY, List<VALUE>> cache;
 	private CombiningFunction combiningFunction;
-	private Context context;
 
 	private InMapperCombiner(int cacheCapacity, CombiningFunction combiningFunction) {
 		this.combiningFunction = combiningFunction;
 		this.maxCacheCapacity = cacheCapacity;
 		// Initial capacity is calculated trying to avoid any rehashing operation
-		int initialCapacity = (int) Math.ceil((this.maxCacheCapacity+1)/LOAD_FACTOR);
-		cache = new LinkedHashMap<KEY, List<VALUE>>(initialCapacity, LOAD_FACTOR);
+		this.initialCapacity = (int) Math.ceil((this.maxCacheCapacity+1)/LOAD_FACTOR);
+		cache = null;
 	}
 
 	public InMapperCombiner(CombiningFunction combiningFunction) {
 		this(CACHE_CAPACITY, combiningFunction);
 	}
 
-	public void setCombiningFunction(CombiningFunction combiningFunction) {
-		this.combiningFunction = combiningFunction;
+	private Map<KEY, List<VALUE>> getMap() {
+		if(cache == null) //lazy loading
+			cache = new LinkedHashMap<KEY, List<VALUE>>(initialCapacity, LOAD_FACTOR);
+		return cache;
 	}
 
-	public void setContext(Context context) {
-		this.context = context;
+	public void setCombiningFunction(CombiningFunction combiningFunction) {
+		this.combiningFunction = combiningFunction;
 	}
 
 	@SuppressWarnings("unchecked")
 	public void write(KEY key, VALUE value, Context context) throws IOException, InterruptedException {
 
 		if (combiningFunction != null) {
+			Map<KEY, List<VALUE>> cache = getMap();
 			org.apache.hadoop.conf.Configuration conf = context.getConfiguration();
 			key = WritableUtils.clone(key, conf);
 			value = WritableUtils.clone(value, conf);
@@ -65,7 +68,7 @@ public class InMapperCombiner<KEY extends WritableComparable, VALUE extends Writ
 	@SuppressWarnings("unchecked")
 	public void flush(Context context, boolean force) throws IOException, InterruptedException {
 
-		if (!force && cache.size() < maxCacheCapacity)
+		if (cache == null || (!force && cache.size() < maxCacheCapacity))
 			return;
 
 		// Emit key-value pairs from the cache
