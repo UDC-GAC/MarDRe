@@ -380,12 +380,12 @@ public class ParDReMR {
 
 		System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR: non duplicated paired reads %d/%d\n", outputSequences, inputSequences);
 		System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR: execution time was %.3f seconds\n", timer.read(T_TOTAL));
-		System.out.format(java.util.Locale.ENGLISH,"\tInitialization has taken %.3f seconds\n", timer.read(T_INIT));
+		System.out.format(java.util.Locale.ENGLISH,"\tInitialization took %.3f seconds\n", timer.read(T_INIT));
 		if (options.isPaired())
-			System.out.format(java.util.Locale.ENGLISH,"\tSequences have been paired in %.3f seconds\n", timer.read(T_PREPARE_PSEQ));
-		System.out.format(java.util.Locale.ENGLISH,"\tDuplicated reads have been removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
+			System.out.format(java.util.Locale.ENGLISH,"\tSequences were paired in %.3f seconds\n", timer.read(T_PREPARE_PSEQ));
+		System.out.format(java.util.Locale.ENGLISH,"\tDuplicated reads were removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
 		if (Configuration.MERGE)
-			System.out.format(java.util.Locale.ENGLISH,"\tOutput files have been merged in %.3f seconds\n", timer.read(T_PRINT_SEQ));
+			System.out.format(java.util.Locale.ENGLISH,"\tOutput files were merged in %.3f seconds\n", timer.read(T_PRINT_SEQ));
 
 		System.exit(0);
 	}
