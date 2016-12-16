@@ -23,7 +23,7 @@ public class FastQSeqStringParser extends SeqStringParser {
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
 					+ ": no name available");
-		String str = st.nextToken();
+		String str = st.nextToken().split("\\s+")[0];
 
 		// Read the sequence name
 		// Everything but the '@'
@@ -41,14 +41,14 @@ public class FastQSeqStringParser extends SeqStringParser {
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
 					+ ": no comment available");
-		String strQuals = st.nextToken();
+		st.nextToken();
 
 		// Read the qualities
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
 					+ ": no qualities available");
-		strQuals = st.nextToken();
+		String strQuals = st.nextToken();
 
 		seq.setFormat(FileFormat.FILE_FORMAT_FASTQ);
 		seq.setLength(str.length());
