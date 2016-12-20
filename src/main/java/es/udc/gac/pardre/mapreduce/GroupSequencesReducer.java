@@ -26,6 +26,11 @@ public class GroupSequencesReducer extends Reducer<LongWritable, Sequence, LongW
 				pairedSeq.setSecondSeq(newSeq);
 			}
 		}
+		
+		//TBR
+		if (pairedSeq.getFirstSeq() == null || pairedSeq.getSecondSeq() == null)
+			throw new IllegalArgumentException("Found null sequence");
+		
 		longKey.set(pairedSeq.getKey());
 		context.write(longKey, pairedSeq);
 	}

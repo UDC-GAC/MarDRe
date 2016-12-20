@@ -87,9 +87,8 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 				pairedSeq.setSecondSeq(seq2);
 				longKey.set(pairedSeq.getKey());
 				combiner.write(longKey, pairedSeq, context);
+				combiner.flush(context, false);
 			}
 		}
-
-		combiner.flush(context, false);		
 	}
 }

@@ -17,7 +17,8 @@ import es.udc.gac.pardre.util.LineReader;
 
 public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 
-	private int linesToProcess;
+	private static final int linesToProcess = 4;
+	
 	private LineReader in;
 	private LongWritable key;
 	private Text value;
@@ -60,7 +61,6 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 		final Path file = split.getPath();
 		org.apache.hadoop.conf.Configuration conf = context.getConfiguration();
 		FileSystem fs = file.getFileSystem(conf);
-		this.linesToProcess = 4;
 		this.key = new LongWritable();
 		this.value = new Text();
 		this.newLine = new Text();
@@ -93,19 +93,10 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 			this.pos += firstRead;
 			i++;
 
-			//System.out.println("nextKeyValue: line "+i+", read "+firstRead+", start "+start+", pos "+pos+", end "+end);
-
-			if (firstRead == 0) {
-				// EOF
-				if (found)
-					break;
+			if (firstRead == 0) //EOF
 				return false;
-			}
 
-			//System.out.println("nextKeyValue:");
-			//System.out.print(newLine.toString());
-
-			if (found == true && i == linesToProcess) {
+			if (found && i == linesToProcess) {
 				//System.out.println("nextKeyValue: last line and starting '@' has been previously found");
 				value.append(newLine.getBytes(), 0, newLine.getLength());
 				break;
@@ -116,39 +107,31 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 				found = true;
 
 				secondRead = in.readLine(temp);
-				value.clear();
 				this.pos += secondRead;
 
-				if (secondRead == 0) {
-					// EOF
-					if (found)
-						break;
+				if (secondRead == 0) //EOF
 					return false;
-				}
 
 				//System.out.println("nextKeyValue: next line (read "+secondRead+") "+temp);
 
 				if (temp.charAt(0) != '@') {
-					key.set(this.pos-(firstRead+secondRead));
 					i = 2;
 					newLine.append(temp.getBytes(), 0, temp.getLength());
 				} else {
-					key.set(this.pos);
+					key.set(this.pos-secondRead);
 					i = 1;
 					value.append(temp.getBytes(), 0, temp.getLength());
 					continue;
 				}
 			}
 
-			if (found == false && i == linesToProcess) {
+			if (found) {
+				value.append(newLine.getBytes(), 0, newLine.getLength());
+			} else if (i == linesToProcess) {
 				//System.out.println("nextKeyValue: last line and no starting '@' has been found (discard previous data)");
-				value.clear();
 				key.set(this.pos);
 				i = 0;
-				continue;
-			} 
-
-			value.append(newLine.getBytes(), 0, newLine.getLength());
+			}
 		}
 
 		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);

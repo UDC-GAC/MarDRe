@@ -13,10 +13,8 @@ public class FastQSeqStringParser extends SeqStringParser {
 	@Override
 	public int getSeq(String s, Sequence seq) {
 
-		if (s.equals("")) {
-			System.out.println("Found empty string " + s);
-			return 0;
-		}
+		if (s.equals(""))
+			throw new IllegalArgumentException("Found empty string " + s);
 
 		StringTokenizer st = new StringTokenizer(s, "\n");
 		if (!st.hasMoreTokens())

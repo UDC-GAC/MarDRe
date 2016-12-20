@@ -78,8 +78,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 		if (parser.getSeq(value.toString(), seq) != 0) {
 			longKey.set(seq.getKey());
 			combiner.write(longKey, seq, context);
+			combiner.flush(context, false);
 		}
-
-		combiner.flush(context, false);
 	}
 }
