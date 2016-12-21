@@ -18,7 +18,7 @@ import es.udc.gac.pardre.util.LineReader;
 public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 
 	private static final int linesToProcess = 4;
-	
+
 	private LineReader in;
 	private LongWritable key;
 	private Text value;

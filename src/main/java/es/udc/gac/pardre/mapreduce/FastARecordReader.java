@@ -81,8 +81,6 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 		if (this.pos >= this.end)
 			return false;
 
-		key.set(this.pos);
-
 		while(true) {
 			read = in.readLine(newLine);
 			this.pos += read;
@@ -96,9 +94,6 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 				return false;
 			}
 
-			//System.out.println("nextKeyValue:");
-			//System.out.print(newLine.toString());
-
 			if (newLine.charAt(0) == '>') {
 				//System.out.println("nextKeyValue: starting '>' has been found");
 
@@ -107,11 +102,13 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 					this.pos -= read;
 					break;
 				} else {
+					key.set(this.pos-read);
 					found = true;
 				}
 			}
 
-			value.append(newLine.getBytes(), 0, newLine.getLength());
+			if (found)
+				value.append(newLine.getBytes(), 0, newLine.getLength());
 		}
 
 		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
