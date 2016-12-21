@@ -379,8 +379,8 @@ public class ParDReMR {
 		long outputSequences = jobRemoveDuplicated.getCounters().findCounter(TaskCounter.REDUCE_OUTPUT_RECORDS).getValue();
 
 		float percent = (float) outputSequences;
-   		percent /= (float) inputSequences;
-   		percent *= 100.00;
+		percent /= (float) inputSequences;
+		percent *= 100.00;
 
 		System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR: non duplicated paired reads %d/%d (%.2f %%)\n", outputSequences, inputSequences, percent);
 		System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR: execution time was %.3f seconds\n", timer.read(T_TOTAL));

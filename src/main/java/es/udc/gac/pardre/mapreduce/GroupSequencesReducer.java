@@ -18,21 +18,21 @@ public class GroupSequencesReducer extends Reducer<LongWritable, Sequence, LongW
 			Context context) throws IOException, InterruptedException {
 
 		int i = 0;
-		
+
 		for (Sequence seq : values) {
 			Sequence newSeq = new Sequence(seq);
 			i++;
-			
+
 			if (seq.isFirstSeq()) {
 				pairedSeq.setFirstSeq(newSeq);
 			} else {
 				pairedSeq.setSecondSeq(newSeq);
 			}
 		}
-		
+
 		if (i != 2)
 			throw new IndexOutOfBoundsException("PairedSequence consists of "+i+" sequence/s");
-			
+
 		longKey.set(pairedSeq.getKey());
 		context.write(longKey, pairedSeq);
 	}
