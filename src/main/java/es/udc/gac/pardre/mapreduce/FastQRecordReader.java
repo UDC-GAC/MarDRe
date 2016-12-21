@@ -86,8 +86,6 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 		if (this.pos >= this.end)
 			return false;
 
-		key.set(this.pos);
-
 		while(i < linesToProcess) {
 			firstRead = in.readLine(newLine);
 			this.pos += firstRead;
@@ -105,6 +103,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 			if (newLine.charAt(0) == '@') {
 				//System.out.println("nextKeyValue: starting '@' has been found at line "+i);
 				found = true;
+				key.set(this.pos-firstRead);
 
 				secondRead = in.readLine(temp);
 				this.pos += secondRead;
@@ -112,14 +111,12 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 				if (secondRead == 0) //EOF
 					return false;
 
-				//System.out.println("nextKeyValue: next line (read "+secondRead+") "+temp);
-
 				if (temp.charAt(0) != '@') {
 					i = 2;
 					newLine.append(temp.getBytes(), 0, temp.getLength());
 				} else {
-					key.set(this.pos-secondRead);
 					i = 1;
+					key.set(this.pos-secondRead);
 					value.append(temp.getBytes(), 0, temp.getLength());
 					continue;
 				}
@@ -129,7 +126,6 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 				value.append(newLine.getBytes(), 0, newLine.getLength());
 			} else if (i == linesToProcess) {
 				//System.out.println("nextKeyValue: last line and no starting '@' has been found (discard previous data)");
-				key.set(this.pos);
 				i = 0;
 			}
 		}
