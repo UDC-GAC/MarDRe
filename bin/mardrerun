@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ -z "$HADOOP_HOME" ]; then
+        echo "HADOOP_HOME must be set";
+        exit -1;
+fi
+
+if [ -z "$MARDRE_HOME" ]; then
+        echo "MARDRE_HOME must be set";
+        exit -1;
+fi
+
+$HADOOP_HOME/bin/hadoop jar $MARDRE_HOME/target/mardre-1.0.jar es.udc.gac.mardre.RunMaRDRe "$@"
+
