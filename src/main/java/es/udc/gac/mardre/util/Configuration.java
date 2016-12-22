@@ -34,7 +34,7 @@ public class Configuration {
 	public static final String TEMP_OUTPUT_PATH_2 = "/MaRDRe/tmp/output2";
 
 	private static String configFileName = null;
-	private static final String MARDRE_CONFIGURATION_FILE = "mardre-mr.conf";
+	private static final String MARDRE_CONFIGURATION_FILE = "mardre.conf";
 	private static Properties properties = new Properties();
 
 	static {
