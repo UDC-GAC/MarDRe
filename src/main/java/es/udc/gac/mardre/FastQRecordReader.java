@@ -1,4 +1,4 @@
-package es.udc.gac.pardre.mapreduce;
+package es.udc.gac.mardre;
 
 import java.io.IOException;
 
@@ -12,15 +12,18 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
-import es.udc.gac.pardre.util.Configuration;
-import es.udc.gac.pardre.util.LineReader;
+import es.udc.gac.mardre.util.Configuration;
+import es.udc.gac.mardre.util.LineReader;
 
-public class FastARecordReader extends RecordReader<LongWritable, Text> {
+public class FastQRecordReader extends RecordReader<LongWritable, Text> {
+
+	private static final int linesToProcess = 4;
 
 	private LineReader in;
 	private LongWritable key;
 	private Text value;
 	private Text newLine;
+	private Text temp;
 	private long start = 0;
 	private long end = 0;
 	private long pos = 0;
@@ -61,6 +64,7 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 		this.key = new LongWritable();
 		this.value = new Text();
 		this.newLine = new Text();
+		this.temp = new Text();
 		this.start = split.getStart();
 		this.pos = this.start;
 		this.end = start + split.getLength();
@@ -72,7 +76,8 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 
 	@Override
 	public boolean nextKeyValue() throws IOException {
-		long read = 0;
+		int i = 0;
+		long firstRead = 0, secondRead = 0;
 		boolean found = false;
 		value.clear();
 
@@ -81,34 +86,48 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 		if (this.pos >= this.end)
 			return false;
 
-		while(true) {
-			read = in.readLine(newLine);
-			this.pos += read;
+		while(i < linesToProcess) {
+			firstRead = in.readLine(newLine);
+			this.pos += firstRead;
+			i++;
 
-			//System.out.println("nextKeyValue: read "+read+", start "+start+", pos "+pos+", end "+end);
-
-			if (read == 0) {
-				// EOF
-				if (found)
-					break;
+			if (firstRead == 0) //EOF
 				return false;
+
+			if (found && i == linesToProcess) {
+				//System.out.println("nextKeyValue: last line and starting '@' has been previously found");
+				value.append(newLine.getBytes(), 0, newLine.getLength());
+				break;
 			}
 
-			if (newLine.charAt(0) == '>') {
-				//System.out.println("nextKeyValue: starting '>' has been found");
+			if (newLine.charAt(0) == '@') {
+				//System.out.println("nextKeyValue: starting '@' has been found at line "+i);
+				found = true;
+				key.set(this.pos-firstRead);
 
-				if (found) {
-					in.seek(in.getPos()-read);
-					this.pos -= read;
-					break;
+				secondRead = in.readLine(temp);
+				this.pos += secondRead;
+
+				if (secondRead == 0) //EOF
+					return false;
+
+				if (temp.charAt(0) != '@') {
+					i = 2;
+					newLine.append(temp.getBytes(), 0, temp.getLength());
 				} else {
-					key.set(this.pos-read);
-					found = true;
+					i = 1;
+					key.set(this.pos-secondRead);
+					value.append(temp.getBytes(), 0, temp.getLength());
+					continue;
 				}
 			}
 
-			if (found)
+			if (found) {
 				value.append(newLine.getBytes(), 0, newLine.getLength());
+			} else if (i == linesToProcess) {
+				//System.out.println("nextKeyValue: last line and no starting '@' has been found (discard previous data)");
+				i = 0;
+			}
 		}
 
 		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);

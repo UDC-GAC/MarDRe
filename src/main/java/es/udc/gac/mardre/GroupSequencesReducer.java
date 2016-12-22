@@ -1,12 +1,12 @@
-package es.udc.gac.pardre.mapreduce;
+package es.udc.gac.mardre;
 
 import java.io.IOException;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 
-import es.udc.gac.pardre.util.PairedSequence;
-import es.udc.gac.pardre.util.Sequence;
+import es.udc.gac.mardre.util.PairedSequence;
+import es.udc.gac.mardre.util.Sequence;
 
 public class GroupSequencesReducer extends Reducer<LongWritable, Sequence, LongWritable, PairedSequence> {
 

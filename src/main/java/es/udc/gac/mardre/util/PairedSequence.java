@@ -1,4 +1,4 @@
-package es.udc.gac.pardre.util;
+package es.udc.gac.mardre.util;
 
 import java.io.DataInput;
 import java.io.DataOutput;

@@ -1,4 +1,4 @@
-package es.udc.gac.pardre.util;
+package es.udc.gac.mardre.util;
 
 public abstract class SeqStringParser {
 

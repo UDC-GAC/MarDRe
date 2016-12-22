@@ -1,11 +1,11 @@
-package es.udc.gac.pardre.util;
+package es.udc.gac.mardre.util;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 
-import es.udc.gac.pardre.mapreduce.InMapperCombiner;
+import es.udc.gac.mardre.InMapperCombiner;
 
 import java.util.Map;
 

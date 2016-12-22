@@ -1,4 +1,4 @@
-package es.udc.gac.pardre.mapreduce;
+package es.udc.gac.mardre;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

@@ -1,8 +1,8 @@
-package es.udc.gac.pardre.util;
+package es.udc.gac.mardre.util;
 
 import java.util.StringTokenizer;
 
-import es.udc.gac.pardre.util.SequenceFactory.FileFormat;
+import es.udc.gac.mardre.util.SequenceFactory.FileFormat;
 
 public class FastASeqStringParser extends SeqStringParser {
 

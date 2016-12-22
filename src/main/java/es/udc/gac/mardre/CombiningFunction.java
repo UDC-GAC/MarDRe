@@ -1,4 +1,4 @@
-package es.udc.gac.pardre.mapreduce;
+package es.udc.gac.mardre;
 
 import java.util.List;
 import java.util.Map;

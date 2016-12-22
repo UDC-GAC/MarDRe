@@ -1,4 +1,4 @@
-package es.udc.gac.pardre.mapreduce;
+package es.udc.gac.mardre;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -24,14 +24,14 @@ import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.mapreduce.lib.join.CompositeInputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
-import es.udc.gac.pardre.util.Configuration;
-import es.udc.gac.pardre.util.Options;
-import es.udc.gac.pardre.util.SequenceFactory.FileFormat;
-import es.udc.gac.pardre.util.PairedSequence;
-import es.udc.gac.pardre.util.Sequence;
-import es.udc.gac.pardre.util.Timer;
+import es.udc.gac.mardre.util.Configuration;
+import es.udc.gac.mardre.util.Options;
+import es.udc.gac.mardre.util.PairedSequence;
+import es.udc.gac.mardre.util.Sequence;
+import es.udc.gac.mardre.util.Timer;
+import es.udc.gac.mardre.util.SequenceFactory.FileFormat;
 
-public class ParDReMR {
+public class RunMaRDRe {
 
 	// Timers
 	private static final int T_TOTAL = 0;
@@ -42,8 +42,8 @@ public class ParDReMR {
 
 	private static Job configureSingleEndJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
 
-		Job job = Job.getInstance(conf, "ParDRe-MR_SingleEnd");
-		job.setJarByClass(ParDReMR.class);
+		Job job = Job.getInstance(conf, "MaRDRe_SingleEnd");
+		job.setJarByClass(RunMaRDRe.class);
 
 		// I/O Format classes
 		job.setInputFormatClass(inputFormatClass);
@@ -65,8 +65,8 @@ public class ParDReMR {
 
 	private static Job configurePairedEndJob(org.apache.hadoop.conf.Configuration conf) throws IOException {
 
-		Job job = Job.getInstance(conf, "ParDRe-MR_PairedEnd");
-		job.setJarByClass(ParDReMR.class);
+		Job job = Job.getInstance(conf, "MaRDRe_PairedEnd");
+		job.setJarByClass(RunMaRDRe.class);
 
 		// Output format classes
 		job.setOutputFormatClass(TextOutputFormat.class);
@@ -94,8 +94,8 @@ public class ParDReMR {
 	}
 
 	private static Job configureHadoopJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
-		Job job = Job.getInstance(conf, "ParDRe-MR_HadoopJoinSequences");
-		job.setJarByClass(ParDReMR.class);
+		Job job = Job.getInstance(conf, "MaRDRe_HadoopJoinSequences");
+		job.setJarByClass(RunMaRDRe.class);
 
 		// I/O Format classes
 		job.setInputFormatClass(inputFormatClass);
@@ -127,8 +127,8 @@ public class ParDReMR {
 	}
 
 	private static Job configureJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
-		Job job = Job.getInstance(conf, "ParDRe-MR_JoinSequences");
-		job.setJarByClass(ParDReMR.class);
+		Job job = Job.getInstance(conf, "MaRDRe_JoinSequences");
+		job.setJarByClass(RunMaRDRe.class);
 
 		// I/O Format classes
 		job.setInputFormatClass(inputFormatClass);
@@ -177,15 +177,15 @@ public class ParDReMR {
 		}
 
 		if (str == null) {
-			System.out.println("ParDRe-MR: Unrecognized file format");
+			System.out.println("MaRDRe: Unrecognized file format");
 		} else if (str.charAt(0) == '@') {
-			System.out.println("ParDRe-MR: FASTQ format identified");
+			System.out.println("MaRDRe: FASTQ format identified");
 			format = FileFormat.FILE_FORMAT_FASTQ;
 		} else if (str.charAt(0) == '>') {
-			System.out.println("ParDRe-MR: FASTA format identified");
+			System.out.println("MaRDRe: FASTA format identified");
 			format = FileFormat.FILE_FORMAT_FASTA;        	
 		} else {
-			System.out.println("ParDRe-MR: Unrecognized file format");
+			System.out.println("MaRDRe: Unrecognized file format");
 		}
 
 		reader.close();
@@ -203,7 +203,7 @@ public class ParDReMR {
 
 		timer.start(T_TOTAL);
 
-		System.out.println("ParDRe-MR: starting from "+Configuration.PARDREMR_HOME);
+		System.out.println("MaRDRe: starting from "+Configuration.PARDREMR_HOME);
 
 		timer.start(T_INIT);
 		Configuration.loadConfiguration();
@@ -213,14 +213,14 @@ public class ParDReMR {
 		// Parse command line options
 		Options options = new Options();
 		if (!options.parse(otherArgs)) {
-			options.printUsage(ParDReMR.class.getName());
+			options.printUsage(RunMaRDRe.class.getName());
 			return;
 		}
 		// FOA, detect the file format
-		System.out.println("ParDRe-MR: detecting file format from input file "+options.getReadFileName1());
+		System.out.println("MaRDRe: detecting file format from input file "+options.getReadFileName1());
 		FileSystem fs = FileSystem.get(conf);
 		Path inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
-		FileFormat format = ParDReMR.detectFileFormat(fs, inputPath1);
+		FileFormat format = RunMaRDRe.detectFileFormat(fs, inputPath1);
 
 		// Set input format class
 		Class<? extends TextInputFormat> inputFormatClass = null;
@@ -230,7 +230,7 @@ public class ParDReMR {
 		} else if (format == FileFormat.FILE_FORMAT_FASTA) {
 			inputFormatClass = FastAInputFormat.class;
 		} else {
-			System.out.println("ParDRe-MR: Unrecognized file format");
+			System.out.println("MaRDRe: Unrecognized file format");
 			System.exit(-1);			
 		}
 
@@ -252,15 +252,18 @@ public class ParDReMR {
 		conf.setBoolean(Configuration.IN_MAPPER_COMBINER_PARAM, Configuration.IN_MAPPER_COMBINER);
 		conf.setInt(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM, Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
 
-		System.out.println("ParDRe-MR: prefix length = "+options.getPrefixLength());
-		System.out.println("ParDRe-MR: quality threshold = "+options.getMinQual());
-		System.out.println("ParDRe-MR: allowed missmatches = "+options.getMissMatch());
-		System.out.println("ParDRe-MR: input buffer size = "+Configuration.IO_FILE_BUFFER_SIZE);
-		System.out.println("ParDRe-MR: in-Mapper combiner = "+Configuration.IN_MAPPER_COMBINER);
-		System.out.println("ParDRe-MR: in-Mapper combiner cache size = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
+		System.out.println("MaRDRe: prefix length = "+options.getPrefixLength());
+		System.out.println("MaRDRe: quality threshold = "+options.getMinQual());
+		System.out.println("MaRDRe: allowed missmatches = "+options.getMissMatch());
+		System.out.println("MaRDRe: input buffer size = "+Configuration.IO_FILE_BUFFER_SIZE);
+		System.out.println("MaRDRe: in-Mapper combiner = "+Configuration.IN_MAPPER_COMBINER);
+		System.out.println("MaRDRe: in-Mapper combiner cache size = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
 
 		if (options.isPaired()) {
-			System.out.println("ParDRe-MR: using paired-end mode");
+			System.out.println("MaRDRe: using paired-end mode");
+
+			if (Configuration.COMPRESS_TEMP)
+				System.out.println("MaRDRe: using Snappy compression");
 
 			// Paired-end mode reads (and writes) a second file
 			Path inputPath2 = fs.resolvePath(new Path(options.getReadFileName2()));
@@ -268,22 +271,19 @@ public class ParDReMR {
 			tmpOutputPath2 = new Path(Configuration.TEMP_OUTPUT_PATH_2);
 			tmpInputPath1 = new Path(Configuration.TEMP_INPUT_PATH_1);
 			tmpInputPath2 = new Path(Configuration.TEMP_INPUT_PATH_2);
-			System.out.println("ParDRe-MR: input path = "+inputPath1);
-			System.out.println("ParDRe-MR: input path = "+inputPath2);
-
-			if (Configuration.COMPRESS_TEMP)
-				System.out.println("ParDRe-MR: using Snappy compression");
+			System.out.println("MaRDRe: input path = "+inputPath1);
+			System.out.println("MaRDRe: input path = "+inputPath2);
 
 			// Configure job to remove duplicated reads
-			jobRemoveDuplicated = ParDReMR.configurePairedEndJob(conf);
+			jobRemoveDuplicated = RunMaRDRe.configurePairedEndJob(conf);
 			FileOutputFormat.setOutputPath(jobRemoveDuplicated, tmpOutputPath1);
 			// Add additional output for the second file
 			MultipleOutputs.addNamedOutput(jobRemoveDuplicated, "output2", TextOutputFormat.class, NullWritable.class, Sequence.class);
 
 			if (Configuration.PAIRED_JOIN) {
 				// Paired-end mode using a map-side Hadooop join needs two map-only jobs to partition both input files
-				Job jobPairedSequences1 = ParDReMR.configureHadoopJoinSequencesJob(conf, inputFormatClass);
-				Job jobPairedSequences2 = ParDReMR.configureHadoopJoinSequencesJob(conf, inputFormatClass);
+				Job jobPairedSequences1 = RunMaRDRe.configureHadoopJoinSequencesJob(conf, inputFormatClass);
+				Job jobPairedSequences2 = RunMaRDRe.configureHadoopJoinSequencesJob(conf, inputFormatClass);
 				FileInputFormat.addInputPath(jobPairedSequences1, inputPath1);
 				FileInputFormat.addInputPath(jobPairedSequences2, inputPath2);
 				FileOutputFormat.setOutputPath(jobPairedSequences1, tmpInputPath1);
@@ -294,7 +294,7 @@ public class ParDReMR {
 				timer.stop(T_INIT);
 
 				// Run first job
-				System.out.println("ParDRe-MR: using map-side join. Partitioning input paths...");
+				System.out.println("MaRDRe: using map-side join. Partitioning input paths...");
 				timer.start(T_PREPARE_PSEQ);
 				if (jobPairedSequences1.waitForCompletion(true)) {
 					// Run second job
@@ -308,7 +308,7 @@ public class ParDReMR {
 				}
 			} else {
 				// Paired-end mode using a manual join only needs one job processing both input files
-				Job jobPairedSequences = ParDReMR.configureJoinSequencesJob(conf, inputFormatClass);
+				Job jobPairedSequences = RunMaRDRe.configureJoinSequencesJob(conf, inputFormatClass);
 				FileInputFormat.addInputPath(jobPairedSequences, inputPath1);
 				FileInputFormat.addInputPath(jobPairedSequences, inputPath2);
 				FileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
@@ -316,18 +316,18 @@ public class ParDReMR {
 				timer.stop(T_INIT);
 
 				// Run job
-				System.out.println("ParDRe-MR: pairing sequences...");
+				System.out.println("MaRDRe: pairing sequences...");
 				timer.start(T_PREPARE_PSEQ);
 				status = jobPairedSequences.waitForCompletion(true);
 				timer.stop(T_PREPARE_PSEQ);
 			}
 		} else {
 			// Single-end mode reads (and writes) one file
-			System.out.println("ParDRe-MR: using single-end mode");
-			System.out.println("ParDRe-MR: input path = "+inputPath1);
+			System.out.println("MaRDRe: using single-end mode");
+			System.out.println("MaRDRe: input path = "+inputPath1);
 
 			// Configure job
-			jobRemoveDuplicated = ParDReMR.configureSingleEndJob(conf, inputFormatClass);
+			jobRemoveDuplicated = RunMaRDRe.configureSingleEndJob(conf, inputFormatClass);
 			FileInputFormat.addInputPath(jobRemoveDuplicated, inputPath1);
 			FileOutputFormat.setOutputPath(jobRemoveDuplicated, tmpOutputPath1);
 			timer.stop(T_INIT);
@@ -335,20 +335,20 @@ public class ParDReMR {
 
 		if (status) {
 			// Run main job 
-			System.out.println("ParDRe-MR: removing duplicated reads...");
+			System.out.println("MaRDRe: removing duplicated reads...");
 			timer.start(T_REMOVE_DUP);
 			status = jobRemoveDuplicated.waitForCompletion(true);
 			timer.stop(T_REMOVE_DUP);
 		}
 
 		if (!status) {
-			System.out.println("ParDRe-MR: job failed!");
+			System.out.println("MaRDRe: job failed!");
 			System.exit(-1);
 		}
 
 		if (Configuration.MERGE) {
 			// Merge output files
-			System.out.print("ParDRe-MR: merging output files...");
+			System.out.print("MaRDRe: merging output files...");
 			timer.start(T_PRINT_SEQ);
 			FileUtil.copyMerge(fs, tmpOutputPath1, fs, outputPath1, Configuration.DELETE_TEMP, conf, null);
 			if (options.isPaired())
@@ -360,12 +360,12 @@ public class ParDReMR {
 			outputPath2 = tmpOutputPath2;
 		}
 
-		System.out.println("ParDRe-MR: job completed successfully!");
-		System.out.println("ParDRe-MR: output path = "+fs.getUri()+outputPath1);
+		System.out.println("MaRDRe: job completed successfully!");
+		System.out.println("MaRDRe: output path = "+fs.getUri()+outputPath1);
 
 		// Cleanup
 		if (options.isPaired()) {
-			System.out.println("ParDRe-MR: output path = "+fs.getUri()+outputPath2);
+			System.out.println("MaRDRe: output path = "+fs.getUri()+outputPath2);
 			if (Configuration.DELETE_TEMP) {
 				fs.delete(tmpInputPath1, true);
 				fs.delete(tmpInputPath2, true);
@@ -382,8 +382,8 @@ public class ParDReMR {
 		percent /= (float) inputSequences;
 		percent *= 100.00;
 
-		System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR: non duplicated paired reads %d/%d (%.2f %%)\n", outputSequences, inputSequences, percent);
-		System.out.format(java.util.Locale.ENGLISH,"ParDRe-MR: execution time was %.3f seconds\n", timer.read(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"MaRDRe: non duplicated paired reads %d/%d (%.2f %%)\n", outputSequences, inputSequences, percent);
+		System.out.format(java.util.Locale.ENGLISH,"MaRDRe: execution time was %.3f seconds\n", timer.read(T_TOTAL));
 		System.out.format(java.util.Locale.ENGLISH,"\tInitialization took %.3f seconds\n", timer.read(T_INIT));
 		if (options.isPaired())
 			System.out.format(java.util.Locale.ENGLISH,"\tSequences were paired in %.3f seconds\n", timer.read(T_PREPARE_PSEQ));

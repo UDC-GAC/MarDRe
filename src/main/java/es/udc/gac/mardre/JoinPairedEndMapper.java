@@ -1,4 +1,4 @@
-package es.udc.gac.pardre.mapreduce;
+package es.udc.gac.mardre;
 
 import java.io.IOException;
 import java.util.List;
@@ -8,12 +8,12 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.join.TupleWritable;
 
-import es.udc.gac.pardre.util.Configuration;
-import es.udc.gac.pardre.util.PairedSequence;
-import es.udc.gac.pardre.util.SeqStringParser;
-import es.udc.gac.pardre.util.Sequence;
-import es.udc.gac.pardre.util.SequenceFactory;
-import es.udc.gac.pardre.util.SequenceFactory.FileFormat;
+import es.udc.gac.mardre.util.Configuration;
+import es.udc.gac.mardre.util.PairedSequence;
+import es.udc.gac.mardre.util.SeqStringParser;
+import es.udc.gac.mardre.util.Sequence;
+import es.udc.gac.mardre.util.SequenceFactory;
+import es.udc.gac.mardre.util.SequenceFactory.FileFormat;
 
 public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, LongWritable, PairedSequence> {
 

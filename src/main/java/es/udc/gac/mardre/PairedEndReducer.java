@@ -1,4 +1,4 @@
-package es.udc.gac.pardre.mapreduce;
+package es.udc.gac.mardre;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,9 +9,9 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 
-import es.udc.gac.pardre.util.Configuration;
-import es.udc.gac.pardre.util.PairedSequence;
-import es.udc.gac.pardre.util.Sequence;
+import es.udc.gac.mardre.util.Configuration;
+import es.udc.gac.mardre.util.PairedSequence;
+import es.udc.gac.mardre.util.Sequence;
 
 public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, NullWritable, Sequence> {
 

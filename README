@@ -1,13 +1,16 @@
-ParDRe-MR
----------
+MaRDRe
+------
 
-ParDRe-MR is a parallel MapReduce-based tool to remove duplicate reads.
-Duplicate reads can be seen as identical or nearly identical sequences 
-with some mismatches. This tool allows the users to avoid the analysis 
-of not necessary reads, reducing the time of subsequent procedures with 
-the dataset (e.g., assemblies, mappings, etc.).
+MaRDRe is a parallel MapReduce-based tool to remove duplicate DNA 
+reads. Duplicate reads can be seen as identical or nearly identical 
+sequences with some mismatches. This tool allows the users to avoid the 
+analysis of not necessary reads, reducing the time of subsequent 
+procedures with the dataset (e.g., assemblies, mappings, etc.).
 
-More info at http://pardremr.des.udc.es
+This tool is implemented with the Hadoop MapReduce framework in order to 
+exploit the parallel capabilities of clusters/clouds infrastructures.
+
+More info at http://mardre.des.udc.es
 
 
 Quick User's Guide
@@ -21,14 +24,14 @@ Quick User's Guide
 
 	2.1) HADOOP_HOME environmental variable must be set accordingly
 
-3) Set PARDREMR_HOME environmental variable:
+3) Set MARDRE_HOME environmental variable:
 
 	3.1) On UNIX/Linux/Mac you can set them in your profile or your 
 	shell configuration files, please just follow the instructions
         below:
 
-	export PARDREMR_HOME=/path/to/pardremr/
-        export PATH=$PARDREMR_HOME/bin:$PATH
+	export MARDRE_HOME=/path/to/mardre/
+        export PATH=$MARDRE_HOME/bin:$PATH
 
 
 - Execution:
@@ -36,10 +39,9 @@ Quick User's Guide
 The following command removes the duplicates of identical reads (no mis-
 matches) of a single-end dataset and prefix length of 15:
 
-	$ pardre-mr -i dataset.fastq -l 15
+	$ mardrerun -i dataset.fastq -l 15
 
 The following command shows a similar example but for paired-end computing,
-allowing two mismatches and with prefix length of 20:
+allowing two mismatches and with a default prefix length of 20:
 
-	$ pardre-mr -i dataset1.fastq -p dataset2.fastq -m 2
-
+	$ mardrerun -i dataset1.fastq -p dataset2.fastq -m 2
