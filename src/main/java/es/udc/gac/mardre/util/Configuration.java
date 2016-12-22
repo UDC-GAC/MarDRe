@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class Configuration {
 
-	public static String PARDREMR_HOME = null;
+	public static String MARDRE_HOME = null;
 	public static boolean MERGE; 
 	public static boolean DELETE_TEMP;
 	public static boolean PAIRED_JOIN;
@@ -20,32 +20,32 @@ public class Configuration {
 	public static boolean IN_MAPPER_COMBINER;
 	public static int IN_MAPPER_COMBINER_CACHE_SIZE;
 
-	public static final String IO_BUFFER_SIZE_PARAM = "ParDRe-MR_ioBufferSize";
-	public static final String IN_MAPPER_COMBINER_PARAM = "ParDRe-MR_inMapperCombiner";
-	public static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "ParDRe-MR_inMapperCombinerCacheSize";
-	public static final String PREFIXLENGTH = "ParDRe-MR_prefixLength";
-	public static final String MINQUAL = "ParDRe-MR_minQual";
-	public static final String MISSMATCH = "ParDRe-MR_missMatch";
-	public static final String FILE_FORMAT = "ParDRe-MR_fileFormat";
-	public static final String INPUT_PATH_1 = "ParDRe-MR_inputPath1";
-	public static final String TEMP_INPUT_PATH_1 = "/ParDRe-MR/tmp/input1";
-	public static final String TEMP_INPUT_PATH_2 = "/ParDRe-MR/tmp/input2";
-	public static final String TEMP_OUTPUT_PATH_1 = "/ParDRe-MR/tmp/output1";
-	public static final String TEMP_OUTPUT_PATH_2 = "/ParDRe-MR/tmp/output2";
+	public static final String IO_BUFFER_SIZE_PARAM = "MaRDRe_ioBufferSize";
+	public static final String IN_MAPPER_COMBINER_PARAM = "MaRDRe_inMapperCombiner";
+	public static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "MaRDRe_inMapperCombinerCacheSize";
+	public static final String PREFIXLENGTH = "MaRDRe_prefixLength";
+	public static final String MINQUAL = "MaRDRe_minQual";
+	public static final String MISSMATCH = "MaRDRe_missMatch";
+	public static final String FILE_FORMAT = "MaRDRe_fileFormat";
+	public static final String INPUT_PATH_1 = "MaRDRePath1";
+	public static final String TEMP_INPUT_PATH_1 = "/MaRDRe/tmp/input1";
+	public static final String TEMP_INPUT_PATH_2 = "/MaRDRe/tmp/input2";
+	public static final String TEMP_OUTPUT_PATH_1 = "/MaRDRe/tmp/output1";
+	public static final String TEMP_OUTPUT_PATH_2 = "/MaRDRe/tmp/output2";
 
 	private static String configFileName = null;
-	private static final String PARDREMR_CONFIGURATION_FILE = "pardre-mr.conf";
+	private static final String MARDRE_CONFIGURATION_FILE = "mardre-mr.conf";
 	private static Properties properties = new Properties();
 
 	static {
 		Map<String,String> map = System.getenv();
-		PARDREMR_HOME = map.get("PARDREMR_HOME");
+		MARDRE_HOME = map.get("MARDRE_HOME");
 
-		if(PARDREMR_HOME == null)
-			throw new RuntimeException("'PARDREMR_HOME' must be set");
+		if(MARDRE_HOME == null)
+			throw new RuntimeException("'MARDRE_HOME' must be set");
 
 		String slash = System.getProperty("file.separator");
-		configFileName = PARDREMR_HOME+slash+"etc"+slash+PARDREMR_CONFIGURATION_FILE;
+		configFileName = MARDRE_HOME+slash+"etc"+slash+MARDRE_CONFIGURATION_FILE;
 	}
 
 	public static void loadConfiguration() throws FileNotFoundException {

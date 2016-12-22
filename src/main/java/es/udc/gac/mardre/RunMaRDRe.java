@@ -203,7 +203,7 @@ public class RunMaRDRe {
 
 		timer.start(T_TOTAL);
 
-		System.out.println("MaRDRe: starting from "+Configuration.PARDREMR_HOME);
+		System.out.println("MaRDRe: starting from "+Configuration.MARDRE_HOME);
 
 		timer.start(T_INIT);
 		Configuration.loadConfiguration();
