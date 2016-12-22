@@ -54,7 +54,7 @@ public class Configuration {
 			properties.load(configFile);
 			configFile.close();
 		} catch (IOException e) {
-			throw new FileNotFoundException();
+			throw new FileNotFoundException("File: "+configFileName);
 		}
 
 		MERGE = Boolean.parseBoolean(properties.getProperty("mergeOutput", "true"));
