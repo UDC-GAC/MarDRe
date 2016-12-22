@@ -45,6 +45,9 @@ public class RunMaRDRe {
 		Job job = Job.getInstance(conf, "MaRDRe_SingleEnd");
 		job.setJarByClass(RunMaRDRe.class);
 
+		// Explicitly turn off speculative execution
+		job.setSpeculativeExecution(false);
+
 		// I/O Format classes
 		job.setInputFormatClass(inputFormatClass);
 		job.setOutputFormatClass(TextOutputFormat.class);
@@ -67,6 +70,9 @@ public class RunMaRDRe {
 
 		Job job = Job.getInstance(conf, "MaRDRe_PairedEnd");
 		job.setJarByClass(RunMaRDRe.class);
+
+		// Explicitly turn off speculative execution
+		job.setSpeculativeExecution(false);
 
 		// Output format classes
 		job.setOutputFormatClass(TextOutputFormat.class);
@@ -96,6 +102,9 @@ public class RunMaRDRe {
 	private static Job configureHadoopJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
 		Job job = Job.getInstance(conf, "MaRDRe_HadoopJoinSequences");
 		job.setJarByClass(RunMaRDRe.class);
+
+		// Explicitly turn off speculative execution
+		job.setSpeculativeExecution(false);
 
 		// I/O Format classes
 		job.setInputFormatClass(inputFormatClass);
@@ -129,6 +138,9 @@ public class RunMaRDRe {
 	private static Job configureJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
 		Job job = Job.getInstance(conf, "MaRDRe_JoinSequences");
 		job.setJarByClass(RunMaRDRe.class);
+
+		// Explicitly turn off speculative execution
+		job.setSpeculativeExecution(false);
 
 		// I/O Format classes
 		job.setInputFormatClass(inputFormatClass);
