@@ -26,11 +26,11 @@ Quick User's Guide
 
 	2.1) HADOOP_HOME environmental variable must be set accordingly
 
-3) Set MARDRE_HOME environmental variable:
+3) Set MARDRE_HOME and PATH environmental variables:
 
 	3.1) On UNIX/Linux/Mac you can set them in your profile or your 
-	shell configuration files, please just follow the instructions
-        below:
+	shell configuration files (e.g., .bashrc), please just follow the
+	instructions below:
 
 	export MARDRE_HOME=/path/to/mardre/
         export PATH=$MARDRE_HOME/bin:$PATH
