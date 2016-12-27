@@ -12,7 +12,7 @@ the parallel capabilities of current distributed systems, specially
 cloud-based infrastructures. It has been implemented on top of the Apache 
 Hadoop project, the most popular distributed computing framework for 
 Big Data processing. This tool is distributed as free software and is 
-publicly available under the GPLv3 license at http://mardre.des.udc.es.
+publicly available under the GPLv3 license at http://gac.udc.es/~rreye/mardre.
 
 
 Quick User's Guide
@@ -22,7 +22,7 @@ Quick User's Guide
 
 1) Make sure you have Java Runtime Environment (JRE) version 1.7 or above
 
-2) Make sure you have a working Hadoop distribution version 2.4 or above
+2) Make sure you have a working Hadoop distribution version 2.2 or above
 
 	2.1) HADOOP_HOME environmental variable must be set accordingly
 
@@ -38,8 +38,8 @@ Quick User's Guide
 
 - Execution:
 
-The following command removes the duplicates of identical reads (no mis-
-matches) of a single-end dataset using a prefix length of 15 and 8 reducers:
+The following command removes the duplicates of identical reads (no mismatches)
+of a single-end dataset using a prefix length of 15 and 8 reducers:
 
 	$ mardrerun -Dmapreduce.job.reduces=8 -i dataset.fastq -l 15
 
@@ -47,3 +47,4 @@ The following command shows a similar example but for paired-end computing,
 allowing two mismatches and using the default prefix length (20) and 8 reducers:
 
 	$ mardrerun -Dmapreduce.job.reduces=8 -i dataset1.fastq -p dataset2.fastq -m 2
+
