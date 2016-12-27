@@ -1,18 +1,14 @@
 MaRDRe
 ------
 
-MaRDRe is a parallel MapReduce-based tool to remove duplicate DNA
-reads. Duplicate reads can be seen as identical or nearly identical 
+MaRDRe is a parallel MapReduce-based tool to remove duplicated DNA
+reads. Duplicated reads can be seen as identical or nearly identical 
 sequences with some mismatches. This tool allows bioinformatics to avoid
 the analysis of not necessary reads, reducing the time of subsequent 
 procedures with the dataset (e.g., assemblies, mappings, etc.).
 
-MaRDRe takes advantage of the MapReduce programming model to exploit
-the parallel capabilities of current distributed systems, specially 
-cloud-based infrastructures. It has been implemented on top of the Apache 
-Hadoop project, the most popular distributed computing framework for 
-Big Data processing. This tool is distributed as free software and is 
-publicly available under the GPLv3 license at http://gac.udc.es/~rreye/mardre.
+This tool is distributed as free software and is publicly available under 
+the GPLv3 license at http://gac.udc.es/~rreye/mardre.
 
 
 Quick User's Guide
