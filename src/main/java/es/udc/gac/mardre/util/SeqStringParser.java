@@ -28,19 +28,19 @@ public abstract class SeqStringParser {
 		this._minQual = minQual;
 	}
 
-	public short get_prefixLength() {
+	public short getPrefixLength() {
 		return _prefixLength;
 	}
 
-	public void set_prefixLength(short _prefixLength) {
+	public void setPrefixLength(short _prefixLength) {
 		this._prefixLength = _prefixLength;
 	}
 
-	public char get_minQual() {
+	public char getMinQual() {
 		return _minQual;
 	}
 
-	public void set_minQual(char _minQual) {
+	public void setMinQual(char _minQual) {
 		this._minQual = _minQual;
 	}
 

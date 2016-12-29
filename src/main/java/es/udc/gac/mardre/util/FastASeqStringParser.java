@@ -57,9 +57,9 @@ public class FastASeqStringParser extends SeqStringParser {
 
 		seq.setFormat(FileFormat.FILE_FORMAT_FASTA);
 		seq.setLength(bases.length());
-		seq.setPrefixLength(this.get_prefixLength());
-		seq.setKey(bases, this.get_minQual());
-		seq.setSuffix(bases, this.get_minQual());
+		seq.setPrefixLength(this.getPrefixLength());
+		seq.setKey(bases, this.getMinQual());
+		seq.setSuffix(bases, this.getMinQual());
 
 		return seq.getLength();
 	}
