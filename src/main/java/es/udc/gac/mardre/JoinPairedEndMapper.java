@@ -53,8 +53,8 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 					boolean insert = true;
 
 					for (PairedSequence seq : seqsInCache) {
-						if (newSeq.getFirstSeq().equal(seq.getFirstSeq(), missMatch, true)) {
-							if (newSeq.getSecondSeq().equal(seq.getSecondSeq(), missMatch, true)) {
+						if (newSeq.getFirstSeq().equal(seq.getFirstSeq(), missMatch)) {
+							if (newSeq.getSecondSeq().equal(seq.getSecondSeq(), missMatch)) {
 								insert = false;
 								break;
 							}

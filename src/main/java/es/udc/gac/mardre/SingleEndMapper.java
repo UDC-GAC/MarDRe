@@ -50,7 +50,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 					boolean insert = true;
 
 					for (Sequence seq : seqsInCache) {
-						if (newSeq.equal(seq, missMatch, true)) {
+						if (newSeq.equal(seq, missMatch)) {
 							insert = false;
 							break;
 						}

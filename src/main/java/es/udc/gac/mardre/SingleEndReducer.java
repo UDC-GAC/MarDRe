@@ -51,7 +51,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			insert = true;
 
 			for (Sequence seq : sequences) {
-				if (new_seq.equal(seq, missMatch, true)) {
+				if (new_seq.equal(seq, missMatch)) {
 					insert = false;
 					break;
 				}

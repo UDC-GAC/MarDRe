@@ -261,18 +261,10 @@ public class Sequence implements Writable {
 		}
 	}
 
-	// The boolean parameter indicates if we need to compare the prefixes too ->
-	// In general it must be false
-	public boolean equal(Sequence seq2, short missMatch, boolean compareKey) {
+	public boolean equal(Sequence seq2, short missMatch) {
 
 		if (_length != seq2._length)
 			return false;
-
-		if (compareKey) {
-			// If the prefix is different they are not equal
-			if (_key != seq2._key)
-				return false;
-		}
 
 		short numMissMatch = 0;
 		long aux1, aux2, xorRes;
