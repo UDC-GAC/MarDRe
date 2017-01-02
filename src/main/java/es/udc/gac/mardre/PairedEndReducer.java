@@ -60,11 +60,9 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			insert = true;
 
 			for (PairedSequence seq : sequences) {
-				if (newSeq.getFirstSeq().equal(seq.getFirstSeq(), missMatch)) {
-					if (newSeq.getSecondSeq().equal(seq.getSecondSeq(), missMatch)) {
+				if (newSeq.equal(seq, missMatch)) {
 						insert = false;
 						break;
-					}
 				}
 			}
 			if (insert)

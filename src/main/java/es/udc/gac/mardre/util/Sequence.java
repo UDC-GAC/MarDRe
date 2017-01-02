@@ -287,6 +287,31 @@ public class Sequence implements Writable {
 		return true;
 	}
 
+	public boolean equal(Sequence seq2, short missMatch, short[] numMissMatch) {
+
+		if (_length != seq2._length)
+			return false;
+
+		long aux1, aux2, xorRes;
+		int popc;
+
+		for (int i = 0; i < _compressSuffix.length; i++) {
+			aux1 = _compressSuffix[i];
+			aux2 = seq2._compressSuffix[i];
+			xorRes = aux1 ^ aux2;
+			popc = Long.bitCount(xorRes);
+			numMissMatch[0] += popc / 2;
+
+			if ((popc % 2) > 0)
+				numMissMatch[0]++;
+
+			if (numMissMatch[0] > missMatch)
+				return false;
+		}
+
+		return true;
+	}
+	
 	public void print(BufferedWriter writer) throws IOException {
 
 		if (_format == FileFormat.FILE_FORMAT_FASTA)
