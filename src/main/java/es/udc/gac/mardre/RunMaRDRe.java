@@ -52,6 +52,7 @@ import es.udc.gac.mardre.util.SequenceFactory.FileFormat;
 public class RunMaRDRe {
 
 	// Timers
+	private static final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
 	private static final int T_INIT = 1;
 	private static final int T_PREPARE_PSEQ = 2;
@@ -229,7 +230,6 @@ public class RunMaRDRe {
 	public static void main(String[] args) throws Exception {
 
 		boolean status = true;
-		Timer timer = new Timer();
 
 		timer.start(T_TOTAL);
 

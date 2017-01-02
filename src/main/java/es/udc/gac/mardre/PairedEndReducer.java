@@ -30,9 +30,12 @@ import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.Sequence;
+import es.udc.gac.mardre.util.Timer;
 
 public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, NullWritable, Sequence> {
 
+	private static final Timer timer = new Timer();
+	private static final int T_TOTAL = 0;
 	private static final NullWritable nullKey = NullWritable.get();
 	private MultipleOutputs<NullWritable,Sequence> mos;
 	private short missMatch;	
@@ -53,12 +56,16 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
 			throws IOException, InterruptedException {
 
+		timer.start(T_TOTAL);
+		
 		boolean insert;
+		int i = 0;
 		List<PairedSequence> sequences = new ArrayList<PairedSequence>();
 
 		for (PairedSequence newSeq : values) {
 			insert = true;
-
+			i++;
+			
 			for (PairedSequence seq : sequences) {
 				if (newSeq.equal(seq, missMatch)) {
 						insert = false;
@@ -73,5 +80,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			context.write(nullKey, seq.getFirstSeq());
 			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2+"/part");
 		}
+		
+		timer.stop(T_TOTAL);
+		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d paired reads: %.2f seconds\n", i, timer.read(T_TOTAL));
 	}
 }

@@ -28,9 +28,12 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.Sequence;
+import es.udc.gac.mardre.util.Timer;
 
 public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
 
+	private static final Timer timer = new Timer();
+	private static final int T_TOTAL = 0;
 	private static final NullWritable nullKey = NullWritable.get();
 	private short missMatch;
 
@@ -44,12 +47,16 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	public void reduce(LongWritable key, Iterable<Sequence> values,
 			Context context) throws IOException, InterruptedException {
 
+		timer.start(T_TOTAL);
+		
 		boolean insert;
+		int i = 0;
 		List<Sequence> sequences = new ArrayList<Sequence>();
 
 		for (Sequence new_seq : values) {
 			insert = true;
-
+			i++;
+			
 			for (Sequence seq : sequences) {
 				if (new_seq.equal(seq, missMatch)) {
 					insert = false;
@@ -63,5 +70,8 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		for (Sequence seq : sequences) {
 			context.write(nullKey, seq);
 		}
+		
+		timer.stop(T_TOTAL);
+		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d paired reads: %.2f seconds\n", i, timer.read(T_TOTAL));
 	}
 }
