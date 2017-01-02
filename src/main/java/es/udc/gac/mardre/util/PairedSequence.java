@@ -27,7 +27,7 @@ import org.apache.hadoop.io.Writable;
 public class PairedSequence implements Writable {
 
 	private static short[] numMissMatch = new short[1];
-	
+
 	private Sequence firstSeq;
 	private Sequence secondSeq;
 
@@ -68,7 +68,7 @@ public class PairedSequence implements Writable {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		this.firstSeq = new Sequence();

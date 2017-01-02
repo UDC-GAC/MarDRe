@@ -57,7 +57,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			throws IOException, InterruptedException {
 
 		timer.start(T_TOTAL);
-		
+
 		boolean insert;
 		int i = 0;
 		List<PairedSequence> sequences = new ArrayList<PairedSequence>();
@@ -65,11 +65,11 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		for (PairedSequence newSeq : values) {
 			insert = true;
 			i++;
-			
+
 			for (PairedSequence seq : sequences) {
 				if (newSeq.equal(seq, missMatch)) {
-						insert = false;
-						break;
+					insert = false;
+					break;
 				}
 			}
 			if (insert)
@@ -80,8 +80,10 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			context.write(nullKey, seq.getFirstSeq());
 			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2+"/part");
 		}
-		
+
 		timer.stop(T_TOTAL);
-		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d paired reads: %.2f seconds\n", i, timer.read(T_TOTAL));
+
+		if (i > 1000)
+			System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d paired reads: %.2f seconds\n", i, timer.read(T_TOTAL));
 	}
 }

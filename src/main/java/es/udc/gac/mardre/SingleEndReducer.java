@@ -48,7 +48,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			Context context) throws IOException, InterruptedException {
 
 		timer.start(T_TOTAL);
-		
+
 		boolean insert;
 		int i = 0;
 		List<Sequence> sequences = new ArrayList<Sequence>();
@@ -56,7 +56,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		for (Sequence new_seq : values) {
 			insert = true;
 			i++;
-			
+
 			for (Sequence seq : sequences) {
 				if (new_seq.equal(seq, missMatch)) {
 					insert = false;
@@ -70,8 +70,10 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		for (Sequence seq : sequences) {
 			context.write(nullKey, seq);
 		}
-		
+
 		timer.stop(T_TOTAL);
-		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d paired reads: %.2f seconds\n", i, timer.read(T_TOTAL));
+
+		if (i > 1000)
+			System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d paired reads: %.2f seconds\n", i, timer.read(T_TOTAL));
 	}
 }

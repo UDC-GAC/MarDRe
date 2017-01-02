@@ -311,7 +311,7 @@ public class Sequence implements Writable {
 
 		return true;
 	}
-	
+
 	public void print(BufferedWriter writer) throws IOException {
 
 		if (_format == FileFormat.FILE_FORMAT_FASTA)
