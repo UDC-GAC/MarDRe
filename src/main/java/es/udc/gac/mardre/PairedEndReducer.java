@@ -83,7 +83,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		timer.stop(T_TOTAL);
 
-		if (i > 1000)
+		if (i > 2000)
 			System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d paired reads: %.2f seconds\n", i, timer.read(T_TOTAL));
 	}
 }
