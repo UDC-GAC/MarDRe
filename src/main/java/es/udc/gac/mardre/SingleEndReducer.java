@@ -53,18 +53,18 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		int i = 0;
 		List<Sequence> sequences = new ArrayList<Sequence>();
 
-		for (Sequence new_seq : values) {
+		for (Sequence newSeq : values) {
 			insert = true;
 			i++;
 
 			for (Sequence seq : sequences) {
-				if (new_seq.equal(seq, missMatch)) {
+				if (newSeq.equal(seq, missMatch)) {
 					insert = false;
 					break;
 				}
 			}
 			if (insert)
-				sequences.add(new Sequence(new_seq));
+				sequences.add(new Sequence(newSeq));
 		}
 
 		for (Sequence seq : sequences) {
