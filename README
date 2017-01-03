@@ -20,27 +20,33 @@ Quick User's Guide
 
 2) Make sure you have a working Hadoop distribution version 2.2 or above
 
-	2.1) HADOOP_HOME environmental variable must be set accordingly
+  2.1) HADOOP_HOME environmental variable must be set accordingly
 
-3) Set MARDRE_HOME and PATH environmental variables:
+3) Untar the downloaded MaRDRE distribution:
 
-	3.1) On UNIX/Linux/Mac you can set them in your profile or your 
-	shell configuration files (e.g., .bashrc), please just follow the
-	instructions below:
+  3.1) On Linux/Mac OS, just follow the instructions below:
 
-	export MARDRE_HOME=/path/to/mardre/
-        export PATH=$MARDRE_HOME/bin:$PATH
+      $ mkdir /path/to/mardre
+      $ tar xzf MaRDRe - v1 .0. tgz -C /path/to/mardre
 
+  3.2) Alternatively use your preferred archive extraction tool
+
+4) Set MARDRE_HOME and PATH environmental variables:
+
+  4.1) On Linux/Mac OS you can set them in your profile or your shell 
+       configuration files (e.g., .bashrc). Follow the instructions below:
+
+      $ export MARDRE_HOME=/path/to/mardre/
+      $ export PATH=$MARDRE_HOME/bin:$PATH
 
 - Execution:
 
 The following command removes the duplicates of identical reads (no mismatches)
 of a single-end dataset using a prefix length of 15 and 8 reducers:
 
-	$ mardrerun -Dmapreduce.job.reduces=8 -i dataset.fastq -l 15
+  $ mardrerun -Dmapreduce.job.reduces=8 -i dataset.fastq -l 15
 
 The following command shows a similar example but for paired-end computing,
 allowing two mismatches and using the default prefix length (20) and 8 reducers:
 
-	$ mardrerun -Dmapreduce.job.reduces=8 -i dataset1.fastq -p dataset2.fastq -m 2
-
+  $ mardrerun -Dmapreduce.job.reduces=8 -i dataset1.fastq -p dataset2.fastq -m 2
