@@ -83,7 +83,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		}
 
 		sequences.clear();
-		
+
 		timer.stop(T_TOTAL);
 
 		if (i > INITIAL_SIZE)
