@@ -53,7 +53,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		boolean insert;
 		int i = 0;
-
+	
 		for (Sequence newSeq : values) {
 			insert = true;
 			i++;
@@ -73,7 +73,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		}
 
 		sequences.clear();
-
+		
 		timer.stop(T_TOTAL);
 
 		if (i > INITIAL_SIZE)
