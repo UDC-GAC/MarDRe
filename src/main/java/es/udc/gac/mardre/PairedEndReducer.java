@@ -37,6 +37,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	private static final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
 	private static final NullWritable nullKey = NullWritable.get();
+	private static List<PairedSequence> sequences = new ArrayList<PairedSequence>(1000);
 	private MultipleOutputs<NullWritable,Sequence> mos;
 	private short missMatch;	
 
@@ -60,7 +61,6 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		boolean insert;
 		int i = 0;
-		List<PairedSequence> sequences = new ArrayList<PairedSequence>();
 
 		for (PairedSequence newSeq : values) {
 			insert = true;
@@ -81,12 +81,11 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2+"/part");
 		}
 
+		sequences.clear();
+		
 		timer.stop(T_TOTAL);
 
 		if (i > 2000)
 			System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d paired reads: %.2f seconds\n", i, timer.read(T_TOTAL));
-
-		sequences.clear();
-		sequences = null;
 	}
 }
