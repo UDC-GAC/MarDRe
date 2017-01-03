@@ -32,10 +32,11 @@ import es.udc.gac.mardre.util.Timer;
 
 public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
 
+	private static final int INITIAL_SIZE = 2000;
 	private static final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
 	private static final NullWritable nullKey = NullWritable.get();
-	private static List<Sequence> sequences = new ArrayList<Sequence>(1000);
+	private static List<Sequence> sequences = new ArrayList<Sequence>(INITIAL_SIZE);
 	private short missMatch;
 
 	@Override
@@ -72,10 +73,10 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		}
 
 		sequences.clear();
-		
+
 		timer.stop(T_TOTAL);
 
-		if (i > 2000)
+		if (i > INITIAL_SIZE)
 			System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d paired reads: %.2f seconds\n", i, timer.read(T_TOTAL));
 	}
 }
