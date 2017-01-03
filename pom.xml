@@ -3,12 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>es.udc.gac</groupId>
-  <artifactId>mardre</artifactId>
+  <artifactId>MaRDRe</artifactId>
   <version>1.0</version>
   <packaging>jar</packaging>
 
-  <name>mardre</name>
-  <url>http://maven.apache.org</url>
+  <name>MaRDRe</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
