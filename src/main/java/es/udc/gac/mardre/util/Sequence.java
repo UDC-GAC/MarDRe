@@ -184,31 +184,34 @@ public class Sequence implements Writable {
 	public long setKey(String bases, char minQual) {
 		_key = 0;
 
-		int length = bases.length();
+		int limit = _prefixLength;
 
-		if (_length != length) {
-			throw new IllegalArgumentException("The number of bases should be "
-					+ _length + " but are " + length);
+		if (_prefixLength > _length)
+			limit = _length;
+
+		for (int i = 0; i < limit; i++) {
+			_key *= 5;
+
+			if (_quals.charAt(i) < minQual)
+				_key += 4;
+			else
+				_key += Sequence.codePrefix(bases.charAt(i));
 		}
+
+		return _key;
+	}
+
+	public long setKey(String bases) {
+		_key = 0;
 
 		int limit = _prefixLength;
 
-		if (_prefixLength > length)
-			limit = length;
+		if (_prefixLength > _length)
+			limit = _length;
 
-		if (_format == FileFormat.FILE_FORMAT_FASTA) {
-			for (int i = 0; i < limit; i++) {
-				_key *= 5;
-				_key += Sequence.codePrefix(bases.charAt(i));
-			}
-		} else {
-			for (int i = 0; i < limit; i++) {
-				_key *= 5;
-				if (_quals.charAt(i) < minQual)
-					_key += 4;
-				else
-					_key += Sequence.codePrefix(bases.charAt(i));
-			}
+		for (int i = 0; i < limit; i++) {
+			_key *= 5;
+			_key += Sequence.codePrefix(bases.charAt(i));
 		}
 
 		return _key;
@@ -240,7 +243,7 @@ public class Sequence implements Writable {
 			for (int j = 0; j < 16; j++) {
 				_compressSuffix[i] <<= 4;
 
-				if (_format == FileFormat.FILE_FORMAT_FASTA || _quals.charAt(iterBases) >= minQual)
+				if (_quals.charAt(iterBases) >= minQual)
 					_compressSuffix[i] += Sequence.code(bases.charAt(iterBases));
 
 				iterBases++;
@@ -253,9 +256,46 @@ public class Sequence implements Writable {
 			for (int i = 0; i < suffixLength % 16; i++) {
 				_compressSuffix[compressLength - 1] <<= 4;
 
-				if (_format == FileFormat.FILE_FORMAT_FASTA || _quals.charAt(iterBases) >= minQual)
+				if (_quals.charAt(iterBases) >= minQual)
 					_compressSuffix[compressLength - 1] += Sequence.code(bases.charAt(iterBases));
 
+				iterBases++;
+			}
+		}
+	}
+
+	public void setSuffix(String bases) {
+		int limit = _prefixLength;
+
+		if (_prefixLength > _length)
+			limit = _length;
+
+		// 16 bases per element
+		int suffixLength = _length - limit;
+		int compressLength = suffixLength / 16;
+		int iterBases = limit;
+
+		if ((suffixLength % 16) > 0)
+			compressLength++;
+
+		_compressSuffix = new long[compressLength];
+
+		for (int i = 0; i < suffixLength / 16; i++) {
+			_compressSuffix[i] = 0;
+
+			for (int j = 0; j < 16; j++) {
+				_compressSuffix[i] <<= 4;
+				_compressSuffix[i] += Sequence.code(bases.charAt(iterBases));
+				iterBases++;
+			}
+		}
+
+		if ((suffixLength % 16) > 0) {
+			_compressSuffix[compressLength - 1] = 0;
+
+			for (int i = 0; i < suffixLength % 16; i++) {
+				_compressSuffix[compressLength - 1] <<= 4;
+				_compressSuffix[compressLength - 1] += Sequence.code(bases.charAt(iterBases));
 				iterBases++;
 			}
 		}

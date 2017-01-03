@@ -412,7 +412,7 @@ public class RunMaRDRe {
 		percent /= (float) inputSequences;
 		percent *= 100.00;
 
-		System.out.format(java.util.Locale.ENGLISH,"MaRDRe: non duplicated paired reads %d/%d (%.2f %%)\n", outputSequences, inputSequences, percent);
+		System.out.format(java.util.Locale.ENGLISH,"MaRDRe: non duplicated paired reads %d/%d (%.2f%%)\n", outputSequences, inputSequences, percent);
 		System.out.format(java.util.Locale.ENGLISH,"MaRDRe: execution time was %.3f seconds\n", timer.read(T_TOTAL));
 		System.out.format(java.util.Locale.ENGLISH,"\tInitialization took %.3f seconds\n", timer.read(T_INIT));
 		if (options.isPaired())
