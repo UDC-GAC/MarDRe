@@ -47,7 +47,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		List<Sequence> sequences = new ArrayList<Sequence>();
 		List<Short> dist = new ArrayList<Short>();
 		short numMissMatch;
-		
+
 		// Get and write the first sequence
 		Sequence first = new Sequence(values.iterator().next());
 		context.write(nullKey, first);

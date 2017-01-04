@@ -53,27 +53,58 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
 			throws IOException, InterruptedException {
 
-		boolean insert;
 		List<PairedSequence> sequences = new ArrayList<PairedSequence>();
+		List<Short> dist = new ArrayList<Short>();
+		short numMissMatch;
+
+		// Get and write the first sequence
+		PairedSequence first = new PairedSequence(values.iterator().next());
+		context.write(nullKey, first.getFirstSeq());
+		mos.write("output2", nullKey, first.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2+"/part");
 
 		for (PairedSequence newSeq : values) {
-			insert = true;
+			numMissMatch = first.dist(newSeq);
 
-			for (PairedSequence seq : sequences) {
-				if (newSeq.equal(seq, missMatch)) {
-					insert = false;
-					break;
+			if (numMissMatch > missMatch) {
+				sequences.add(new PairedSequence(newSeq));
+				dist.add(numMissMatch);
+			}
+		}
+
+		PairedSequence seq1, seq2;
+		int diff, size, j, i;
+		size = sequences.size();
+
+		for (i=0; i<size-1; i++) {
+			seq1 = sequences.get(i);
+
+			if (!seq1.isDuplicate()) {
+				for (j=i+1; j<size; j++) {
+					seq2 = sequences.get(j);
+
+					if (!seq2.isDuplicate()) {
+						diff = dist.get(i).shortValue() - dist.get(j).shortValue();
+						diff = (diff < 0) ? -diff : diff;
+
+						if (diff <= missMatch) {
+							if(seq1.equal(seq2, missMatch)) {
+								seq2.setDuplicate(true);
+							}
+						}
+					}
 				}
 			}
-			if (insert)
-				sequences.add(new PairedSequence(newSeq.getFirstSeq(), newSeq.getSecondSeq()));
 		}
 
 		for (PairedSequence seq : sequences) {
-			context.write(nullKey, seq.getFirstSeq());
-			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2+"/part");
+			if (!seq.isDuplicate()) {
+				context.write(nullKey, seq.getFirstSeq());
+				mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2+"/part");
+			}
 		}
 
 		sequences = null;
+		dist = null;
+		first = null;
 	}
 }

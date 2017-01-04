@@ -82,7 +82,7 @@ public class Sequence implements Writable {
 	private String _quals;
 	private float _avgQual;
 	private boolean _duplicate;
-	
+
 	public Sequence() {
 		_name = null;
 		_key = 0;
@@ -168,10 +168,10 @@ public class Sequence implements Writable {
 		return _duplicate;
 	}
 
-	public void setDuplicate(boolean _duplicate) {
-		this._duplicate = _duplicate;
+	public void setDuplicate(boolean duplicate) {
+		this._duplicate = duplicate;
 	}
-	
+
 	public long getKey() {
 		return _key;
 	}
@@ -357,7 +357,7 @@ public class Sequence implements Writable {
 
 		return numMissMatch;
 	}
-	
+
 	public void print(BufferedWriter writer) throws IOException {
 
 		writer.write(_name, 0, _name.length());
@@ -479,6 +479,6 @@ public class Sequence implements Writable {
 		}
 
 		//if (_quals != null)
-			//_avgQual = in.readFloat();
+		//_avgQual = in.readFloat();
 	}
 }
