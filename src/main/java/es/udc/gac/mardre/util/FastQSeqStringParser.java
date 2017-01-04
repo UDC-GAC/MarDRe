@@ -33,7 +33,7 @@ public class FastQSeqStringParser extends SeqStringParser {
 			throw new IllegalArgumentException("Found empty string " + s);
 
 		StringTokenizer st = new StringTokenizer(s, "\n");
-		
+
 		// Read the sequence name
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
@@ -63,11 +63,11 @@ public class FastQSeqStringParser extends SeqStringParser {
 					+ ": no qualities available");
 		String strQuals = st.nextToken();
 
-		seq.setLength(str.length());
+		seq.setLength((short)str.length());
 		seq.setPrefixLength(this.getPrefixLength());
 		seq.setQuals(strQuals);
-		seq.setKey(str, this.getMinQual());
-		seq.setSuffix(str, this.getMinQual());
+		seq.setKey(str);
+		seq.setSuffix(str);
 
 		return seq.getLength();
 	}

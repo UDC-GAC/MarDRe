@@ -44,26 +44,80 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	public void reduce(LongWritable key, Iterable<Sequence> values,
 			Context context) throws IOException, InterruptedException {
 
-		boolean insert;
+//		boolean insert;
+//		List<Sequence> sequences = new ArrayList<Sequence>();
+//
+//		for (Sequence newSeq : values) {
+//			insert = true;
+//
+//			for (Sequence seq : sequences) {
+//				if (newSeq.equal(seq, missMatch)) {
+//					insert = false;
+//					break;
+//				}
+//			}
+//			if (insert)
+//				sequences.add(new Sequence(newSeq));
+//		}
+//
+//		for (Sequence seq : sequences) {
+//			context.write(nullKey, seq);
+//		}
+//
+//		sequences = null;
+		
+		short numMissMatch;
 		List<Sequence> sequences = new ArrayList<Sequence>();
+		List<Short> dist = new ArrayList<Short>();
+		
+		// Get and write the first sequence
+		Sequence first = new Sequence(values.iterator().next());
+		context.write(nullKey, first);
+		
+		for (Sequence newSeq : values) {			
+			numMissMatch = first.dist(newSeq);
+			
+			if (numMissMatch > missMatch) {
+				sequences.add(new Sequence(newSeq));
+				dist.add(numMissMatch);
+			}
+		}
 
-		for (Sequence newSeq : values) {
-			insert = true;
+		Sequence seq1, seq2;
+		int diff, size, j, i, comps = 0;
+		size = sequences.size();
 
-			for (Sequence seq : sequences) {
-				if (newSeq.equal(seq, missMatch)) {
-					insert = false;
-					break;
+		for (i=0; i<size-1; i++) {
+			seq1 = sequences.get(i);
+
+			if (!seq1.isDuplicate()) {
+				for (j=i+1; j<size; j++) {
+					seq2 = sequences.get(j);
+
+					if (!seq2.isDuplicate()) {
+						diff = dist.get(i).shortValue() - dist.get(j).shortValue();
+						diff = (diff < 0) ? -diff : diff;
+
+						if (diff <= missMatch) {
+							comps++;
+							if(seq1.equal(seq2, missMatch)) {
+								seq2.setDuplicate(true);
+							}
+						}
+					}
 				}
 			}
-			if (insert)
-				sequences.add(new Sequence(newSeq));
 		}
 
 		for (Sequence seq : sequences) {
-			context.write(nullKey, seq);
+			if (!seq.isDuplicate())
+				context.write(nullKey, seq);
 		}
-
+				
+		System.out.println("Size: "+sequences.size()+", Comps: "+comps);
+		
 		sequences = null;
+		dist = null;
+		first = null;
 	}
 }

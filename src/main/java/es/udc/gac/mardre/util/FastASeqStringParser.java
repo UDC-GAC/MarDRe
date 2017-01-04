@@ -33,7 +33,7 @@ public class FastASeqStringParser extends SeqStringParser {
 			throw new IllegalArgumentException("Found empty string " + s);
 
 		StringTokenizer st = new StringTokenizer(s, "\n");
-		
+
 		// Read the sequence name
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
@@ -41,7 +41,7 @@ public class FastASeqStringParser extends SeqStringParser {
 					+ ": no name available");
 		String name = st.nextToken().split("\\s+")[0];
 		seq.setName(name);
-		
+
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
@@ -52,7 +52,7 @@ public class FastASeqStringParser extends SeqStringParser {
 		while(st.hasMoreTokens())
 			bases += st.nextToken();
 
-		seq.setLength(bases.length());
+		seq.setLength((short)bases.length());
 		seq.setPrefixLength(this.getPrefixLength());
 		seq.setKey(bases);
 		seq.setSuffix(bases);

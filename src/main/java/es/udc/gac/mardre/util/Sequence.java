@@ -74,14 +74,15 @@ public class Sequence implements Writable {
 	}
 
 	private String _name;
-	private int _length;
+	private short _length;
 	private short _prefixLength;
 	private long _key;
 	private long[] _compressSuffix;
 	private boolean _isFirstSeq;
 	private String _quals;
 	private float _avgQual;
-
+	private boolean _duplicate;
+	
 	public Sequence() {
 		_name = null;
 		_key = 0;
@@ -91,6 +92,7 @@ public class Sequence implements Writable {
 		_isFirstSeq = false;
 		_quals = null;
 		_avgQual = -1;
+		_duplicate = false;
 	}
 
 	public Sequence(Sequence s) {
@@ -102,6 +104,7 @@ public class Sequence implements Writable {
 		_isFirstSeq = s._isFirstSeq;
 		_quals = s._quals;
 		_avgQual = s._avgQual;
+		_duplicate = false;
 	}
 
 	public void setName(String name) {
@@ -112,7 +115,7 @@ public class Sequence implements Writable {
 		return _name;
 	}
 
-	public void setLength(int length) {
+	public void setLength(short length) {
 		_length = length;
 	}
 
@@ -161,6 +164,14 @@ public class Sequence implements Writable {
 		return _avgQual;
 	}
 
+	public boolean isDuplicate() {
+		return _duplicate;
+	}
+
+	public void setDuplicate(boolean _duplicate) {
+		this._duplicate = _duplicate;
+	}
+	
 	public long getKey() {
 		return _key;
 	}
@@ -328,6 +339,25 @@ public class Sequence implements Writable {
 		return true;
 	}
 
+	public short dist(Sequence seq2) {
+
+		if (_length != seq2._length)
+			return _length;
+
+		short numMissMatch = 0;
+		int popc;
+
+		for (int i = 0; i < _compressSuffix.length; i++) {
+			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
+			numMissMatch += popc / 2;
+
+			if ((popc % 2) > 0)
+				numMissMatch++;
+		}
+
+		return numMissMatch;
+	}
+	
 	public void print(BufferedWriter writer) throws IOException {
 
 		writer.write(_name, 0, _name.length());
@@ -414,7 +444,7 @@ public class Sequence implements Writable {
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeLong(_key);
-		out.writeInt(_length);
+		out.writeShort(_length);
 		out.writeShort(_prefixLength);
 		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
@@ -432,7 +462,7 @@ public class Sequence implements Writable {
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		_key = in.readLong();
-		_length = in.readInt();
+		_length = in.readShort();
 		_prefixLength = in.readShort();
 		_name = in.readUTF();
 		_isFirstSeq = in.readBoolean();
