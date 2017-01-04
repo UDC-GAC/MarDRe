@@ -29,8 +29,8 @@ import org.apache.hadoop.mapreduce.Mapper;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.SeqStringParser;
 import es.udc.gac.mardre.util.Sequence;
-import es.udc.gac.mardre.util.SequenceFactory;
-import es.udc.gac.mardre.util.SequenceFactory.FileFormat;
+import es.udc.gac.mardre.util.SequenceParserFactory;
+import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
 
@@ -72,7 +72,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 		format = FileFormat.values()[Integer.parseInt(job.get(Configuration.FILE_FORMAT))];
 		prefixLength = Short.parseShort(job.get(Configuration.PREFIXLENGTH));
 		minQual = (char) Integer.parseInt(job.get(Configuration.MINQUAL));
-		parser = SequenceFactory.createParser(format, prefixLength, minQual);
+		parser = SequenceParserFactory.createParser(format, prefixLength, minQual);
 		missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
 
 		if (Boolean.parseBoolean(job.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {

@@ -47,7 +47,7 @@ import es.udc.gac.mardre.util.Options;
 import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.Sequence;
 import es.udc.gac.mardre.util.Timer;
-import es.udc.gac.mardre.util.SequenceFactory.FileFormat;
+import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class RunMaRDRe {
 

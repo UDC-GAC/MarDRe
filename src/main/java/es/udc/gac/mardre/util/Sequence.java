@@ -26,8 +26,6 @@ import java.io.StringWriter;
 
 import org.apache.hadoop.io.Writable;
 
-import es.udc.gac.mardre.util.SequenceFactory.FileFormat;
-
 public class Sequence implements Writable {
 
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
@@ -82,8 +80,7 @@ public class Sequence implements Writable {
 	private boolean _isFirstSeq;
 	private String _quals;
 	private float _avgQual;
-	private FileFormat _format;
-
+	
 	public Sequence() {
 		_name = null;
 		_key = 0;
@@ -93,7 +90,6 @@ public class Sequence implements Writable {
 		_isFirstSeq = false;
 		_quals = null;
 		_avgQual = -1;
-		_format = FileFormat.FILE_FORMAT_UNKNOWN;
 	}
 
 	public Sequence(Sequence s) {
@@ -105,7 +101,6 @@ public class Sequence implements Writable {
 		_isFirstSeq = s._isFirstSeq;
 		_quals = s._quals;
 		_avgQual = s._avgQual;
-		_format = s._format;
 	}
 
 	public void setName(String name) {
@@ -148,16 +143,12 @@ public class Sequence implements Writable {
 		_quals = quals;
 	}
 
-	public void releaseQuals() {
-		_quals = null;
-	}
-
 	public void setAvgQual(float avgQual) {
 		_avgQual = avgQual;
 	}
 
 	public float getAvgQual() {
-		if ((_avgQual == -1) && (!_quals.isEmpty())) {
+		if ((_avgQual == -1) && (_quals != null)) {
 			_avgQual = 0;
 
 			for (int i = 0; i < _length; i++) {
@@ -167,14 +158,6 @@ public class Sequence implements Writable {
 		}
 
 		return _avgQual;
-	}
-
-	public FileFormat getFormat() {
-		return _format;
-	}
-
-	public void setFormat(FileFormat _format) {
-		this._format = _format;
 	}
 
 	public long getKey() {
@@ -307,14 +290,10 @@ public class Sequence implements Writable {
 			return false;
 
 		short numMissMatch = 0;
-		long aux1, aux2, xorRes;
 		int popc;
 
 		for (int i = 0; i < _compressSuffix.length; i++) {
-			aux1 = _compressSuffix[i];
-			aux2 = seq2._compressSuffix[i];
-			xorRes = aux1 ^ aux2;
-			popc = Long.bitCount(xorRes);
+			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
 			numMissMatch += popc / 2;
 
 			if ((popc % 2) > 0)
@@ -332,14 +311,10 @@ public class Sequence implements Writable {
 		if (_length != seq2._length)
 			return false;
 
-		long aux1, aux2, xorRes;
 		int popc;
 
 		for (int i = 0; i < _compressSuffix.length; i++) {
-			aux1 = _compressSuffix[i];
-			aux2 = seq2._compressSuffix[i];
-			xorRes = aux1 ^ aux2;
-			popc = Long.bitCount(xorRes);
+			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
 			numMissMatch[0] += popc / 2;
 
 			if ((popc % 2) > 0)
@@ -353,11 +328,6 @@ public class Sequence implements Writable {
 	}
 
 	public void print(BufferedWriter writer) throws IOException {
-
-		if (_format == FileFormat.FILE_FORMAT_FASTA)
-			writer.write(">");
-		else
-			writer.write("@");
 
 		writer.write(_name, 0, _name.length());
 		writer.newLine();
@@ -416,7 +386,7 @@ public class Sequence implements Writable {
 
 		writer.write(bases);
 
-		if (_format == FileFormat.FILE_FORMAT_FASTQ && !_quals.isEmpty()) {
+		if (_quals != null) {
 			writer.newLine();
 			writer.write('+');
 			writer.newLine();
@@ -452,9 +422,7 @@ public class Sequence implements Writable {
 		for (int i = 0; i < _compressSuffix.length; i++)
 			out.writeLong(_compressSuffix[i]);
 
-		out.writeInt(_format.ordinal());
-
-		if (_format == FileFormat.FILE_FORMAT_FASTQ) {
+		if (_quals != null) {
 			out.writeUTF(_quals);
 			out.writeFloat(_avgQual);
 		}
@@ -473,9 +441,7 @@ public class Sequence implements Writable {
 		for (int i = 0; i < compressSuffixLength; i++)
 			_compressSuffix[i] = in.readLong();
 
-		_format = FileFormat.values()[in.readInt()];
-
-		if (_format == FileFormat.FILE_FORMAT_FASTQ) {
+		if (_quals != null) {
 			_quals = in.readUTF();
 			_avgQual = in.readFloat();
 		}

@@ -18,13 +18,13 @@
  */
 package es.udc.gac.mardre.util;
 
-public class SequenceFactory {
+public class SequenceParserFactory {
 
 	public enum FileFormat {
 		FILE_FORMAT_FASTA, FILE_FORMAT_FASTQ, FILE_FORMAT_UNKNOWN
 	}
 
-	private SequenceFactory() {}
+	private SequenceParserFactory() {}
 
 	public static SeqStringParser createParser(FileFormat format, short prefixLength, char minQual) {
 

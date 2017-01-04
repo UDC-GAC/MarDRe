@@ -20,8 +20,6 @@ package es.udc.gac.mardre.util;
 
 import java.util.StringTokenizer;
 
-import es.udc.gac.mardre.util.SequenceFactory.FileFormat;
-
 public class FastQSeqStringParser extends SeqStringParser {
 
 	public FastQSeqStringParser(short prefixLength, char minQual) {
@@ -35,15 +33,14 @@ public class FastQSeqStringParser extends SeqStringParser {
 			throw new IllegalArgumentException("Found empty string " + s);
 
 		StringTokenizer st = new StringTokenizer(s, "\n");
+		
+		// Read the sequence name
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
 					+ ": no name available");
 		String str = st.nextToken().split("\\s+")[0];
-
-		// Read the sequence name
-		// Everything but the '@'
-		seq.setName(str.substring(1));
+		seq.setName(str);
 
 		// Read the sequence bases
 		if (!st.hasMoreTokens())
@@ -66,7 +63,6 @@ public class FastQSeqStringParser extends SeqStringParser {
 					+ ": no qualities available");
 		String strQuals = st.nextToken();
 
-		seq.setFormat(FileFormat.FILE_FORMAT_FASTQ);
 		seq.setLength(str.length());
 		seq.setPrefixLength(this.getPrefixLength());
 		seq.setQuals(strQuals);

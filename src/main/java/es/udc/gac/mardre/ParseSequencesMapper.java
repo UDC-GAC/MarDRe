@@ -28,8 +28,8 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.SeqStringParser;
 import es.udc.gac.mardre.util.Sequence;
-import es.udc.gac.mardre.util.SequenceFactory;
-import es.udc.gac.mardre.util.SequenceFactory.FileFormat;
+import es.udc.gac.mardre.util.SequenceParserFactory;
+import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
 
@@ -46,7 +46,7 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 		format = FileFormat.values()[Integer.parseInt(job.get(Configuration.FILE_FORMAT))];
 		prefixLength = Short.parseShort(job.get(Configuration.PREFIXLENGTH));
 		minQual = (char) Integer.parseInt(job.get(Configuration.MINQUAL));
-		parser = SequenceFactory.createParser(format, prefixLength, minQual);
+		parser = SequenceParserFactory.createParser(format, prefixLength, minQual);
 		String inputPath1 = job.get(Configuration.INPUT_PATH_1);
 		String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
 
