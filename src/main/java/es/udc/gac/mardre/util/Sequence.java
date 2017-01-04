@@ -21,6 +21,7 @@ package es.udc.gac.mardre.util;
 import java.io.BufferedWriter;
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringWriter;
 
@@ -80,7 +81,7 @@ public class Sequence implements Writable {
 	private boolean _isFirstSeq;
 	private String _quals;
 	private float _avgQual;
-	
+
 	public Sequence() {
 		_name = null;
 		_key = 0;
@@ -441,10 +442,14 @@ public class Sequence implements Writable {
 		for (int i = 0; i < compressSuffixLength; i++)
 			_compressSuffix[i] = in.readLong();
 
-		if (_quals != null) {
+		try {
 			_quals = in.readUTF();
-			_avgQual = in.readFloat();
+		} catch (EOFException ex) {
+			_quals = null;
 		}
+
+		if (_quals != null)
+			_avgQual = in.readFloat();
 	}
 
 	public String toStringFull() {
