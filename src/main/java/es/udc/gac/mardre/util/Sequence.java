@@ -115,8 +115,8 @@ public class Sequence implements Writable {
 		return _name;
 	}
 
-	public void setLength(short length) {
-		_length = length;
+	public void setLength(int length) {
+		_length = (short) length;
 	}
 
 	public int getLength() {
@@ -455,7 +455,7 @@ public class Sequence implements Writable {
 
 		if (_quals != null) {
 			out.writeUTF(_quals);
-			out.writeFloat(_avgQual);
+			//out.writeFloat(_avgQual);
 		}
 	}
 
@@ -478,12 +478,7 @@ public class Sequence implements Writable {
 			_quals = null;
 		}
 
-		if (_quals != null)
-			_avgQual = in.readFloat();
-	}
-
-	public String toStringFull() {
-		return toString() + ", isFirstSeq=" + _isFirstSeq + ", compressSuffix.length=" + _compressSuffix.length
-				+ ", prefixLength=" + _prefixLength;
+		//if (_quals != null)
+			//_avgQual = in.readFloat();
 	}
 }

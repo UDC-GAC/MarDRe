@@ -63,7 +63,7 @@ public class FastQSeqStringParser extends SeqStringParser {
 					+ ": no qualities available");
 		String strQuals = st.nextToken();
 
-		seq.setLength((short)str.length());
+		seq.setLength(str.length());
 		seq.setPrefixLength(this.getPrefixLength());
 		seq.setQuals(strQuals);
 		seq.setKey(str);

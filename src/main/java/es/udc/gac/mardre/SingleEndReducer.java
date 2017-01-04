@@ -44,39 +44,17 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	public void reduce(LongWritable key, Iterable<Sequence> values,
 			Context context) throws IOException, InterruptedException {
 
-//		boolean insert;
-//		List<Sequence> sequences = new ArrayList<Sequence>();
-//
-//		for (Sequence newSeq : values) {
-//			insert = true;
-//
-//			for (Sequence seq : sequences) {
-//				if (newSeq.equal(seq, missMatch)) {
-//					insert = false;
-//					break;
-//				}
-//			}
-//			if (insert)
-//				sequences.add(new Sequence(newSeq));
-//		}
-//
-//		for (Sequence seq : sequences) {
-//			context.write(nullKey, seq);
-//		}
-//
-//		sequences = null;
-		
-		short numMissMatch;
 		List<Sequence> sequences = new ArrayList<Sequence>();
 		List<Short> dist = new ArrayList<Short>();
+		short numMissMatch;
 		
 		// Get and write the first sequence
 		Sequence first = new Sequence(values.iterator().next());
 		context.write(nullKey, first);
-		
-		for (Sequence newSeq : values) {			
+
+		for (Sequence newSeq : values) {
 			numMissMatch = first.dist(newSeq);
-			
+
 			if (numMissMatch > missMatch) {
 				sequences.add(new Sequence(newSeq));
 				dist.add(numMissMatch);
@@ -84,7 +62,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		}
 
 		Sequence seq1, seq2;
-		int diff, size, j, i, comps = 0;
+		int diff, size, j, i;
 		size = sequences.size();
 
 		for (i=0; i<size-1; i++) {
@@ -99,7 +77,6 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 						diff = (diff < 0) ? -diff : diff;
 
 						if (diff <= missMatch) {
-							comps++;
 							if(seq1.equal(seq2, missMatch)) {
 								seq2.setDuplicate(true);
 							}
@@ -110,12 +87,11 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		}
 
 		for (Sequence seq : sequences) {
-			if (!seq.isDuplicate())
+			if (!seq.isDuplicate()) {
 				context.write(nullKey, seq);
+			}
 		}
-				
-		System.out.println("Size: "+sequences.size()+", Comps: "+comps);
-		
+
 		sequences = null;
 		dist = null;
 		first = null;

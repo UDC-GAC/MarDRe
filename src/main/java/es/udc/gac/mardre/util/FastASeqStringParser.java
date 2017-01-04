@@ -52,7 +52,7 @@ public class FastASeqStringParser extends SeqStringParser {
 		while(st.hasMoreTokens())
 			bases += st.nextToken();
 
-		seq.setLength((short)bases.length());
+		seq.setLength(bases.length());
 		seq.setPrefixLength(this.getPrefixLength());
 		seq.setKey(bases);
 		seq.setSuffix(bases);
