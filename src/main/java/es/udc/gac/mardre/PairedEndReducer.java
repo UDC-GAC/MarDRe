@@ -35,6 +35,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final String path2 = Configuration.TEMP_OUTPUT_PATH_2+"/part";
+	private static final List<PairedSequence> sequences = new ArrayList<PairedSequence>();
 	private MultipleOutputs<NullWritable,Sequence> mos;
 	private short missMatch;	
 
@@ -54,7 +55,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
 			throws IOException, InterruptedException {
 
-		List<PairedSequence> sequences = new ArrayList<PairedSequence>();
+		int diff, mask;
+		boolean insert;
 
 		// Get and write the first sequence
 		PairedSequence first = new PairedSequence(values.iterator().next());
@@ -63,37 +65,33 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		// Iterate over the remaining sequences
 		for (PairedSequence newSeq : values) {
-			if (newSeq.setDist(first) > missMatch)
-				sequences.add(new PairedSequence(newSeq));
-		}
+			if (newSeq.setDist(first) > missMatch) {
+				insert = true;
 
-		PairedSequence seq1, seq2;
-		int diff, j, i, mask;
+				for (PairedSequence seq : sequences) {
+					diff = newSeq.getDist() - seq.getDist();
+					// Very fast abs value computation for integers
+					mask = diff >> 31;
+					diff = (diff + mask) ^ mask;
 
-		// Remove duplicates
-		for (i=0; i<sequences.size()-1; i++) {
-			seq1 = sequences.get(i);
-
-			for (j=i+1; j<sequences.size(); j++) {
-				seq2 = sequences.get(j);
-				diff = seq1.getDist() - seq2.getDist();
-				// Very fast abs computation for integers
-				mask = diff >> 31;
-                                diff = (diff + mask) ^ mask;
-
-				if (diff <= missMatch) {
-					if(seq1.equal(seq2, missMatch)) {
-						sequences.remove(j);
-						j--;
+					if (diff <= missMatch) {
+						if(newSeq.equal(seq, missMatch)) {
+							insert = false;
+							break;
+						}
 					}
 				}
+				if (insert)
+					sequences.add(new PairedSequence(newSeq));
 			}
-
-			context.write(nullKey, seq1.getFirstSeq());
-			mos.write("output2", nullKey, seq1.getSecondSeq(), path2);
 		}
 
-		sequences = null;
-		first = null;
+		// Print non-duplicated sequences
+		for (PairedSequence seq : sequences) {
+			context.write(nullKey, seq.getFirstSeq());
+			mos.write("output2", nullKey, seq.getSecondSeq(), path2);
+		}
+
+		sequences.clear();
 	}
 }

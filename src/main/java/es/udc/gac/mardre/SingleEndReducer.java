@@ -32,6 +32,7 @@ import es.udc.gac.mardre.util.Sequence;
 public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
 
 	private static final NullWritable nullKey = NullWritable.get();
+	private static final List<Sequence> sequences = new ArrayList<Sequence>();
 	private short missMatch;
 
 	@Override
@@ -44,7 +45,8 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	public void reduce(LongWritable key, Iterable<Sequence> values,
 			Context context) throws IOException, InterruptedException {
 
-		List<Sequence> sequences = new ArrayList<Sequence>();
+		int diff, mask;
+		boolean insert;
 
 		// Get and write the first sequence
 		Sequence first = new Sequence(values.iterator().next());
@@ -52,39 +54,31 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		// Iterate over the remaining sequences
 		for (Sequence newSeq : values) {
-			if (newSeq.setDist(first) > missMatch)
-				sequences.add(new Sequence(newSeq));
-		}
+			if (newSeq.setDist(first) > missMatch) {
+				insert = true;
 
-		Sequence seq1, seq2;
-		int diff, j, i, mask;
+				for (Sequence seq : sequences) {
+					diff = newSeq.getDist() - seq.getDist();
+					// Very fast abs value computation for integers
+					mask = diff >> 31;
+					diff = (diff + mask) ^ mask;
 
-		// Remove duplicates
-		for (i=0; i<sequences.size()-1; i++) {
-			seq1 = sequences.get(i);
-
-			for (j=i+1; j<sequences.size(); j++) {
-				seq2 = sequences.get(j);
-				diff = seq1.getDist() - seq2.getDist();
-				// Very fast abs computation for integers
-				mask = diff >> 31;
-				diff = (diff + mask) ^ mask;
-
-				if (diff <= missMatch) {
-					if(seq1.equal(seq2, missMatch)) {
-						sequences.remove(j);
-						j--;
+					if (diff <= missMatch) {
+						if(newSeq.equal(seq, missMatch)) {
+							insert = false;
+							break;
+						}
 					}
 				}
+				if (insert)
+                        		sequences.add(new Sequence(newSeq));
 			}
-
-			//context.write(nullKey, seq1);
 		}
 
-		for (Sequence seq: sequences)
-			context.write(nullKey, seq);
+		// Print non-duplicated sequences
+		for (Sequence seq : sequences)
+                	context.write(nullKey, seq);
 
-		sequences = null;
-		first = null;
+		sequences.clear();
 	}
 }
