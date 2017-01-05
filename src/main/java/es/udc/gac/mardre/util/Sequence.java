@@ -81,7 +81,7 @@ public class Sequence implements Writable {
 	private boolean _isFirstSeq;
 	private String _quals;
 	private float _avgQual;
-	private boolean _duplicate;
+	private short _dist;
 
 	public Sequence() {
 		_name = null;
@@ -92,7 +92,7 @@ public class Sequence implements Writable {
 		_isFirstSeq = false;
 		_quals = null;
 		_avgQual = -1;
-		_duplicate = false;
+		_dist = -1;
 	}
 
 	public Sequence(Sequence s) {
@@ -104,7 +104,7 @@ public class Sequence implements Writable {
 		_isFirstSeq = s._isFirstSeq;
 		_quals = s._quals;
 		_avgQual = s._avgQual;
-		_duplicate = false;
+		_dist = s._dist;
 	}
 
 	public void setName(String name) {
@@ -164,12 +164,29 @@ public class Sequence implements Writable {
 		return _avgQual;
 	}
 
-	public boolean isDuplicate() {
-		return _duplicate;
+	public short getDist() {
+		return _dist;
 	}
 
-	public void setDuplicate(boolean duplicate) {
-		this._duplicate = duplicate;
+	public short setDist(Sequence seq2) {
+
+		if (_length != seq2._length) {
+			_dist = _length;
+			return _dist;
+		}
+
+		_dist = 0;
+		int popc;
+
+		for (int i = 0; i < _compressSuffix.length; i++) {
+			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
+			_dist += popc / 2;
+
+			if ((popc % 2) > 0)
+				_dist++;
+		}
+
+		return _dist;
 	}
 
 	public long getKey() {
@@ -337,25 +354,6 @@ public class Sequence implements Writable {
 		}
 
 		return true;
-	}
-
-	public short dist(Sequence seq2) {
-
-		if (_length != seq2._length)
-			return _length;
-
-		short numMissMatch = 0;
-		int popc;
-
-		for (int i = 0; i < _compressSuffix.length; i++) {
-			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
-			numMissMatch += popc / 2;
-
-			if ((popc % 2) > 0)
-				numMissMatch++;
-		}
-
-		return numMissMatch;
 	}
 
 	public void print(BufferedWriter writer) throws IOException {

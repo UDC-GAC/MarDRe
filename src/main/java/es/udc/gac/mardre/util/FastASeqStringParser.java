@@ -39,8 +39,7 @@ public class FastASeqStringParser extends SeqStringParser {
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
 					+ ": no name available");
-		String name = st.nextToken().split("\\s+")[0];
-		seq.setName(name);
+		seq.setName(st.nextToken().split("\\s+")[0]);
 
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(

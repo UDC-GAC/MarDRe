@@ -45,55 +45,46 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			Context context) throws IOException, InterruptedException {
 
 		List<Sequence> sequences = new ArrayList<Sequence>();
-		List<Short> dist = new ArrayList<Short>();
-		short numMissMatch;
 
 		// Get and write the first sequence
 		Sequence first = new Sequence(values.iterator().next());
 		context.write(nullKey, first);
 
+		// Iterate over the remaining sequences
 		for (Sequence newSeq : values) {
-			numMissMatch = first.dist(newSeq);
-
-			if (numMissMatch > missMatch) {
+			if (newSeq.setDist(first) > missMatch)
 				sequences.add(new Sequence(newSeq));
-				dist.add(numMissMatch);
-			}
 		}
 
 		Sequence seq1, seq2;
-		int diff, size, j, i;
-		size = sequences.size();
+		int diff, j, i, mask;
 
-		for (i=0; i<size-1; i++) {
+		// Remove duplicates
+		for (i=0; i<sequences.size()-1; i++) {
 			seq1 = sequences.get(i);
 
-			if (!seq1.isDuplicate()) {
-				for (j=i+1; j<size; j++) {
-					seq2 = sequences.get(j);
+			for (j=i+1; j<sequences.size(); j++) {
+				seq2 = sequences.get(j);
+				diff = seq1.getDist() - seq2.getDist();
+				// Very fast abs computation for integers
+				mask = diff >> 31;
+				diff = (diff + mask) ^ mask;
 
-					if (!seq2.isDuplicate()) {
-						diff = dist.get(i).shortValue() - dist.get(j).shortValue();
-						diff = (diff < 0) ? -diff : diff;
-
-						if (diff <= missMatch) {
-							if(seq1.equal(seq2, missMatch)) {
-								seq2.setDuplicate(true);
-							}
-						}
+				if (diff <= missMatch) {
+					if(seq1.equal(seq2, missMatch)) {
+						sequences.remove(j);
+						j--;
 					}
 				}
 			}
+
+			//context.write(nullKey, seq1);
 		}
 
-		for (Sequence seq : sequences) {
-			if (!seq.isDuplicate()) {
-				context.write(nullKey, seq);
-			}
-		}
+		for (Sequence seq: sequences)
+			context.write(nullKey, seq);
 
 		sequences = null;
-		dist = null;
 		first = null;
 	}
 }

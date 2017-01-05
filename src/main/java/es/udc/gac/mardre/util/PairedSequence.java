@@ -30,24 +30,18 @@ public class PairedSequence implements Writable {
 
 	private Sequence firstSeq;
 	private Sequence secondSeq;
-	private boolean duplicate;
+	private short dist;
 
 	public PairedSequence() {
 		this.firstSeq = null;
 		this.secondSeq = null;
-		this.duplicate = false;
+		dist = -1;
 	}
 
 	public PairedSequence(PairedSequence seq) {
 		this.firstSeq = seq.firstSeq;
 		this.secondSeq = seq.secondSeq;
-		this.duplicate = false;
-	}
-
-	public PairedSequence(Sequence first, Sequence second) {
-		this.firstSeq = first;
-		this.secondSeq = second;
-		this.duplicate = false;
+		dist = seq.dist;
 	}
 
 	public Sequence getFirstSeq() {
@@ -66,12 +60,13 @@ public class PairedSequence implements Writable {
 		this.secondSeq = secondSeq;
 	}
 
-	public boolean isDuplicate() {
-		return duplicate;
+	public short getDist() {
+		return dist;
 	}
 
-	public void setDuplicate(boolean duplicate) {
-		this.duplicate = duplicate;
+	public short setDist(PairedSequence seq2) {
+		dist = (short)(firstSeq.setDist(seq2.firstSeq)+secondSeq.setDist(seq2.secondSeq));
+		return dist;
 	}
 
 	public long getKey() {
@@ -84,12 +79,6 @@ public class PairedSequence implements Writable {
 			return this.secondSeq.equal(seq2.secondSeq, missMatch, numMissMatch);
 		}
 		return false;
-	}
-
-	public short dist(PairedSequence seq2) {
-		numMissMatch[0] = this.firstSeq.dist(seq2.firstSeq);
-		numMissMatch[0] += this.secondSeq.dist(seq2.secondSeq);
-		return numMissMatch[0];
 	}
 
 	@Override

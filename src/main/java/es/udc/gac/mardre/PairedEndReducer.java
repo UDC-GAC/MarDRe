@@ -34,6 +34,7 @@ import es.udc.gac.mardre.util.Sequence;
 public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, NullWritable, Sequence> {
 
 	private static final NullWritable nullKey = NullWritable.get();
+	private static final String path2 = Configuration.TEMP_OUTPUT_PATH_2+"/part";
 	private MultipleOutputs<NullWritable,Sequence> mos;
 	private short missMatch;	
 
@@ -54,57 +55,45 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			throws IOException, InterruptedException {
 
 		List<PairedSequence> sequences = new ArrayList<PairedSequence>();
-		List<Short> dist = new ArrayList<Short>();
-		short numMissMatch;
 
 		// Get and write the first sequence
 		PairedSequence first = new PairedSequence(values.iterator().next());
 		context.write(nullKey, first.getFirstSeq());
 		mos.write("output2", nullKey, first.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2+"/part");
 
+		// Iterate over the remaining sequences
 		for (PairedSequence newSeq : values) {
-			numMissMatch = first.dist(newSeq);
-
-			if (numMissMatch > missMatch) {
+			if (newSeq.setDist(first) > missMatch)
 				sequences.add(new PairedSequence(newSeq));
-				dist.add(numMissMatch);
-			}
 		}
 
 		PairedSequence seq1, seq2;
-		int diff, size, j, i;
-		size = sequences.size();
+		int diff, j, i, mask;
 
-		for (i=0; i<size-1; i++) {
+		// Remove duplicates
+		for (i=0; i<sequences.size()-1; i++) {
 			seq1 = sequences.get(i);
 
-			if (!seq1.isDuplicate()) {
-				for (j=i+1; j<size; j++) {
-					seq2 = sequences.get(j);
+			for (j=i+1; j<sequences.size(); j++) {
+				seq2 = sequences.get(j);
+				diff = seq1.getDist() - seq2.getDist();
+				// Very fast abs computation for integers
+				mask = diff >> 31;
+                                diff = (diff + mask) ^ mask;
 
-					if (!seq2.isDuplicate()) {
-						diff = dist.get(i).shortValue() - dist.get(j).shortValue();
-						diff = (diff < 0) ? -diff : diff;
-
-						if (diff <= missMatch) {
-							if(seq1.equal(seq2, missMatch)) {
-								seq2.setDuplicate(true);
-							}
-						}
+				if (diff <= missMatch) {
+					if(seq1.equal(seq2, missMatch)) {
+						sequences.remove(j);
+						j--;
 					}
 				}
 			}
-		}
 
-		for (PairedSequence seq : sequences) {
-			if (!seq.isDuplicate()) {
-				context.write(nullKey, seq.getFirstSeq());
-				mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2+"/part");
-			}
+			context.write(nullKey, seq1.getFirstSeq());
+			mos.write("output2", nullKey, seq1.getSecondSeq(), path2);
 		}
 
 		sequences = null;
-		dist = null;
 		first = null;
 	}
 }
