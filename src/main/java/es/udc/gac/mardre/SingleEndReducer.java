@@ -36,21 +36,21 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static final int T_TOTAL = 0;
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final List<Sequence> sequences = new ArrayList<Sequence>();
-	private static long numSequences;
-	private static long numClusters;
+	private static long numAnalyzedSequences;
+	private static long numPrintedSequences;
 	private short missMatch;
 
 	@Override
 	public void setup(Context context) {
 		org.apache.hadoop.conf.Configuration job = context.getConfiguration();
 		missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
-		numSequences = 0;
-		numClusters = 0;
+		numAnalyzedSequences = 0;
+		numPrintedSequences = 0;
 	}
 
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
-		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d reads in %d clusters: %.3f seconds\n", numSequences, numClusters, timer.read(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f seconds\n", numPrintedSequences, numAnalyzedSequences, timer.read(T_TOTAL));
 	}
 	
 	@Override
@@ -68,6 +68,8 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		// Iterate over the remaining sequences
 		for (Sequence newSeq : values) {
+			numAnalyzedSequences++;
+			
 			if (newSeq.setDist(first) > missMatch) {
 				insert = true;
 
@@ -89,14 +91,11 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			}
 		}
 
-		values = null;
-
 		// Print non-duplicated sequences
 		for (Sequence seq : sequences)
 			context.write(nullKey, seq);
 
-		numClusters++;
-		numSequences+=sequences.size();
+		numPrintedSequences+=sequences.size();
 		sequences.clear();
 		
 		timer.stop(T_TOTAL);
