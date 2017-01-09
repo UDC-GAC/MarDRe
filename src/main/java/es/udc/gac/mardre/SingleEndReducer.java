@@ -28,19 +28,29 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.Sequence;
+import es.udc.gac.mardre.util.Timer;
 
 public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
 
+	private static final Timer timer = new Timer();
+	private static final int T_TOTAL = 0;
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final List<Sequence> sequences = new ArrayList<Sequence>();
+	private static long numSequences;
 	private short missMatch;
 
 	@Override
 	public void setup(Context context) {
 		org.apache.hadoop.conf.Configuration job = context.getConfiguration();
 		missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
+		numSequences = 0;
 	}
 
+	@Override
+	protected void cleanup(Context context) throws IOException, InterruptedException {
+		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d reads: %.3f seconds\n", numSequences, timer.read(T_TOTAL));
+	}
+	
 	@Override
 	public void reduce(LongWritable key, Iterable<Sequence> values,
 			Context context) throws IOException, InterruptedException {
@@ -48,6 +58,8 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		int diff, mask;
 		boolean insert;
 
+		timer.start(T_TOTAL);
+		
 		// Get and write the first sequence
 		Sequence first = new Sequence(values.iterator().next());
 		context.write(nullKey, first);
@@ -81,6 +93,9 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		for (Sequence seq : sequences)
 			context.write(nullKey, seq);
 
+		numSequences+=sequences.size();
 		sequences.clear();
+		
+		timer.stop(T_TOTAL);
 	}
 }
