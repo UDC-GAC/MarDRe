@@ -176,9 +176,12 @@ public class Sequence implements Writable {
 
 		_dist = 0;
 		int popc;
+		long iter1, iter2;
 
 		for (int i = 0; i < _compressLength; i++) {
-			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
+			iter1 = _compressSuffix[i];
+			iter2 = seq2._compressSuffix[i];
+			popc = Long.bitCount(iter1 ^ iter2);
 			_dist += popc / 2;
 
 			if ((popc % 2) > 0)
@@ -246,9 +249,12 @@ public class Sequence implements Writable {
 
 		short numMissMatch = 0;
 		int popc;
+		long iter1, iter2;
 
 		for (int i = 0; i < _compressLength; i++) {
-			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
+			iter1 = _compressSuffix[i];
+			iter2 = seq2._compressSuffix[i];
+			popc = Long.bitCount(iter1 ^ iter2);
 			numMissMatch += popc / 2;
 
 			if ((popc % 2) > 0)
@@ -267,9 +273,12 @@ public class Sequence implements Writable {
 			return false;
 
 		int popc;
+		long iter1, iter2;
 
 		for (int i = 0; i < _compressLength; i++) {
-			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
+			iter1 = _compressSuffix[i];
+			iter2 = seq2._compressSuffix[i];
+			popc = Long.bitCount(iter1 ^ iter2);
 			numMissMatch[0] += popc / 2;
 
 			if ((popc % 2) > 0)
@@ -316,15 +325,15 @@ public class Sequence implements Writable {
 		// Decode the suffix
 		// 16 bases per element
 		iterBases = _length - 1;
-		long iterSuffix = _compressSuffix[_compressLength - 1];
+		int iterSuffix = _compressLength - 1;
+		long auxCompress = _compressSuffix[_compressLength - 1];
 		int suffixLength = _length - _prefixLength;
 		int numDecoded = 0;
 
 		if ((suffixLength % 16) > 0) {
-
 			for (int i = 0; i < (suffixLength % 16); i++) {
-				bases[iterBases] = (char) Sequence.decodeTab[(int) (iterSuffix & 15)];
-				iterSuffix >>= 4;
+				bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
+				auxCompress >>= 4;
 			iterBases--;
 			}
 			iterSuffix--;
@@ -332,9 +341,11 @@ public class Sequence implements Writable {
 		}
 
 		for (; numDecoded < _compressLength; numDecoded++) {
+			auxCompress = _compressSuffix[iterSuffix];
+
 			for (int j = 0; j < 16; j++) {
-				bases[iterBases] = (char) Sequence.decodeTab[(int) (iterSuffix & 15)];
-				iterSuffix >>= 4;
+				bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
+				auxCompress >>= 4;
 			iterBases--;
 			}
 			iterSuffix--;
