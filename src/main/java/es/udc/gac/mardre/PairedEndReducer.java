@@ -86,6 +86,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			}
 		}
 
+		values = null;
+		
 		// Print non-duplicated sequences
 		for (PairedSequence seq : sequences) {
 			context.write(nullKey, seq.getFirstSeq());

@@ -22,8 +22,8 @@ import java.util.StringTokenizer;
 
 public class FastASeqStringParser extends SeqStringParser {
 
-	public FastASeqStringParser(short prefixLength, char minQual) {
-		super(prefixLength, minQual);
+	public FastASeqStringParser(short prefixLength) {
+		super(prefixLength);
 	}
 
 	@Override

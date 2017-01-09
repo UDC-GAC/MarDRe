@@ -36,7 +36,6 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 	private Sequence seq = new Sequence();
 	private SeqStringParser parser;
 	private short prefixLength;
-	private char minQual;
 	private boolean isFirstInputPath = true;
 	private FileFormat format;
 
@@ -45,8 +44,7 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 		org.apache.hadoop.conf.Configuration job = context.getConfiguration();
 		format = FileFormat.values()[Integer.parseInt(job.get(Configuration.FILE_FORMAT))];
 		prefixLength = Short.parseShort(job.get(Configuration.PREFIXLENGTH));
-		minQual = (char) Integer.parseInt(job.get(Configuration.MINQUAL));
-		parser = SequenceParserFactory.createParser(format, prefixLength, minQual);
+		parser = SequenceParserFactory.createParser(format, prefixLength);
 		String inputPath1 = job.get(Configuration.INPUT_PATH_1);
 		String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
 

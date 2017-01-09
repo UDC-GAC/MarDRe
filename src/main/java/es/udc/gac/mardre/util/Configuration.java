@@ -42,7 +42,6 @@ public class Configuration {
 	public static final String IN_MAPPER_COMBINER_PARAM = "MaRDRe_inMapperCombiner";
 	public static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "MaRDRe_inMapperCombinerCacheSize";
 	public static final String PREFIXLENGTH = "MaRDRe_prefixLength";
-	public static final String MINQUAL = "MaRDRe_minQual";
 	public static final String MISSMATCH = "MaRDRe_missMatch";
 	public static final String FILE_FORMAT = "MaRDRe_fileFormat";
 	public static final String INPUT_PATH_1 = "MaRDRePath1";

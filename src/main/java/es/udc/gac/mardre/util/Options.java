@@ -25,7 +25,6 @@ public class Options {
 	private String _writeFileName1;
 	private String _writeFileName2;
 	private boolean _paired;
-	private char _minQual;
 	private short _missMatch;
 	private short _prefixLength;
 
@@ -35,7 +34,6 @@ public class Options {
 		_writeFileName1 = null;
 		_writeFileName2 = null;
 		_paired = false;
-		_minQual = '0';
 		_missMatch = 0;
 		_prefixLength = 20;
 	}
@@ -76,14 +74,6 @@ public class Options {
 		return _paired;
 	}
 
-	public char getMinQual() {
-		return _minQual;
-	}
-
-	public void setMinQual(char minQual) {
-		_minQual = minQual;
-	}
-
 	public short getMissMatch() {
 		return _missMatch;
 	}
@@ -119,10 +109,6 @@ public class Options {
 		System.out.print(
 				"    -l <short> (prefix length used for clustering, default ");
 		System.out.print(_prefixLength);
-		System.out.println(")");
-		System.out.print(
-				"    -q <char> (quality threshold under which bases are considered 'N', default ");
-		System.out.print(_minQual);
 		System.out.println(")");
 		System.out.println("Others:");
 		System.out.println("    -h (print out the usage of the program)");
@@ -192,19 +178,6 @@ public class Options {
 					argInd++;
 				} else {
 					System.out.println("No value specified for parameter -l");
-					return false;
-				}
-			} else if (args[argInd].equals("-q")) {
-				// Minimal quality score
-				argInd++;
-				if (argInd < args.length) {
-					_minQual = args[argInd].charAt(0);
-					if (_minQual < 0)
-						_minQual = 0;
-
-					argInd++;
-				} else {
-					System.out.println("No value specified for parameter -q");
 					return false;
 				}
 			} else if (args[argInd].equals("-h")) {

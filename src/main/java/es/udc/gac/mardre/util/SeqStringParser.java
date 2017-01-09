@@ -21,11 +21,9 @@ package es.udc.gac.mardre.util;
 public abstract class SeqStringParser {
 
 	private short _prefixLength;
-	private char _minQual;
 
-	public SeqStringParser(short prefixLength, char minQual) {
+	public SeqStringParser(short prefixLength) {
 		this._prefixLength = prefixLength;
-		this._minQual = minQual;
 	}
 
 	public short getPrefixLength() {
@@ -34,14 +32,6 @@ public abstract class SeqStringParser {
 
 	public void setPrefixLength(short _prefixLength) {
 		this._prefixLength = _prefixLength;
-	}
-
-	public char getMinQual() {
-		return _minQual;
-	}
-
-	public void setMinQual(char _minQual) {
-		this._minQual = _minQual;
 	}
 
 	public abstract int getSeq(String s, Sequence seq);

@@ -38,7 +38,6 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 	private LongWritable longKey = new LongWritable();
 	private SeqStringParser parser;
 	private short prefixLength;
-	private char minQual;
 	private short missMatch;
 	private FileFormat format;
 
@@ -71,8 +70,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 		org.apache.hadoop.conf.Configuration job = context.getConfiguration();
 		format = FileFormat.values()[Integer.parseInt(job.get(Configuration.FILE_FORMAT))];
 		prefixLength = Short.parseShort(job.get(Configuration.PREFIXLENGTH));
-		minQual = (char) Integer.parseInt(job.get(Configuration.MINQUAL));
-		parser = SequenceParserFactory.createParser(format, prefixLength, minQual);
+		parser = SequenceParserFactory.createParser(format, prefixLength);
 		missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
 
 		if (Boolean.parseBoolean(job.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {

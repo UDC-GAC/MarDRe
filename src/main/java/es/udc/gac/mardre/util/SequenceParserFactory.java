@@ -26,12 +26,12 @@ public class SequenceParserFactory {
 
 	private SequenceParserFactory() {}
 
-	public static SeqStringParser createParser(FileFormat format, short prefixLength, char minQual) {
+	public static SeqStringParser createParser(FileFormat format, short prefixLength) {
 
 		if (format == FileFormat.FILE_FORMAT_FASTQ)
-			return new FastQSeqStringParser(prefixLength, minQual);
+			return new FastQSeqStringParser(prefixLength);
 		else if (format == FileFormat.FILE_FORMAT_FASTA)
-			return new FastASeqStringParser(prefixLength, minQual);
+			return new FastASeqStringParser(prefixLength);
 		else
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
 	}

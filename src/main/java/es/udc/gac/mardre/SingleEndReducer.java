@@ -71,13 +71,15 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 					}
 				}
 				if (insert)
-                        		sequences.add(new Sequence(newSeq));
+					sequences.add(new Sequence(newSeq));
 			}
 		}
 
+		values = null;
+
 		// Print non-duplicated sequences
 		for (Sequence seq : sequences)
-                	context.write(nullKey, seq);
+			context.write(nullKey, seq);
 
 		sequences.clear();
 	}
