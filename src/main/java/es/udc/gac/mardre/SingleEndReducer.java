@@ -52,7 +52,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	protected void cleanup(Context context) throws IOException, InterruptedException {
 		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f seconds\n", numPrintedSequences, numAnalyzedSequences, timer.read(T_TOTAL));
 	}
-	
+
 	@Override
 	public void reduce(LongWritable key, Iterable<Sequence> values,
 			Context context) throws IOException, InterruptedException {
@@ -61,7 +61,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		boolean insert;
 
 		timer.start(T_TOTAL);
-		
+
 		// Get and write the first sequence
 		Sequence first = new Sequence(values.iterator().next());
 		context.write(nullKey, first);
@@ -69,7 +69,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		// Iterate over the remaining sequences
 		for (Sequence newSeq : values) {
 			numAnalyzedSequences++;
-			
+
 			if (newSeq.setDist(first) > missMatch) {
 				insert = true;
 
@@ -97,7 +97,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		numPrintedSequences+=sequences.size();
 		sequences.clear();
-		
+
 		timer.stop(T_TOTAL);
 	}
 }

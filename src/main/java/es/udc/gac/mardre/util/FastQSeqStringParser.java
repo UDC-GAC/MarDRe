@@ -62,6 +62,10 @@ public class FastQSeqStringParser extends SeqStringParser {
 					+ ": no qualities available");
 		String strQuals = st.nextToken();
 
+		// For base-space reads
+		if (strQuals.length() != str.length())
+			throw new IllegalArgumentException("The number of bases is not equal to the number of quality scores");
+
 		seq.setLength(str.length());
 		seq.setPrefixLength(this.getPrefixLength());
 		seq.setQuals(strQuals);
