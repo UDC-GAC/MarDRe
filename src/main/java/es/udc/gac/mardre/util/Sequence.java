@@ -280,10 +280,9 @@ public class Sequence implements Writable {
 		return true;
 	}
 
-	private void decodeBases(char[] bases) {
+	private void decodeBases(char[] bases, short prefixLength) {
 
 		// Decode the prefix
-		short prefixLength = Configuration.prefixLength;
 		int iterBases = prefixLength - 1;
 		long auxKey = _key;
 
@@ -333,9 +332,9 @@ public class Sequence implements Writable {
 			bufferedWriter.newLine();
 
 			char[] bases = new char[_length];
-			
+
 			// Decode the bases
-			decodeBases(bases);
+			decodeBases(bases, Configuration.prefixLength);
 
 			// Print the bases
 			bufferedWriter.write(bases);
