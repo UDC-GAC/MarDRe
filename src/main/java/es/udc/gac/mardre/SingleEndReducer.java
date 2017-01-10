@@ -40,7 +40,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static long numPrintedSequences;
 
 	@Override
-	public void setup(Context context) {
+	protected void setup(Context context) {
 		Configuration.setParameters(context.getConfiguration());
 		numAnalyzedSequences = 0;
 		numPrintedSequences = 0;

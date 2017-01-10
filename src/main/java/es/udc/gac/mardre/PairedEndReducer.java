@@ -30,21 +30,29 @@ import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.Sequence;
+import es.udc.gac.mardre.util.Timer;
 
 public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, NullWritable, Sequence> {
 
+	private static final Timer timer = new Timer();
+	private static final int T_TOTAL = 0;
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final List<PairedSequence> sequences = new ArrayList<PairedSequence>();
 	private static MultipleOutputs<NullWritable,Sequence> mos;
+	private static long numAnalyzedSequences;
+	private static long numPrintedSequences;
 
 	@Override
-	public void setup(Context context) {
+	protected void setup(Context context) {
 		Configuration.setParameters(context.getConfiguration());
 		mos = new MultipleOutputs<NullWritable,Sequence>(context);
+		numAnalyzedSequences = 0;
+		numPrintedSequences = 0;
 	}
 
 	@Override
-	public void cleanup(Context context) throws IOException, InterruptedException {
+	protected void cleanup(Context context) throws IOException, InterruptedException {
+		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f seconds\n", numPrintedSequences, numAnalyzedSequences, timer.read(T_TOTAL));
 		mos.close();
 	}
 
@@ -55,6 +63,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		int diff, mask;
 		boolean insert;
 
+		timer.start(T_TOTAL);
+
 		// Get and write the first sequence
 		PairedSequence first = new PairedSequence(values.iterator().next());
 		context.write(nullKey, first.getFirstSeq());
@@ -62,6 +72,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		// Iterate over the remaining sequences
 		for (PairedSequence newSeq : values) {
+			numAnalyzedSequences++;
+
 			if (newSeq.setDist(first) > Configuration.missMatch) {
 				insert = true;
 
@@ -89,6 +101,9 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 		}
 
+		numPrintedSequences+=sequences.size();
 		sequences.clear();
+
+		timer.stop(T_TOTAL);
 	}
 }

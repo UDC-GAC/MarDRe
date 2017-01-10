@@ -57,15 +57,14 @@ public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWr
 			);
 
 	@Override
-	public void setup(Context context) {
+	protected void setup(Context context) {
 		org.apache.hadoop.conf.Configuration jobConf = context.getConfiguration();
 		Configuration.setParameters(jobConf);
 
 		if (Boolean.parseBoolean(jobConf.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
 			// Disable the in-Mapper combiner
 			combiner.setCombiningFunction(null);
-		}
-		else {
+		} else {
 			int cacheCapacity = Integer.parseInt(jobConf.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
 			combiner.setMaxCacheCapacity(cacheCapacity);
 		}

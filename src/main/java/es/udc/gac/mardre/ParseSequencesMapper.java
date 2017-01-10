@@ -37,7 +37,7 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 	private static boolean isFirstInputPath = true;
 
 	@Override
-	public void setup(Context context) throws IOException {
+	protected void setup(Context context) throws IOException {
 		Configuration.setParameters(context.getConfiguration());		
 		parser = SequenceParserFactory.createParser(Configuration.fileFormat, Configuration.prefixLength);
 		String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
