@@ -173,8 +173,8 @@ public class Sequence implements Writable {
 			popc = Long.bitCount(iter1 ^ iter2);
 			_dist += popc >> 1;
 
-			if ((popc & 1) > 0)
-				_dist++;
+		if ((popc & 1) > 0)
+			_dist++;
 		}
 
 		return _dist;
@@ -245,11 +245,11 @@ public class Sequence implements Writable {
 			popc = Long.bitCount(iter1 ^ iter2);
 			numMissMatch += popc >> 1;
 
-			if ((popc & 1) > 0)
-				numMissMatch++;
+		if ((popc & 1) > 0)
+			numMissMatch++;
 
-			if (numMissMatch > missMatch)
-				return false;
+		if (numMissMatch > missMatch)
+			return false;
 		}
 
 		return true;
@@ -269,11 +269,11 @@ public class Sequence implements Writable {
 			popc = Long.bitCount(iter1 ^ iter2);
 			numMissMatch[0] += popc >> 1;
 
-			if ((popc & 1) > 0)
-				numMissMatch[0]++;
+		if ((popc & 1) > 0)
+			numMissMatch[0]++;
 
-			if (numMissMatch[0] > missMatch)
-				return false;
+		if (numMissMatch[0] > missMatch)
+			return false;
 		}
 
 		return true;
