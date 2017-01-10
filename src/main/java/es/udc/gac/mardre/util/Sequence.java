@@ -29,8 +29,7 @@ import org.apache.hadoop.io.Writable;
 
 public class Sequence implements Writable {
 
-	private static char[] bases = null;
-	private static StringWriter stringWriter = new StringWriter();
+	private static final StringWriter stringWriter = new StringWriter();
 
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
 
@@ -281,10 +280,7 @@ public class Sequence implements Writable {
 		return true;
 	}
 
-	private void decodeBases() {
-
-		if (bases == null)
-			bases = new char[_length];
+	private void decodeBases(char[] bases) {
 
 		// Decode the prefix
 		short prefixLength = Configuration.prefixLength;
@@ -336,8 +332,10 @@ public class Sequence implements Writable {
 			bufferedWriter.write(_name, 0, _name.length());
 			bufferedWriter.newLine();
 
+			char[] bases = new char[_length];
+			
 			// Decode the bases
-			decodeBases();
+			decodeBases(bases);
 
 			// Print the bases
 			bufferedWriter.write(bases);
