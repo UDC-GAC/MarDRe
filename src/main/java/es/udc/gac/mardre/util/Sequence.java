@@ -171,9 +171,9 @@ public class Sequence implements Writable {
 			iter1 = _compressSuffix[i];
 			iter2 = seq2._compressSuffix[i];
 			popc = Long.bitCount(iter1 ^ iter2);
-			_dist += popc / 2;
+			_dist += popc >> 1;
 
-			if ((popc % 2) > 0)
+			if ((popc & 1) > 0)
 				_dist++;
 		}
 
@@ -184,15 +184,12 @@ public class Sequence implements Writable {
 		return _key;
 	}
 
-	public long setKey(String bases, short prefixLength) {
+	public void setKey(String bases, short prefixLength) {
 		_key = 0;
 
 		for (int i = 0; i < prefixLength; i++) {
-			_key *= 5;
-			_key += Sequence.codePrefix(bases.charAt(i));
+			_key = (_key * 5) + Sequence.codePrefix(bases.charAt(i));
 		}
-
-		return _key;
 	}
 
 	public long[] getSufix() {
@@ -202,15 +199,17 @@ public class Sequence implements Writable {
 	public void setSuffix(String bases, short prefixLength) {
 		// 16 bases per element
 		int suffixLength = _length - prefixLength;
-		int compressLength = (short) (suffixLength / 16);
+		int suffixLengthDiv = suffixLength >> 4;
+		int suffixLengthMod = suffixLength & 15;
+		int compressLength = suffixLengthDiv;
 		int iterBases = prefixLength;
 
-		if ((suffixLength % 16) > 0)
+		if (suffixLengthMod > 0)
 			compressLength++;
 
 		_compressSuffix = new long[compressLength];
 
-		for (int i = 0; i < suffixLength / 16; i++) {
+		for (int i = 0; i < suffixLengthDiv; i++) {
 			_compressSuffix[i] = 0;
 
 			for (int j = 0; j < 16; j++) {
@@ -220,10 +219,10 @@ public class Sequence implements Writable {
 			}
 		}
 
-		if ((suffixLength % 16) > 0) {
+		if (suffixLengthMod > 0) {
 			_compressSuffix[compressLength - 1] = 0;
 
-			for (int i = 0; i < suffixLength % 16; i++) {
+			for (int i = 0; i < suffixLengthMod; i++) {
 				_compressSuffix[compressLength - 1] <<= 4;
 				_compressSuffix[compressLength - 1] += Sequence.code(bases.charAt(iterBases));
 				iterBases++;
@@ -244,9 +243,9 @@ public class Sequence implements Writable {
 			iter1 = _compressSuffix[i];
 			iter2 = seq2._compressSuffix[i];
 			popc = Long.bitCount(iter1 ^ iter2);
-			numMissMatch += popc / 2;
+			numMissMatch += popc >> 1;
 
-			if ((popc % 2) > 0)
+			if ((popc & 1) > 0)
 				numMissMatch++;
 
 			if (numMissMatch > missMatch)
@@ -268,9 +267,9 @@ public class Sequence implements Writable {
 			iter1 = _compressSuffix[i];
 			iter2 = seq2._compressSuffix[i];
 			popc = Long.bitCount(iter1 ^ iter2);
-			numMissMatch[0] += popc / 2;
+			numMissMatch[0] += popc >> 1;
 
-			if ((popc % 2) > 0)
+			if ((popc & 1) > 0)
 				numMissMatch[0]++;
 
 			if (numMissMatch[0] > missMatch)
@@ -288,7 +287,7 @@ public class Sequence implements Writable {
 
 		for (int i = 0; i < prefixLength; i++) {
 			bases[iterBases] = (char) Sequence.decodePrefixTab[(int) (auxKey % 5)];
-			auxKey /= 5;
+			auxKey *= 0.2;
 			iterBases--;
 		}
 
@@ -297,10 +296,11 @@ public class Sequence implements Writable {
 		int iterSuffix = _compressSuffix.length - 1;
 		long auxCompress = _compressSuffix[iterSuffix];
 		int suffixLength = _length - prefixLength;
+		int suffixLengthMod = suffixLength & 15;
 		int numDecoded = 0;
 
-		if ((suffixLength % 16) > 0) {
-			for (int i = 0; i < (suffixLength % 16); i++) {
+		if (suffixLengthMod > 0) {
+			for (int i = 0; i < suffixLengthMod; i++) {
 				bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
 				auxCompress >>= 4;
 			iterBases--;
