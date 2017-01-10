@@ -28,8 +28,8 @@ import es.udc.gac.mardre.util.Sequence;
 
 public class GroupSequencesReducer extends Reducer<LongWritable, Sequence, LongWritable, PairedSequence> {
 
-	private PairedSequence pairedSeq = new PairedSequence();
-	private LongWritable longKey = new LongWritable();
+	private static PairedSequence pairedSeq = new PairedSequence();
+	private static LongWritable longKey = new LongWritable();
 
 	@Override
 	public void reduce(LongWritable key, Iterable<Sequence> values,

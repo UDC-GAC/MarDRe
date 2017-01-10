@@ -29,6 +29,9 @@ import org.apache.hadoop.io.Writable;
 
 public class Sequence implements Writable {
 
+	private static char[] bases = null;
+	private static StringWriter stringWriter = new StringWriter();
+
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
 
 	private static final short[] codePrefixTab = { 0, 4, 1, 4, 4, 4, 2, // A -> G
@@ -73,24 +76,20 @@ public class Sequence implements Writable {
 		return Sequence.codeTab[aux];
 	}
 
-	private String _name;
-	private short _length;
-	private short _prefixLength;
 	private long _key;
+	private short _length;
+	private short _dist;
 	private long[] _compressSuffix;
-	private short _compressLength;
 	private boolean _isFirstSeq;
+	private String _name;
 	private String _quals;
 	private float _avgQual;
-	private short _dist;
 
 	public Sequence() {
 		_name = null;
 		_key = 0;
 		_compressSuffix = null;
-		_compressLength = 0;
 		_length = -1;
-		_prefixLength = -1;
 		_isFirstSeq = false;
 		_quals = null;
 		_avgQual = -1;
@@ -101,9 +100,7 @@ public class Sequence implements Writable {
 		_name = s._name;
 		_key = s._key;
 		_compressSuffix = s._compressSuffix;
-		_compressLength = s._compressLength;
 		_length = s._length;
-		_prefixLength = s._prefixLength;
 		_isFirstSeq = s._isFirstSeq;
 		_quals = s._quals;
 		_avgQual = s._avgQual;
@@ -126,14 +123,6 @@ public class Sequence implements Writable {
 		return _length;
 	}
 
-	public void setPrefixLength(short length) {
-		_prefixLength = length;
-	}
-
-	public short getPrefixLength() {
-		return _prefixLength;
-	}
-
 	public void setIsFirstSeq(boolean val) {
 		_isFirstSeq = val;
 	}
@@ -153,11 +142,12 @@ public class Sequence implements Writable {
 	public float getAvgQual() {
 		if ((_avgQual == -1) && (_quals != null)) {
 			_avgQual = 0;
+			int length = _quals.length();
 
-			for (int i = 0; i < _length; i++) {
+			for (int i = 0; i < length; i++) {
 				_avgQual += _quals.charAt(i);
 			}
-			_avgQual /= (float) _length;
+			_avgQual /= (float) length;
 		}
 
 		return _avgQual;
@@ -178,7 +168,7 @@ public class Sequence implements Writable {
 		int popc;
 		long iter1, iter2;
 
-		for (int i = 0; i < _compressLength; i++) {
+		for (int i = 0; i < _compressSuffix.length; i++) {
 			iter1 = _compressSuffix[i];
 			iter2 = seq2._compressSuffix[i];
 			popc = Long.bitCount(iter1 ^ iter2);
@@ -195,10 +185,10 @@ public class Sequence implements Writable {
 		return _key;
 	}
 
-	public long setKey(String bases) {
+	public long setKey(String bases, short prefixLength) {
 		_key = 0;
 
-		for (int i = 0; i < _prefixLength; i++) {
+		for (int i = 0; i < prefixLength; i++) {
 			_key *= 5;
 			_key += Sequence.codePrefix(bases.charAt(i));
 		}
@@ -210,16 +200,16 @@ public class Sequence implements Writable {
 		return _compressSuffix;
 	}
 
-	public void setSuffix(String bases) {
+	public void setSuffix(String bases, short prefixLength) {
 		// 16 bases per element
-		int suffixLength = _length - _prefixLength;
-		_compressLength = (short) (suffixLength / 16);
-		int iterBases = _prefixLength;
+		int suffixLength = _length - prefixLength;
+		int compressLength = (short) (suffixLength / 16);
+		int iterBases = prefixLength;
 
 		if ((suffixLength % 16) > 0)
-			_compressLength++;
+			compressLength++;
 
-		_compressSuffix = new long[_compressLength];
+		_compressSuffix = new long[compressLength];
 
 		for (int i = 0; i < suffixLength / 16; i++) {
 			_compressSuffix[i] = 0;
@@ -232,11 +222,11 @@ public class Sequence implements Writable {
 		}
 
 		if ((suffixLength % 16) > 0) {
-			_compressSuffix[_compressLength - 1] = 0;
+			_compressSuffix[compressLength - 1] = 0;
 
 			for (int i = 0; i < suffixLength % 16; i++) {
-				_compressSuffix[_compressLength - 1] <<= 4;
-				_compressSuffix[_compressLength - 1] += Sequence.code(bases.charAt(iterBases));
+				_compressSuffix[compressLength - 1] <<= 4;
+				_compressSuffix[compressLength - 1] += Sequence.code(bases.charAt(iterBases));
 				iterBases++;
 			}
 		}
@@ -251,7 +241,7 @@ public class Sequence implements Writable {
 		int popc;
 		long iter1, iter2;
 
-		for (int i = 0; i < _compressLength; i++) {
+		for (int i = 0; i < _compressSuffix.length; i++) {
 			iter1 = _compressSuffix[i];
 			iter2 = seq2._compressSuffix[i];
 			popc = Long.bitCount(iter1 ^ iter2);
@@ -275,7 +265,7 @@ public class Sequence implements Writable {
 		int popc;
 		long iter1, iter2;
 
-		for (int i = 0; i < _compressLength; i++) {
+		for (int i = 0; i < _compressSuffix.length; i++) {
 			iter1 = _compressSuffix[i];
 			iter2 = seq2._compressSuffix[i];
 			popc = Long.bitCount(iter1 ^ iter2);
@@ -291,43 +281,27 @@ public class Sequence implements Writable {
 		return true;
 	}
 
-	public void print(BufferedWriter writer) throws IOException {
+	private void decodeBases() {
 
-		// Print the name
-		writer.write(_name, 0, _name.length());
-		writer.newLine();
-
-		// Decode the bases
-		decodeBases(writer);
-
-		// Print the quality scores if available
-		if (_quals != null) {
-			writer.newLine();
-			writer.write('+');
-			writer.newLine();
-			writer.write(_quals, 0, _quals.length());
-		}
-	}
-
-	private void decodeBases(BufferedWriter writer) throws IOException {
+		if (bases == null)
+			bases = new char[_length];
 
 		// Decode the prefix
-		char[] bases = new char[_length];
-		int iterBases = _prefixLength - 1;
+		short prefixLength = Configuration.prefixLength;
+		int iterBases = prefixLength - 1;
 		long auxKey = _key;
 
-		for (int i = 0; i < _prefixLength; i++) {
+		for (int i = 0; i < prefixLength; i++) {
 			bases[iterBases] = (char) Sequence.decodePrefixTab[(int) (auxKey % 5)];
 			auxKey /= 5;
 			iterBases--;
 		}
 
-		// Decode the suffix
-		// 16 bases per element
+		// Decode the suffix (16 bases per element)
 		iterBases = _length - 1;
-		int iterSuffix = _compressLength - 1;
-		long auxCompress = _compressSuffix[_compressLength - 1];
-		int suffixLength = _length - _prefixLength;
+		int iterSuffix = _compressSuffix.length - 1;
+		long auxCompress = _compressSuffix[iterSuffix];
+		int suffixLength = _length - prefixLength;
 		int numDecoded = 0;
 
 		if ((suffixLength % 16) > 0) {
@@ -340,7 +314,7 @@ public class Sequence implements Writable {
 			numDecoded++;
 		}
 
-		for (; numDecoded < _compressLength; numDecoded++) {
+		for (; numDecoded < _compressSuffix.length; numDecoded++) {
 			auxCompress = _compressSuffix[iterSuffix];
 
 			for (int j = 0; j < 16; j++) {
@@ -350,56 +324,65 @@ public class Sequence implements Writable {
 			}
 			iterSuffix--;
 		}
-
-		// Print the bases
-		writer.write(bases);
 	}
 
 	@Override
 	public String toString() {
-		StringWriter sw = new StringWriter();
-		BufferedWriter bw = new BufferedWriter(sw);
+		stringWriter.getBuffer().setLength(0);
+		BufferedWriter bufferedWriter = new BufferedWriter(stringWriter);
 
 		try {
-			print(bw);
-			bw.close();
-			sw.close();
+			// Print the name
+			bufferedWriter.write(_name, 0, _name.length());
+			bufferedWriter.newLine();
+
+			// Decode the bases
+			decodeBases();
+
+			// Print the bases
+			bufferedWriter.write(bases);
+
+			// Print the quality scores if available
+			if (_quals != null) {
+				bufferedWriter.newLine();
+				bufferedWriter.write('+');
+				bufferedWriter.newLine();
+				bufferedWriter.write(_quals, 0, _quals.length());
+			}
+
+			bufferedWriter.close();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 
-		return sw.toString();
+		return stringWriter.toString();
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeLong(_key);
 		out.writeShort(_length);
-		out.writeShort(_prefixLength);
 		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
-		out.writeShort(_compressLength);
+		out.writeShort(_compressSuffix.length);
 
-		for (int i = 0; i < _compressLength; i++)
+		for (int i = 0; i < _compressSuffix.length; i++)
 			out.writeLong(_compressSuffix[i]);
 
-		if (_quals != null) {
+		if (_quals != null)
 			out.writeUTF(_quals);
-			//out.writeFloat(_avgQual);
-		}
 	}
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		_key = in.readLong();
 		_length = in.readShort();
-		_prefixLength = in.readShort();
 		_name = in.readUTF();
 		_isFirstSeq = in.readBoolean();
-		_compressLength = in.readShort();
-		_compressSuffix = new long[_compressLength];
+		int compressLength = in.readShort();
+		_compressSuffix = new long[compressLength];
 
-		for (int i = 0; i < _compressLength; i++)
+		for (int i = 0; i < compressLength; i++)
 			_compressSuffix[i] = in.readLong();
 
 		try {
@@ -407,8 +390,5 @@ public class Sequence implements Writable {
 		} catch (EOFException ex) {
 			_quals = null;
 		}
-
-		//if (_quals != null)
-		//_avgQual = in.readFloat();
 	}
 }

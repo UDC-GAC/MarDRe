@@ -30,10 +30,9 @@ import es.udc.gac.mardre.util.PairedSequence;
 
 public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWritable, PairedSequence> {
 
-	private LongWritable longKey = new LongWritable();
-	private short missMatch;
+	private static LongWritable longKey = new LongWritable();
 
-	private final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
+	private static final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
 			new CombiningFunction<LongWritable, PairedSequence>() {
 				@Override
 				public void combine(Map<LongWritable, List<PairedSequence>> cache, List<PairedSequence> seqsInCache, PairedSequence newSeq) {
@@ -41,7 +40,7 @@ public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWr
 					boolean insert = true;
 
 					for (PairedSequence seq : seqsInCache) {
-						if (newSeq.equal(seq, missMatch)) {
+						if (newSeq.equal(seq, Configuration.missMatch)) {
 							insert = false;
 							break;
 						}
@@ -59,15 +58,15 @@ public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWr
 
 	@Override
 	public void setup(Context context) {
-		org.apache.hadoop.conf.Configuration job = context.getConfiguration();
-		missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
+		org.apache.hadoop.conf.Configuration jobConf = context.getConfiguration();
+		Configuration.setParameters(jobConf);
 
-		if (Boolean.parseBoolean(job.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
+		if (Boolean.parseBoolean(jobConf.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
 			// Disable the in-Mapper combiner
 			combiner.setCombiningFunction(null);
 		}
 		else {
-			int cacheCapacity = Integer.parseInt(job.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
+			int cacheCapacity = Integer.parseInt(jobConf.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
 			combiner.setMaxCacheCapacity(cacheCapacity);
 		}
 	}

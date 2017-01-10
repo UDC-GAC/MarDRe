@@ -34,20 +34,17 @@ import es.udc.gac.mardre.util.Sequence;
 public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, NullWritable, Sequence> {
 
 	private static final NullWritable nullKey = NullWritable.get();
-	private static final String path2 = Configuration.TEMP_OUTPUT_PATH_2+"/part";
 	private static final List<PairedSequence> sequences = new ArrayList<PairedSequence>();
-	private MultipleOutputs<NullWritable,Sequence> mos;
-	private short missMatch;	
+	private static MultipleOutputs<NullWritable,Sequence> mos;
 
 	@Override
 	public void setup(Context context) {
-		org.apache.hadoop.conf.Configuration job = context.getConfiguration();
-		missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
+		Configuration.setParameters(context.getConfiguration());
 		mos = new MultipleOutputs<NullWritable,Sequence>(context);
 	}
 
 	@Override
-	public void cleanup(Context context ) throws IOException, InterruptedException {
+	public void cleanup(Context context) throws IOException, InterruptedException {
 		mos.close();
 	}
 
@@ -61,11 +58,11 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		// Get and write the first sequence
 		PairedSequence first = new PairedSequence(values.iterator().next());
 		context.write(nullKey, first.getFirstSeq());
-		mos.write("output2", nullKey, first.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2+"/part");
+		mos.write("output2", nullKey, first.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 
 		// Iterate over the remaining sequences
 		for (PairedSequence newSeq : values) {
-			if (newSeq.setDist(first) > missMatch) {
+			if (newSeq.setDist(first) > Configuration.missMatch) {
 				insert = true;
 
 				for (PairedSequence seq : sequences) {
@@ -74,8 +71,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 					mask = diff >> 31;
 					diff = (diff + mask) ^ mask;
 
-					if (diff <= missMatch) {
-						if(newSeq.equal(seq, missMatch)) {
+					if (diff <= Configuration.missMatch) {
+						if(newSeq.equal(seq, Configuration.missMatch)) {
 							insert = false;
 							break;
 						}
@@ -89,7 +86,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		// Print non-duplicated sequences
 		for (PairedSequence seq : sequences) {
 			context.write(nullKey, seq.getFirstSeq());
-			mos.write("output2", nullKey, seq.getSecondSeq(), path2);
+			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 		}
 
 		sequences.clear();

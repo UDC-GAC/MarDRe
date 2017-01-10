@@ -38,12 +38,10 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static final List<Sequence> sequences = new ArrayList<Sequence>();
 	private static long numAnalyzedSequences;
 	private static long numPrintedSequences;
-	private short missMatch;
 
 	@Override
 	public void setup(Context context) {
-		org.apache.hadoop.conf.Configuration job = context.getConfiguration();
-		missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
+		Configuration.setParameters(context.getConfiguration());
 		numAnalyzedSequences = 0;
 		numPrintedSequences = 0;
 	}
@@ -70,7 +68,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		for (Sequence newSeq : values) {
 			numAnalyzedSequences++;
 
-			if (newSeq.setDist(first) > missMatch) {
+			if (newSeq.setDist(first) > Configuration.missMatch) {
 				insert = true;
 
 				for (Sequence seq : sequences) {
@@ -79,8 +77,8 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 					mask = diff >> 31;
 					diff = (diff + mask) ^ mask;
 
-					if (diff <= missMatch) {
-						if(newSeq.equal(seq, missMatch)) {
+					if (diff <= Configuration.missMatch) {
+						if(newSeq.equal(seq, Configuration.missMatch)) {
 							insert = false;
 							break;
 						}

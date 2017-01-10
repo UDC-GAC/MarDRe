@@ -273,10 +273,10 @@ public class RunMaRDRe {
 		Job jobRemoveDuplicated = null;
 
 		// Set parameters to be used for mapper/reducer classes
-		conf.setInt(Configuration.PREFIXLENGTH, options.getPrefixLength());
-		conf.setInt(Configuration.MISSMATCH, options.getMissMatch());
-		conf.setInt(Configuration.FILE_FORMAT, format.ordinal());
-		conf.set(Configuration.INPUT_PATH_1, inputPath1.toString());
+		conf.setInt(Configuration.PREFIXLENGTH_PARAM, options.getPrefixLength());
+		conf.setInt(Configuration.MISSMATCH_PARAM, options.getMissMatch());
+		conf.setInt(Configuration.FILE_FORMAT_PARAM, format.ordinal());
+		conf.set(Configuration.INPUT_PATH_1_PARAM, inputPath1.toString());
 		conf.setInt(Configuration.IO_BUFFER_SIZE_PARAM, Configuration.IO_FILE_BUFFER_SIZE);
 		conf.setBoolean(Configuration.IN_MAPPER_COMBINER_PARAM, Configuration.IN_MAPPER_COMBINER);
 		conf.setInt(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM, Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);

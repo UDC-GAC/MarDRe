@@ -31,20 +31,16 @@ import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.SeqStringParser;
 import es.udc.gac.mardre.util.Sequence;
 import es.udc.gac.mardre.util.SequenceParserFactory;
-import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, LongWritable, PairedSequence> {
 
-	private PairedSequence pairedSeq = new PairedSequence();
-	private Sequence seq1 = new Sequence();
-	private Sequence seq2 = new Sequence();
-	private LongWritable longKey = new LongWritable();
-	private SeqStringParser parser;
-	private short prefixLength;
-	private short missMatch;
-	private FileFormat format;
+	private static PairedSequence pairedSeq = new PairedSequence();
+	private static Sequence seq1 = new Sequence();
+	private static Sequence seq2 = new Sequence();
+	private static LongWritable longKey = new LongWritable();
+	private static SeqStringParser parser;
 
-	private final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
+	private static final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
 			new CombiningFunction<LongWritable, PairedSequence>() {
 				@Override
 				public void combine(Map<LongWritable, List<PairedSequence>> cache, List<PairedSequence> seqsInCache, PairedSequence newSeq) {
@@ -52,7 +48,7 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 					boolean insert = true;
 
 					for (PairedSequence seq : seqsInCache) {
-						if (newSeq.equal(seq, missMatch)) {
+						if (newSeq.equal(seq, Configuration.missMatch)) {
 							insert = false;
 							break;
 						}
@@ -70,18 +66,16 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 
 	@Override
 	public void setup(Context context) {
-		org.apache.hadoop.conf.Configuration job = context.getConfiguration();
-		format = FileFormat.values()[Integer.parseInt(job.get(Configuration.FILE_FORMAT))];
-		prefixLength = Short.parseShort(job.get(Configuration.PREFIXLENGTH));
-		parser = SequenceParserFactory.createParser(format, prefixLength);
-		missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
+		org.apache.hadoop.conf.Configuration jobConf = context.getConfiguration();
+		Configuration.setParameters(jobConf);
+		parser = SequenceParserFactory.createParser(Configuration.fileFormat, Configuration.prefixLength);
 
-		if (Boolean.parseBoolean(job.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
+		if (Boolean.parseBoolean(jobConf.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
 			// Disable the in-Mapper combiner
 			combiner.setCombiningFunction(null);
 		}
 		else {
-			int cacheCapacity = Integer.parseInt(job.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
+			int cacheCapacity = Integer.parseInt(jobConf.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
 			combiner.setMaxCacheCapacity(cacheCapacity);
 		}
 	}

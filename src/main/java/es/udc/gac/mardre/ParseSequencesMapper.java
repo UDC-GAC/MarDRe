@@ -29,26 +29,20 @@ import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.SeqStringParser;
 import es.udc.gac.mardre.util.Sequence;
 import es.udc.gac.mardre.util.SequenceParserFactory;
-import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
 
-	private Sequence seq = new Sequence();
-	private SeqStringParser parser;
-	private short prefixLength;
-	private boolean isFirstInputPath = true;
-	private FileFormat format;
+	private static Sequence seq = new Sequence();
+	private static SeqStringParser parser;
+	private static boolean isFirstInputPath = true;
 
 	@Override
 	public void setup(Context context) throws IOException {
-		org.apache.hadoop.conf.Configuration job = context.getConfiguration();
-		format = FileFormat.values()[Integer.parseInt(job.get(Configuration.FILE_FORMAT))];
-		prefixLength = Short.parseShort(job.get(Configuration.PREFIXLENGTH));
-		parser = SequenceParserFactory.createParser(format, prefixLength);
-		String inputPath1 = job.get(Configuration.INPUT_PATH_1);
+		Configuration.setParameters(context.getConfiguration());		
+		parser = SequenceParserFactory.createParser(Configuration.fileFormat, Configuration.prefixLength);
 		String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
 
-		if (!inputSplitPath.equals(inputPath1))
+		if (!inputSplitPath.equals(Configuration.inputPath1))
 			isFirstInputPath = false;
 	}
 

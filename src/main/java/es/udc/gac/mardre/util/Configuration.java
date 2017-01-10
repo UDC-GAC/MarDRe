@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 import es.udc.gac.mardre.InMapperCombiner;
+import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 import java.util.Map;
 
@@ -38,20 +39,26 @@ public class Configuration {
 	public static boolean IN_MAPPER_COMBINER;
 	public static int IN_MAPPER_COMBINER_CACHE_SIZE;
 
+	public static short prefixLength;
+	public static short missMatch;
+	public static FileFormat fileFormat;
+	public static String inputPath1;
+
 	public static final String IO_BUFFER_SIZE_PARAM = "MaRDRe_ioBufferSize";
 	public static final String IN_MAPPER_COMBINER_PARAM = "MaRDRe_inMapperCombiner";
 	public static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "MaRDRe_inMapperCombinerCacheSize";
-	public static final String PREFIXLENGTH = "MaRDRe_prefixLength";
-	public static final String MISSMATCH = "MaRDRe_missMatch";
-	public static final String FILE_FORMAT = "MaRDRe_fileFormat";
-	public static final String INPUT_PATH_1 = "MaRDRePath1";
+	public static final String PREFIXLENGTH_PARAM = "MaRDRe_prefixLength";
+	public static final String MISSMATCH_PARAM = "MaRDRe_missMatch";
+	public static final String FILE_FORMAT_PARAM = "MaRDRe_fileFormat";
+	public static final String INPUT_PATH_1_PARAM = "MaRDRe_inputPath1";
+
 	public static final String TEMP_INPUT_PATH_1 = "/MaRDRe/tmp/input1";
 	public static final String TEMP_INPUT_PATH_2 = "/MaRDRe/tmp/input2";
 	public static final String TEMP_OUTPUT_PATH_1 = "/MaRDRe/tmp/output1";
 	public static final String TEMP_OUTPUT_PATH_2 = "/MaRDRe/tmp/output2";
-
-	private static String configFileName = null;
+	public static final String OUTPUT_PATH_2 = Configuration.TEMP_OUTPUT_PATH_2+"/part";
 	private static final String MARDRE_CONFIGURATION_FILE = "mardre.conf";
+	private static String configFileName = null;
 	private static Properties properties = new Properties();
 
 	static {
@@ -84,5 +91,12 @@ public class Configuration {
 
 		if (MERGE == false)
 			DELETE_TEMP = false;
+	}
+
+	public static void setParameters(org.apache.hadoop.conf.Configuration jobConf) {
+		prefixLength = Short.parseShort(jobConf.get(Configuration.PREFIXLENGTH_PARAM));
+		missMatch = Short.parseShort(jobConf.get(Configuration.MISSMATCH_PARAM));
+		fileFormat = FileFormat.values()[Integer.parseInt(jobConf.get(Configuration.FILE_FORMAT_PARAM))];
+		inputPath1 = jobConf.get(Configuration.INPUT_PATH_1_PARAM);
 	}
 }

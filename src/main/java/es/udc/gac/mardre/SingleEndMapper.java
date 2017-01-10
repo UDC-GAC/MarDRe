@@ -30,16 +30,12 @@ import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.SeqStringParser;
 import es.udc.gac.mardre.util.Sequence;
 import es.udc.gac.mardre.util.SequenceParserFactory;
-import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
 
-	private Sequence seq = new Sequence();
-	private LongWritable longKey = new LongWritable();
-	private SeqStringParser parser;
-	private short prefixLength;
-	private short missMatch;
-	private FileFormat format;
+	private static Sequence seq = new Sequence();
+	private static LongWritable longKey = new LongWritable();
+	private static SeqStringParser parser;
 
 	private final InMapperCombiner<LongWritable, Sequence> combiner = new InMapperCombiner<LongWritable, Sequence>(
 			new CombiningFunction<LongWritable, Sequence>() {
@@ -49,7 +45,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 					boolean insert = true;
 
 					for (Sequence seq : seqsInCache) {
-						if (newSeq.equal(seq, missMatch)) {
+						if (newSeq.equal(seq, Configuration.missMatch)) {
 							insert = false;
 							break;
 						}
@@ -67,18 +63,16 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 
 	@Override
 	public void setup(Context context) {
-		org.apache.hadoop.conf.Configuration job = context.getConfiguration();
-		format = FileFormat.values()[Integer.parseInt(job.get(Configuration.FILE_FORMAT))];
-		prefixLength = Short.parseShort(job.get(Configuration.PREFIXLENGTH));
-		parser = SequenceParserFactory.createParser(format, prefixLength);
-		missMatch = Short.parseShort(job.get(Configuration.MISSMATCH));
+		org.apache.hadoop.conf.Configuration jobConf = context.getConfiguration();
+		Configuration.setParameters(jobConf);
+		parser = SequenceParserFactory.createParser(Configuration.fileFormat, Configuration.prefixLength);
 
-		if (Boolean.parseBoolean(job.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
+		if (Boolean.parseBoolean(jobConf.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
 			// Disable the in-Mapper combiner
 			combiner.setCombiningFunction(null);
 		}
 		else {
-			int cacheCapacity = Integer.parseInt(job.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
+			int cacheCapacity = Integer.parseInt(jobConf.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
 			combiner.setMaxCacheCapacity(cacheCapacity);
 		}
 	}
