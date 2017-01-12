@@ -43,6 +43,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	private static long maxWrittenClusterSize;
 	private static long numAnalyzedSequences;
 	private static long numWrittenSequences;
+	private static double maxTime;
 
 	private static final int fastABS(int value) {
 		// Very fast abs value computation for integers
@@ -58,11 +59,12 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		numWrittenSequences = 0;
 		maxAnalyzedClusterSize = -1;
 		maxWrittenClusterSize = -1;
+		maxTime = -1;
 	}
 
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
-		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f seconds (largest cluster %d/%d)\n", numWrittenSequences, numAnalyzedSequences, timer.read(T_TOTAL), maxWrittenClusterSize, maxAnalyzedClusterSize);
+		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f sec (largest cluster %d/%d in %.3f sec)\n", numWrittenSequences, numAnalyzedSequences, timer.readTotal(T_TOTAL), maxWrittenClusterSize, maxAnalyzedClusterSize, maxTime);
 		mos.close();
 	}
 
@@ -113,14 +115,15 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		writtenClusterSize = sequences.size();
 		sequences.clear();
 
+		timer.stop(T_TOTAL);
+
 		// Update stats
 		numWrittenSequences+=writtenClusterSize;
 
 		if (analyzedClusterSize > maxAnalyzedClusterSize) {
 			maxAnalyzedClusterSize = analyzedClusterSize;
 			maxWrittenClusterSize = writtenClusterSize;
+			maxTime = timer.readLast(T_TOTAL);
 		}
-
-		timer.stop(T_TOTAL);
 	}
 }

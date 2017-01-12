@@ -411,13 +411,13 @@ public class RunMaRDRe {
 		percent *= 100.00;
 
 		System.out.format(java.util.Locale.ENGLISH,"MaRDRe: non duplicated paired reads %d/%d (%.2f %%)\n", outputSequences, inputSequences, percent);
-		System.out.format(java.util.Locale.ENGLISH,"MaRDRe: execution time was %.3f seconds\n", timer.read(T_TOTAL));
-		System.out.format(java.util.Locale.ENGLISH,"\tInitialization took %.3f seconds\n", timer.read(T_INIT));
+		System.out.format(java.util.Locale.ENGLISH,"MaRDRe: execution time was %.3f seconds\n", timer.readTotal(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"\tInitialization took %.3f seconds\n", timer.readTotal(T_INIT));
 		if (options.isPaired())
-			System.out.format(java.util.Locale.ENGLISH,"\tSequences were paired in %.3f seconds\n", timer.read(T_PREPARE_PSEQ));
-		System.out.format(java.util.Locale.ENGLISH,"\tDuplicated reads were removed in %.3f seconds\n", timer.read(T_REMOVE_DUP));
+			System.out.format(java.util.Locale.ENGLISH,"\tSequences were paired in %.3f seconds\n", timer.readTotal(T_PREPARE_PSEQ));
+		System.out.format(java.util.Locale.ENGLISH,"\tDuplicated reads were removed in %.3f seconds\n", timer.readTotal(T_REMOVE_DUP));
 		if (Configuration.MERGE)
-			System.out.format(java.util.Locale.ENGLISH,"\tOutput files were merged in %.3f seconds\n", timer.read(T_PRINT_SEQ));
+			System.out.format(java.util.Locale.ENGLISH,"\tOutput files were merged in %.3f seconds\n", timer.readTotal(T_PRINT_SEQ));
 
 		System.exit(0);
 	}

@@ -20,7 +20,7 @@ package es.udc.gac.mardre.util;
 
 public class Timer {
 
-	public static final int MAX_TIMERS = 16;
+	public static final int MAX_TIMERS = 8;
 	private double startTime[] = new double[MAX_TIMERS];
 	private double elapsedTime[] = new double[MAX_TIMERS];
 	private double totalTime[] = new double[MAX_TIMERS];
@@ -44,7 +44,11 @@ public class Timer {
 		totalTime[n] += elapsedTime[n];
 	}
 
-	public double read(int n) {
+	public double readLast(int n) {
+		return elapsedTime[n];
+	}
+	
+	public double readTotal(int n) {
 		return totalTime[n];
 	}
 

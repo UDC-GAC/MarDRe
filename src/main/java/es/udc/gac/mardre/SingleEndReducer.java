@@ -40,6 +40,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static long maxWrittenClusterSize;
 	private static long numAnalyzedSequences;
 	private static long numWrittenSequences;
+	private static double maxTime;
 
 	private static final int fastABS(int value) {
 		// Very fast abs value computation for integers
@@ -54,11 +55,12 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		numWrittenSequences = 0;
 		maxAnalyzedClusterSize = -1;
 		maxWrittenClusterSize = -1;
+		maxTime = -1;
 	}
 
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
-		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f seconds (largest cluster %d/%d)\n", numWrittenSequences, numAnalyzedSequences, timer.read(T_TOTAL), maxWrittenClusterSize, maxAnalyzedClusterSize);
+		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f sec (largest cluster %d/%d in %.3f sec)\n", numWrittenSequences, numAnalyzedSequences, timer.readTotal(T_TOTAL), maxWrittenClusterSize, maxAnalyzedClusterSize, maxTime);
 	}
 
 	@Override
@@ -77,12 +79,13 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		// Iterate over the remaining sequences
 		for (Sequence newSeq : values) {
-			analyzedClusterSize++;
 			numAnalyzedSequences++;
 
 			if (newSeq.setDist(first) > Configuration.missMatch)
 				sequences.add(new Sequence(newSeq));
 		}
+
+		analyzedClusterSize = sequences.size();
 
 		// Remove duplicated sequences
 		for (i=0; i<sequences.size(); i++) {
@@ -93,7 +96,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 				diff = seq1.getDist() - seq2.getDist();
 
 				if (fastABS(diff) <= Configuration.missMatch) {
-					if(seq1.equal(seq1, Configuration.missMatch)) {
+					if(seq1.equal(seq2, Configuration.missMatch)) {
 						sequences.remove(j);
 						j--;
 					}
@@ -105,14 +108,15 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		writtenClusterSize = sequences.size();
 		sequences.clear();
 
+		timer.stop(T_TOTAL);
+
 		// Update stats
 		numWrittenSequences+=writtenClusterSize;
 
 		if (analyzedClusterSize > maxAnalyzedClusterSize) {
 			maxAnalyzedClusterSize = analyzedClusterSize;
 			maxWrittenClusterSize = writtenClusterSize;
+			maxTime = timer.readLast(T_TOTAL);
 		}
-
-		timer.stop(T_TOTAL);
 	}
 }
