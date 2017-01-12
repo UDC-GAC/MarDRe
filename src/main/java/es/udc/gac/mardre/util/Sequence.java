@@ -81,7 +81,7 @@ public class Sequence implements Writable {
 	private long[] _compressSuffix;
 	private boolean _isFirstSeq;
 	private String _name;
-	private String _quals;
+	private char[] _quals;
 	private float _avgQual;
 
 	public Sequence() {
@@ -130,21 +130,21 @@ public class Sequence implements Writable {
 		return _isFirstSeq;
 	}
 
-	public String getQuals() {
+	public char[] getQuals() {
 		return _quals;
 	}
 
-	public void setQuals(String quals) {
+	public void setQuals(char[] quals) {
 		_quals = quals;
 	}
 
 	public float getAvgQual() {
 		if ((_avgQual == -1) && (_quals != null)) {
 			_avgQual = 0;
-			int length = _quals.length();
+			int length = _quals.length;
 
 			for (int i = 0; i < length; i++) {
-				_avgQual += _quals.charAt(i);
+				_avgQual += _quals[i];
 			}
 			_avgQual /= (float) length;
 		}
@@ -164,16 +164,13 @@ public class Sequence implements Writable {
 		}
 
 		_dist = 0;
-		int popc;
-		long iter1, iter2;
+		int popc, i;
 
-		for (int i = 0; i < _compressSuffix.length; i++) {
-			iter1 = _compressSuffix[i];
-			iter2 = seq2._compressSuffix[i];
-			popc = Long.bitCount(iter1 ^ iter2);
+		for (i = 0; i < _compressSuffix.length; i++) {
+			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
 			_dist += popc >> 1;
 
-		if ((popc & 1) > 0)
+		if ((popc % 2) > 0)
 			_dist++;
 		}
 
@@ -188,7 +185,8 @@ public class Sequence implements Writable {
 		_key = 0;
 
 		for (int i = 0; i < prefixLength; i++) {
-			_key = (_key * 5) + Sequence.codePrefix(bases.charAt(i));
+			_key *= 5;
+			_key += Sequence.codePrefix(bases.charAt(i));
 		}
 	}
 
@@ -232,20 +230,14 @@ public class Sequence implements Writable {
 
 	public boolean equal(Sequence seq2, short missMatch) {
 
-		if (_length != seq2._length)
-			return false;
-
 		short numMissMatch = 0;
-		int popc;
-		long iter1, iter2;
+		int popc, i;
 
-		for (int i = 0; i < _compressSuffix.length; i++) {
-			iter1 = _compressSuffix[i];
-			iter2 = seq2._compressSuffix[i];
-			popc = Long.bitCount(iter1 ^ iter2);
+		for (i = 0; i < _compressSuffix.length; i++) {
+			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
 			numMissMatch += popc >> 1;
 
-		if ((popc & 1) > 0)
+		if ((popc % 2) > 0)
 			numMissMatch++;
 
 		if (numMissMatch > missMatch)
@@ -257,19 +249,13 @@ public class Sequence implements Writable {
 
 	public boolean equal(Sequence seq2, short missMatch, short[] numMissMatch) {
 
-		if (_length != seq2._length)
-			return false;
+		int popc, i;
 
-		int popc;
-		long iter1, iter2;
-
-		for (int i = 0; i < _compressSuffix.length; i++) {
-			iter1 = _compressSuffix[i];
-			iter2 = seq2._compressSuffix[i];
-			popc = Long.bitCount(iter1 ^ iter2);
+		for (i = 0; i < _compressSuffix.length; i++) {
+			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
 			numMissMatch[0] += popc >> 1;
 
-		if ((popc & 1) > 0)
+		if ((popc % 2) > 0)
 			numMissMatch[0]++;
 
 		if (numMissMatch[0] > missMatch)
@@ -295,8 +281,7 @@ public class Sequence implements Writable {
 		iterBases = _length - 1;
 		int iterSuffix = _compressSuffix.length - 1;
 		long auxCompress = _compressSuffix[iterSuffix];
-		int suffixLength = _length - prefixLength;
-		int suffixLengthMod = suffixLength & 15;
+		int suffixLengthMod = (_length - prefixLength) & 15;
 		int numDecoded = 0;
 
 		if (suffixLengthMod > 0) {
@@ -344,7 +329,7 @@ public class Sequence implements Writable {
 				bufferedWriter.newLine();
 				bufferedWriter.write('+');
 				bufferedWriter.newLine();
-				bufferedWriter.write(_quals, 0, _quals.length());
+				bufferedWriter.write(_quals);
 			}
 
 			bufferedWriter.close();
@@ -366,8 +351,10 @@ public class Sequence implements Writable {
 		for (int i = 0; i < _compressSuffix.length; i++)
 			out.writeLong(_compressSuffix[i]);
 
-		if (_quals != null)
-			out.writeUTF(_quals);
+		if (_quals != null) {
+			for (int i = 0; i < _length; i++)
+				out.writeChar(_quals[i]);
+		}
 	}
 
 	@Override
@@ -383,7 +370,11 @@ public class Sequence implements Writable {
 			_compressSuffix[i] = in.readLong();
 
 		try {
-			_quals = in.readUTF();
+			char firstQual = in.readChar();
+			_quals = new char[_length];
+			_quals[0] = firstQual;
+			for (int i = 1; i < _length; i++)
+				_quals[i] = in.readChar();
 		} catch (EOFException ex) {
 			_quals = null;
 		}

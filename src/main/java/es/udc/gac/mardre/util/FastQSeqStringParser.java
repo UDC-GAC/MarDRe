@@ -67,7 +67,7 @@ public class FastQSeqStringParser extends SeqStringParser {
 			throw new IllegalArgumentException("The number of bases is not equal to the number of quality scores");
 
 		seq.setLength(str.length());
-		seq.setQuals(strQuals);
+		seq.setQuals(strQuals.toCharArray());
 		seq.setKey(str, this.getPrefixLength());
 		seq.setSuffix(str,this.getPrefixLength());
 
