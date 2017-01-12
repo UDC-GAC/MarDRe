@@ -58,7 +58,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
-		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f seconds\n", numWrittenSequences, numAnalyzedSequences, timer.read(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f seconds (largest cluster %d/%d)\n", numWrittenSequences, numAnalyzedSequences, timer.read(T_TOTAL), maxWrittenClusterSize, maxAnalyzedClusterSize);
 	}
 
 	@Override
@@ -108,10 +108,10 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		// Update stats
 		numWrittenSequences+=writtenClusterSize;
 
-		if (writtenClusterSize > maxWrittenClusterSize)
-			maxWrittenClusterSize = writtenClusterSize;
-		if (analyzedClusterSize > maxAnalyzedClusterSize)
+		if (analyzedClusterSize > maxAnalyzedClusterSize) {
 			maxAnalyzedClusterSize = analyzedClusterSize;
+			maxWrittenClusterSize = writtenClusterSize;
+		}
 
 		timer.stop(T_TOTAL);
 	}
