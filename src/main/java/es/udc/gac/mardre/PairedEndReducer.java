@@ -39,26 +39,30 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final List<PairedSequence> sequences = new ArrayList<PairedSequence>();
 	private static MultipleOutputs<NullWritable,Sequence> mos;
+	private static long maxAnalyzedClusterSize;
+	private static long maxWrittenClusterSize;
 	private static long numAnalyzedSequences;
-	private static long numPrintedSequences;
+	private static long numWrittenSequences;
 
 	private static final int fastABS(int value) {
 		// Very fast abs value computation for integers
 		int mask = value >> 31;
 		return (value + mask) ^ mask;
 	}
-	
+
 	@Override
 	protected void setup(Context context) {
 		Configuration.setParameters(context.getConfiguration());
 		mos = new MultipleOutputs<NullWritable,Sequence>(context);
 		numAnalyzedSequences = 0;
-		numPrintedSequences = 0;
+		numWrittenSequences = 0;
+		maxAnalyzedClusterSize = -1;
+		maxWrittenClusterSize = -1;
 	}
 
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
-		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f seconds\n", numPrintedSequences, numAnalyzedSequences, timer.read(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f seconds\n", numWrittenSequences, numAnalyzedSequences, timer.read(T_TOTAL));
 		mos.close();
 	}
 
@@ -66,7 +70,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
 			throws IOException, InterruptedException {
 
-		int diff, mask;
+		long analyzedClusterSize = 0, writtenClusterSize = 0;
+		int diff;
 		boolean insert;
 
 		timer.start(T_TOTAL);
@@ -78,6 +83,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		// Iterate over the remaining sequences
 		for (PairedSequence newSeq : values) {
+			analyzedClusterSize++;
 			numAnalyzedSequences++;
 
 			if (newSeq.setDist(first) > Configuration.missMatch) {
@@ -85,11 +91,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 				for (PairedSequence seq : sequences) {
 					diff = newSeq.getDist() - seq.getDist();
-					// Very fast abs value computation for integers
-					mask = diff >> 31;
-					diff = (diff + mask) ^ mask;
 
-					if (diff <= Configuration.missMatch) {
+					if (fastABS(diff) <= Configuration.missMatch) {
 						if(newSeq.equal(seq, Configuration.missMatch)) {
 							insert = false;
 							break;
@@ -107,8 +110,16 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 		}
 
-		numPrintedSequences+=sequences.size();
+		writtenClusterSize = sequences.size();
 		sequences.clear();
+
+		// Update stats
+		numWrittenSequences+=writtenClusterSize;
+
+		if (writtenClusterSize > maxWrittenClusterSize)
+			maxWrittenClusterSize = writtenClusterSize;
+		if (analyzedClusterSize > maxAnalyzedClusterSize)
+			maxAnalyzedClusterSize = analyzedClusterSize;
 
 		timer.stop(T_TOTAL);
 	}

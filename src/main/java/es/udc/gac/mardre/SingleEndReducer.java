@@ -36,8 +36,10 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static final int T_TOTAL = 0;
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final List<Sequence> sequences = new ArrayList<Sequence>();
+	private static long maxAnalyzedClusterSize;
+	private static long maxWrittenClusterSize;
 	private static long numAnalyzedSequences;
-	private static long numPrintedSequences;
+	private static long numWrittenSequences;
 
 	private static final int fastABS(int value) {
 		// Very fast abs value computation for integers
@@ -49,12 +51,14 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	protected void setup(Context context) {
 		Configuration.setParameters(context.getConfiguration());
 		numAnalyzedSequences = 0;
-		numPrintedSequences = 0;
+		numWrittenSequences = 0;
+		maxAnalyzedClusterSize = -1;
+		maxWrittenClusterSize = -1;
 	}
 
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
-		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f seconds\n", numPrintedSequences, numAnalyzedSequences, timer.read(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f seconds\n", numWrittenSequences, numAnalyzedSequences, timer.read(T_TOTAL));
 	}
 
 	@Override
@@ -62,6 +66,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			Context context) throws IOException, InterruptedException {
 
 		Sequence first, seq1, seq2;
+		long analyzedClusterSize = 0, writtenClusterSize = 0;
 		int diff, i, j;
 
 		timer.start(T_TOTAL);
@@ -72,12 +77,14 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		// Iterate over the remaining sequences
 		for (Sequence newSeq : values) {
+			analyzedClusterSize++;
 			numAnalyzedSequences++;
 
 			if (newSeq.setDist(first) > Configuration.missMatch)
 				sequences.add(new Sequence(newSeq));
 		}
 
+		// Remove duplicated sequences
 		for (i=0; i<sequences.size(); i++) {
 			seq1 = sequences.get(i);
 
@@ -95,8 +102,16 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			context.write(nullKey, seq1);
 		}
 
-		numPrintedSequences+=sequences.size();
+		writtenClusterSize = sequences.size();
 		sequences.clear();
+
+		// Update stats
+		numWrittenSequences+=writtenClusterSize;
+
+		if (writtenClusterSize > maxWrittenClusterSize)
+			maxWrittenClusterSize = writtenClusterSize;
+		if (analyzedClusterSize > maxAnalyzedClusterSize)
+			maxAnalyzedClusterSize = analyzedClusterSize;
 
 		timer.stop(T_TOTAL);
 	}
