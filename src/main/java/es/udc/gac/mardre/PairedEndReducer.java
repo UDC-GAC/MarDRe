@@ -42,6 +42,12 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	private static long numAnalyzedSequences;
 	private static long numPrintedSequences;
 
+	private static final int fastABS(int value) {
+		// Very fast abs value computation for integers
+		int mask = value >> 31;
+		return (value + mask) ^ mask;
+	}
+	
 	@Override
 	protected void setup(Context context) {
 		Configuration.setParameters(context.getConfiguration());

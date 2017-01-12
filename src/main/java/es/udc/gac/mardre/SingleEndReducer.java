@@ -39,6 +39,12 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static long numAnalyzedSequences;
 	private static long numPrintedSequences;
 
+	private static final int fastABS(int value) {
+		// Very fast abs value computation for integers
+		int mask = value >> 31;
+		return (value + mask) ^ mask;
+	}
+
 	@Override
 	protected void setup(Context context) {
 		Configuration.setParameters(context.getConfiguration());
@@ -55,43 +61,39 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	public void reduce(LongWritable key, Iterable<Sequence> values,
 			Context context) throws IOException, InterruptedException {
 
-		int diff, mask;
-		boolean insert;
+		Sequence first, seq1, seq2;
+		int diff, i, j;
 
 		timer.start(T_TOTAL);
 
 		// Get and write the first sequence
-		Sequence first = new Sequence(values.iterator().next());
+		first = new Sequence(values.iterator().next());
 		context.write(nullKey, first);
 
 		// Iterate over the remaining sequences
 		for (Sequence newSeq : values) {
 			numAnalyzedSequences++;
 
-			if (newSeq.setDist(first) > Configuration.missMatch) {
-				insert = true;
-
-				for (Sequence seq : sequences) {
-					diff = newSeq.getDist() - seq.getDist();
-					// Very fast abs value computation for integers
-					mask = diff >> 31;
-					diff = (diff + mask) ^ mask;
-
-					if (diff <= Configuration.missMatch) {
-						if(newSeq.equal(seq, Configuration.missMatch)) {
-							insert = false;
-							break;
-						}
-					}
-				}
-				if (insert)
-					sequences.add(new Sequence(newSeq));
-			}
+			if (newSeq.setDist(first) > Configuration.missMatch)
+				sequences.add(new Sequence(newSeq));
 		}
 
-		// Print non-duplicated sequences
-		for (Sequence seq : sequences)
-			context.write(nullKey, seq);
+		for (i=0; i<sequences.size(); i++) {
+			seq1 = sequences.get(i);
+
+			for (j=i+1; j<sequences.size(); j++) {
+				seq2 = sequences.get(j);
+				diff = seq1.getDist() - seq2.getDist();
+
+				if (fastABS(diff) <= Configuration.missMatch) {
+					if(seq1.equal(seq1, Configuration.missMatch)) {
+						sequences.remove(j);
+						j--;
+					}
+				}
+			}
+			context.write(nullKey, seq1);
+		}
 
 		numPrintedSequences+=sequences.size();
 		sequences.clear();
