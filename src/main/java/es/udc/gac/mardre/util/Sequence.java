@@ -19,12 +19,12 @@
 package es.udc.gac.mardre.util;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.hadoop.io.Writable;
 
@@ -330,7 +330,7 @@ public class Sequence implements Writable {
 				bufferedWriter.newLine();
 				bufferedWriter.write('+');
 				bufferedWriter.newLine();
-				bufferedWriter.write(_quals.toString());
+				bufferedWriter.write(new String(_quals, StandardCharsets.US_ASCII));
 			}
 
 			bufferedWriter.close();
@@ -347,7 +347,6 @@ public class Sequence implements Writable {
 		out.writeShort(_length);
 		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
-		//out.writeShort(_compressSuffix.length);
 
 		for (int i = 0; i < _compressSuffix.length; i++)
 			out.writeLong(_compressSuffix[i]);
@@ -369,9 +368,10 @@ public class Sequence implements Writable {
 			_compressSuffix[i] = in.readLong();
 
 		try {
-			ByteArrayInputStream bis = (ByteArrayInputStream) in;
-			_quals = new byte[bis.available()];
-			in.readFully(_quals);
+			byte firstByte = in.readByte();
+			_quals = new byte[_length];
+			_quals[0] = firstByte;
+			in.readFully(_quals, 1, _length-1);
 		} catch (EOFException ex) {
 			_quals = null;
 		}
