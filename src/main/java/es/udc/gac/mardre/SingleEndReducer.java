@@ -113,7 +113,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		// Update stats
 		numOutputSequences+=outputClusterSize;
 
-		if (inputClusterSize > maxInputClusterSize) {
+		if (outputClusterSize > maxOutputClusterSize) {
 			maxInputClusterSize = inputClusterSize;
 			maxOutputClusterSize = outputClusterSize;
 			maxTime = timer.readLast(T_TOTAL);

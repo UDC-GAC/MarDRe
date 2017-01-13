@@ -120,7 +120,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		// Update stats
 		numOutputSequences+=outputClusterSize;
 
-		if (inputClusterSize > maxInputClusterSize) {
+		if (outputClusterSize > maxOutputClusterSize) {
 			maxInputClusterSize = inputClusterSize;
 			maxOutputClusterSize = outputClusterSize;
 			maxTime = timer.readLast(T_TOTAL);
