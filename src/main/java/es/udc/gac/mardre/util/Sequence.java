@@ -266,7 +266,9 @@ public class Sequence implements Writable {
 		return true;
 	}
 
-	private void decodeBases(char[] bases, short prefixLength) {
+	private char[] decodeBases(short prefixLength) {
+
+		char[] bases = new char[_length];
 
 		// Decode the prefix
 		int iterBases = prefixLength - 1;
@@ -305,6 +307,8 @@ public class Sequence implements Writable {
 			}
 			iterSuffix--;
 		}
+		
+		return bases;
 	}
 
 	@Override
@@ -317,10 +321,8 @@ public class Sequence implements Writable {
 			bufferedWriter.write(_name, 0, _name.length());
 			bufferedWriter.newLine();
 
-			char[] bases = new char[_length];
-
 			// Decode the bases
-			decodeBases(bases, Configuration.prefixLength);
+			char[] bases = decodeBases(Configuration.prefixLength);
 
 			// Print the bases
 			bufferedWriter.write(bases);
@@ -347,7 +349,8 @@ public class Sequence implements Writable {
 		out.writeShort(_length);
 		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
-
+		out.writeByte(_compressSuffix.length);
+		
 		for (int i = 0; i < _compressSuffix.length; i++)
 			out.writeLong(_compressSuffix[i]);
 
@@ -361,7 +364,8 @@ public class Sequence implements Writable {
 		_length = in.readShort();
 		_name = in.readUTF();
 		_isFirstSeq = in.readBoolean();
-		int compressLength = (_length - Configuration.prefixLength) >> 4;
+		byte compressLength = in.readByte();
+		
 		_compressSuffix = new long[compressLength];
 
 		for (int i = 0; i < compressLength; i++)
