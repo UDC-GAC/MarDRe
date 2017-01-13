@@ -19,6 +19,7 @@
 package es.udc.gac.mardre.util;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.EOFException;
@@ -81,7 +82,7 @@ public class Sequence implements Writable {
 	private long[] _compressSuffix;
 	private boolean _isFirstSeq;
 	private String _name;
-	private char[] _quals;
+	private byte[] _quals;
 	private float _avgQual;
 
 	public Sequence() {
@@ -130,11 +131,11 @@ public class Sequence implements Writable {
 		return _isFirstSeq;
 	}
 
-	public char[] getQuals() {
+	public byte[] getQuals() {
 		return _quals;
 	}
 
-	public void setQuals(char[] quals) {
+	public void setQuals(byte[] quals) {
 		_quals = quals;
 	}
 
@@ -329,7 +330,7 @@ public class Sequence implements Writable {
 				bufferedWriter.newLine();
 				bufferedWriter.write('+');
 				bufferedWriter.newLine();
-				bufferedWriter.write(_quals);
+				bufferedWriter.write(_quals.toString());
 			}
 
 			bufferedWriter.close();
@@ -346,15 +347,13 @@ public class Sequence implements Writable {
 		out.writeShort(_length);
 		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
-		out.writeShort(_compressSuffix.length);
+		//out.writeShort(_compressSuffix.length);
 
 		for (int i = 0; i < _compressSuffix.length; i++)
 			out.writeLong(_compressSuffix[i]);
 
-		if (_quals != null) {
-			for (int i = 0; i < _length; i++)
-				out.writeChar(_quals[i]);
-		}
+		if (_quals != null)
+			out.write(_quals);
 	}
 
 	@Override
@@ -363,18 +362,16 @@ public class Sequence implements Writable {
 		_length = in.readShort();
 		_name = in.readUTF();
 		_isFirstSeq = in.readBoolean();
-		int compressLength = in.readShort();
+		int compressLength = (_length - Configuration.prefixLength) >> 4;
 		_compressSuffix = new long[compressLength];
 
 		for (int i = 0; i < compressLength; i++)
 			_compressSuffix[i] = in.readLong();
 
 		try {
-			char firstQual = in.readChar();
-			_quals = new char[_length];
-			_quals[0] = firstQual;
-			for (int i = 1; i < _length; i++)
-				_quals[i] = in.readChar();
+			ByteArrayInputStream bis = (ByteArrayInputStream) in;
+			_quals = new byte[bis.available()];
+			in.readFully(_quals);
 		} catch (EOFException ex) {
 			_quals = null;
 		}
