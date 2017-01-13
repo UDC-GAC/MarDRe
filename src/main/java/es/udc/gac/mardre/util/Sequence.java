@@ -307,7 +307,7 @@ public class Sequence implements Writable {
 			}
 			iterSuffix--;
 		}
-		
+
 		return bases;
 	}
 
@@ -350,7 +350,7 @@ public class Sequence implements Writable {
 		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
 		out.writeByte(_compressSuffix.length);
-		
+
 		for (int i = 0; i < _compressSuffix.length; i++)
 			out.writeLong(_compressSuffix[i]);
 
@@ -365,7 +365,7 @@ public class Sequence implements Writable {
 		_name = in.readUTF();
 		_isFirstSeq = in.readBoolean();
 		byte compressLength = in.readByte();
-		
+
 		_compressSuffix = new long[compressLength];
 
 		for (int i = 0; i < compressLength; i++)

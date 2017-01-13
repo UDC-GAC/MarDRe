@@ -39,10 +39,10 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final List<PairedSequence> sequences = new ArrayList<PairedSequence>();
 	private static MultipleOutputs<NullWritable,Sequence> mos;
-	private static long maxAnalyzedClusterSize;
-	private static long maxWrittenClusterSize;
-	private static long numAnalyzedSequences;
-	private static long numWrittenSequences;
+	private static long maxInputClusterSize;
+	private static long maxOutputClusterSize;
+	private static long numInputSequences;
+	private static long numOutputSequences;
 	private static double maxTime;
 
 	private static final int fastABS(int value) {
@@ -55,16 +55,16 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	protected void setup(Context context) {
 		Configuration.setParameters(context.getConfiguration());
 		mos = new MultipleOutputs<NullWritable,Sequence>(context);
-		numAnalyzedSequences = 0;
-		numWrittenSequences = 0;
-		maxAnalyzedClusterSize = -1;
-		maxWrittenClusterSize = -1;
+		numInputSequences = 0;
+		numOutputSequences = 0;
+		maxInputClusterSize = -1;
+		maxOutputClusterSize = -1;
 		maxTime = -1;
 	}
 
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
-		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f sec (largest cluster %d/%d in %.3f sec)\n", numWrittenSequences, numAnalyzedSequences, timer.readTotal(T_TOTAL), maxWrittenClusterSize, maxAnalyzedClusterSize, maxTime);
+		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f sec (largest cluster %d/%d in %.3f sec)\n", numOutputSequences, numInputSequences, timer.readTotal(T_TOTAL), maxOutputClusterSize, maxInputClusterSize, maxTime);
 		mos.close();
 	}
 
@@ -72,7 +72,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
 			throws IOException, InterruptedException {
 
-		long analyzedClusterSize = 0, writtenClusterSize = 0;
+		long inputClusterSize = 0, outputClusterSize = 0;
 		int diff;
 		boolean insert;
 
@@ -85,8 +85,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		// Iterate over the remaining sequences
 		for (PairedSequence newSeq : values) {
-			analyzedClusterSize++;
-			numAnalyzedSequences++;
+			inputClusterSize++;
+			numInputSequences++;
 
 			if (newSeq.setDist(first) > Configuration.missMatch) {
 				insert = true;
@@ -112,17 +112,17 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 		}
 
-		writtenClusterSize = sequences.size();
+		outputClusterSize = sequences.size();
 		sequences.clear();
 
 		timer.stop(T_TOTAL);
 
 		// Update stats
-		numWrittenSequences+=writtenClusterSize;
+		numOutputSequences+=outputClusterSize;
 
-		if (analyzedClusterSize > maxAnalyzedClusterSize) {
-			maxAnalyzedClusterSize = analyzedClusterSize;
-			maxWrittenClusterSize = writtenClusterSize;
+		if (inputClusterSize > maxInputClusterSize) {
+			maxInputClusterSize = inputClusterSize;
+			maxOutputClusterSize = outputClusterSize;
 			maxTime = timer.readLast(T_TOTAL);
 		}
 	}
