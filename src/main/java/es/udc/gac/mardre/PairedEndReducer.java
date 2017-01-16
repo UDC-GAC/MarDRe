@@ -72,44 +72,44 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
 			throws IOException, InterruptedException {
 
+		PairedSequence first, seq1, seq2;
 		long inputClusterSize = 0, outputClusterSize = 0;
-		int diff;
-		boolean insert;
+		int diff, i, j;
 
 		timer.start(T_TOTAL);
 
 		// Get and write the first sequence
-		PairedSequence first = new PairedSequence(values.iterator().next());
+		first = new PairedSequence(values.iterator().next());
 		context.write(nullKey, first.getFirstSeq());
 		mos.write("output2", nullKey, first.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 
 		// Iterate over the remaining sequences
 		for (PairedSequence newSeq : values) {
-			inputClusterSize++;
 			numInputSequences++;
 
-			if (newSeq.setDist(first) > Configuration.missMatch) {
-				insert = true;
-
-				for (PairedSequence seq : sequences) {
-					diff = newSeq.getDist() - seq.getDist();
-
-					if (fastABS(diff) <= Configuration.missMatch) {
-						if(newSeq.equal(seq, Configuration.missMatch)) {
-							insert = false;
-							break;
-						}
-					}
-				}
-				if (insert)
-					sequences.add(new PairedSequence(newSeq));
-			}
+			if (newSeq.setDist(first) > Configuration.missMatch)
+				sequences.add(new PairedSequence(newSeq));
 		}
 
-		// Print non-duplicated sequences
-		for (PairedSequence seq : sequences) {
-			context.write(nullKey, seq.getFirstSeq());
-			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
+		inputClusterSize = sequences.size();
+
+		// Remove duplicated sequences
+		for (i=0; i<sequences.size(); i++) {
+			seq1 = sequences.get(i);
+
+			for (j=i+1; j<sequences.size(); j++) {
+				seq2 = sequences.get(j);
+				diff = seq1.getDist() - seq2.getDist();
+
+				if (fastABS(diff) <= Configuration.missMatch) {
+					if(seq1.equal(seq2, Configuration.missMatch)) {
+						sequences.remove(j);
+						j--;
+					}
+				}
+			}
+			context.write(nullKey, seq1.getFirstSeq());
+			mos.write("output2", nullKey, seq1.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 		}
 
 		outputClusterSize = sequences.size();
