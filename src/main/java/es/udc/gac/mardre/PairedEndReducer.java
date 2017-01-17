@@ -72,9 +72,10 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
 			throws IOException, InterruptedException {
 
-		PairedSequence first, seq1, seq2;
+		PairedSequence first;
+		boolean insert;
 		long inputClusterSize = 0, outputClusterSize = 0;
-		int diff, i, j;
+		int diff;
 
 		timer.start(T_TOTAL);
 
@@ -85,31 +86,30 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		// Iterate over the remaining sequences
 		for (PairedSequence newSeq : values) {
-			numInputSequences++;
+			inputClusterSize++;
 
-			if (newSeq.setDist(first) > Configuration.missMatch)
-				sequences.add(new PairedSequence(newSeq));
-		}
+			if (newSeq.setDist(first) > Configuration.missMatch) {
+				insert = true;
 
-		inputClusterSize = sequences.size();
+				for (PairedSequence seq : sequences) {
+					diff = newSeq.getDist() - seq.getDist();
 
-		// Remove duplicated sequences
-		for (i=0; i<sequences.size(); i++) {
-			seq1 = sequences.get(i);
-
-			for (j=i+1; j<sequences.size(); j++) {
-				seq2 = sequences.get(j);
-				diff = seq1.getDist() - seq2.getDist();
-
-				if (fastABS(diff) <= Configuration.missMatch) {
-					if(seq1.equal(seq2, Configuration.missMatch)) {
-						sequences.remove(j);
-						j--;
+					if (fastABS(diff) <= Configuration.missMatch) {
+						if(newSeq.equal(seq, Configuration.missMatch)) {
+							insert = false;
+							break;
+						}
 					}
 				}
+				if (insert)
+					sequences.add(new PairedSequence(newSeq));
 			}
-			context.write(nullKey, seq1.getFirstSeq());
-			mos.write("output2", nullKey, seq1.getSecondSeq(), Configuration.OUTPUT_PATH_2);
+		}
+
+		// Print non-duplicated sequences
+		for (PairedSequence seq : sequences) {
+			context.write(nullKey, seq.getFirstSeq());
+			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 		}
 
 		outputClusterSize = sequences.size();
@@ -118,6 +118,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		timer.stop(T_TOTAL);
 
 		// Update stats
+		numInputSequences+=inputClusterSize;
 		numOutputSequences+=outputClusterSize;
 
 		if (outputClusterSize > maxOutputClusterSize) {

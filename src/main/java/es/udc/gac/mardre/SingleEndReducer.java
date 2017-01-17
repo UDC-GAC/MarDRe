@@ -67,9 +67,10 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	public void reduce(LongWritable key, Iterable<Sequence> values,
 			Context context) throws IOException, InterruptedException {
 
-		Sequence first, seq1, seq2;
+		Sequence first;
+		boolean insert;
 		long inputClusterSize = 0, outputClusterSize = 0;
-		int diff, i, j;
+		int diff;
 
 		timer.start(T_TOTAL);
 
@@ -79,31 +80,29 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		// Iterate over the remaining sequences
 		for (Sequence newSeq : values) {
-			numInputSequences++;
+			inputClusterSize++;
 
-			if (newSeq.setDist(first) > Configuration.missMatch)
-				sequences.add(new Sequence(newSeq));
-		}
+			if (newSeq.setDist(first) > Configuration.missMatch) {
+				insert = true;
 
-		inputClusterSize = sequences.size();
+				for (Sequence seq : sequences) {
+					diff = newSeq.getDist() - seq.getDist();
 
-		// Remove duplicated sequences
-		for (i=0; i<sequences.size(); i++) {
-			seq1 = sequences.get(i);
-
-			for (j=i+1; j<sequences.size(); j++) {
-				seq2 = sequences.get(j);
-				diff = seq1.getDist() - seq2.getDist();
-
-				if (fastABS(diff) <= Configuration.missMatch) {
-					if(seq1.equal(seq2, Configuration.missMatch)) {
-						sequences.remove(j);
-						j--;
+					if (fastABS(diff) <= Configuration.missMatch) {
+						if(newSeq.equal(seq, Configuration.missMatch)) {
+							insert = false;
+							break;
+						}
 					}
 				}
+				if (insert)
+					sequences.add(new Sequence(newSeq));
 			}
-			context.write(nullKey, seq1);
 		}
+
+		// Print non-duplicated sequences
+		for (Sequence seq : sequences)
+			context.write(nullKey, seq);
 
 		outputClusterSize = sequences.size();
 		sequences.clear();
@@ -111,6 +110,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		timer.stop(T_TOTAL);
 
 		// Update stats
+		numInputSequences+=inputClusterSize;
 		numOutputSequences+=outputClusterSize;
 
 		if (inputClusterSize > maxInputClusterSize) {
