@@ -18,6 +18,14 @@
  */
 package es.udc.gac.mardre.util;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
 public class SequenceParserFactory {
 
 	public enum FileFormat {
@@ -34,5 +42,40 @@ public class SequenceParserFactory {
 			return new FastASeqStringParser(prefixLength);
 		else
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
+	}
+
+	public static FileFormat detectFileFormat(FileSystem fs, Path file) throws IOException {
+
+		BufferedReader reader = null;
+		FileFormat format = FileFormat.FILE_FORMAT_UNKNOWN;
+
+		try {
+			reader = new BufferedReader(new InputStreamReader(fs.open(file)));
+		} catch (FileNotFoundException e) {
+			throw e;
+		}
+
+		// Read first line
+		String str = reader.readLine();
+
+		// Look for the line where the sequence starts
+		while ((str != null) && (str.charAt(0) != '@') && (str.charAt(0) != '>')) {
+			str = reader.readLine();
+		}
+
+		if (str == null) {
+			System.out.println("MaRDRe: Unrecognized file format");
+		} else if (str.charAt(0) == '@') {
+			System.out.println("MaRDRe: FASTQ format identified");
+			format = FileFormat.FILE_FORMAT_FASTQ;
+		} else if (str.charAt(0) == '>') {
+			System.out.println("MaRDRe: FASTA format identified");
+			format = FileFormat.FILE_FORMAT_FASTA;        	
+		} else {
+			System.out.println("MaRDRe: Unrecognized file format");
+		}
+
+		reader.close();
+		return format;
 	}
 }
