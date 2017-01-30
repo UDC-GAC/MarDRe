@@ -8,7 +8,7 @@ the analysis of not necessary reads, reducing the time of subsequent
 procedures with the dataset (e.g., assemblies, mappings, etc.).
 
 This tool is distributed as free software and is publicly available under 
-the GPLv3 license at http://gac.udc.es/~rreye/mardre.
+the GPLv3 license at http://mardre.des.udc.es.
 
 
 Quick User's Guide
