@@ -100,7 +100,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			}
 		}
 
-		// Print non-duplicated sequences
+		// Print non-duplicate sequences
 		for (Sequence seq : sequences)
 			context.write(nullKey, seq);
 

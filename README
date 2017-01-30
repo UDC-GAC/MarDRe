@@ -1,8 +1,8 @@
 MarDRe
 ------
 
-MarDRe is a de novo MapReduce-based parallel tool to remove duplicated
-DNA reads. Duplicated reads can be seen as identical or nearly identical 
+MarDRe is a de novo MapReduce-based parallel tool to remove duplicate
+DNA reads. Duplicate reads can be seen as identical or nearly identical 
 sequences with some mismatches. This tool allows bioinformatics to avoid
 the analysis of not necessary reads, reducing the time of subsequent 
 procedures with the dataset (e.g., assemblies, mappings, etc.).

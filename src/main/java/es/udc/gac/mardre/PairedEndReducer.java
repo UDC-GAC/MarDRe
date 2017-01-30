@@ -106,7 +106,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			}
 		}
 
-		// Print non-duplicated sequences
+		// Print non-duplicate sequences
 		for (PairedSequence seq : sequences) {
 			context.write(nullKey, seq.getFirstSeq());
 			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.OUTPUT_PATH_2);

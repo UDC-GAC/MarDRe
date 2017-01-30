@@ -233,7 +233,7 @@ public class RunMarDRe {
 		Path tmpInputPath1 = null;
 		Path tmpInputPath2 = null;
 		Path tmpOutputPath2 = null;
-		Job jobRemoveDuplicated = null;
+		Job jobRemoveDuplicate = null;
 
 		// Set parameters to be used for mapper/reducer classes
 		conf.setInt(Configuration.PREFIXLENGTH_PARAM, options.getPrefixLength());
@@ -265,11 +265,11 @@ public class RunMarDRe {
 			System.out.println("MarDRe: input path = "+inputPath1);
 			System.out.println("MarDRe: input path = "+inputPath2);
 
-			// Configure job to remove duplicated reads
-			jobRemoveDuplicated = RunMarDRe.configurePairedEndJob(conf);
-			FileOutputFormat.setOutputPath(jobRemoveDuplicated, tmpOutputPath1);
+			// Configure job to remove duplicate reads
+			jobRemoveDuplicate = RunMarDRe.configurePairedEndJob(conf);
+			FileOutputFormat.setOutputPath(jobRemoveDuplicate, tmpOutputPath1);
 			// Add additional output for the second file
-			MultipleOutputs.addNamedOutput(jobRemoveDuplicated, "output2", TextOutputFormat.class, NullWritable.class, Sequence.class);
+			MultipleOutputs.addNamedOutput(jobRemoveDuplicate, "output2", TextOutputFormat.class, NullWritable.class, Sequence.class);
 
 			if (Configuration.PAIRED_JOIN) {
 				// Paired-end mode using a map-side Hadooop join needs two map-only jobs to partition both input files
@@ -281,7 +281,7 @@ public class RunMarDRe {
 				FileOutputFormat.setOutputPath(jobPairedSequences2, tmpInputPath2);
 				// Map-side inner join of both partitioned files
 				String joinExpression = CompositeInputFormat.compose("inner", SequenceFileInputFormat.class, tmpInputPath1, tmpInputPath2);
-				jobRemoveDuplicated.getConfiguration().set("mapreduce.join.expr", joinExpression);
+				jobRemoveDuplicate.getConfiguration().set("mapreduce.join.expr", joinExpression);
 				timer.stop(T_INIT);
 
 				// Run first job
@@ -303,7 +303,7 @@ public class RunMarDRe {
 				FileInputFormat.addInputPath(jobPairedSequences, inputPath1);
 				FileInputFormat.addInputPath(jobPairedSequences, inputPath2);
 				FileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
-				FileInputFormat.addInputPath(jobRemoveDuplicated, tmpInputPath1);
+				FileInputFormat.addInputPath(jobRemoveDuplicate, tmpInputPath1);
 				timer.stop(T_INIT);
 
 				// Run job
@@ -318,17 +318,17 @@ public class RunMarDRe {
 			System.out.println("MarDRe: input path = "+inputPath1);
 
 			// Configure job
-			jobRemoveDuplicated = RunMarDRe.configureSingleEndJob(conf, inputFormatClass);
-			FileInputFormat.addInputPath(jobRemoveDuplicated, inputPath1);
-			FileOutputFormat.setOutputPath(jobRemoveDuplicated, tmpOutputPath1);
+			jobRemoveDuplicate = RunMarDRe.configureSingleEndJob(conf, inputFormatClass);
+			FileInputFormat.addInputPath(jobRemoveDuplicate, inputPath1);
+			FileOutputFormat.setOutputPath(jobRemoveDuplicate, tmpOutputPath1);
 			timer.stop(T_INIT);
 		}
 
 		if (status) {
 			// Run main job 
-			System.out.println("MarDRe: removing duplicated reads...");
+			System.out.println("MarDRe: removing duplicate reads...");
 			timer.start(T_REMOVE_DUP);
-			status = jobRemoveDuplicated.waitForCompletion(true);
+			status = jobRemoveDuplicate.waitForCompletion(true);
 			timer.stop(T_REMOVE_DUP);
 		}
 
@@ -366,19 +366,19 @@ public class RunMarDRe {
 		timer.stop(T_TOTAL);
 
 		// Get task counters
-		long inputSequences = jobRemoveDuplicated.getCounters().findCounter(TaskCounter.MAP_INPUT_RECORDS).getValue();
-		long outputSequences = jobRemoveDuplicated.getCounters().findCounter(TaskCounter.REDUCE_OUTPUT_RECORDS).getValue();
+		long inputSequences = jobRemoveDuplicate.getCounters().findCounter(TaskCounter.MAP_INPUT_RECORDS).getValue();
+		long outputSequences = jobRemoveDuplicate.getCounters().findCounter(TaskCounter.REDUCE_OUTPUT_RECORDS).getValue();
 
 		float percent = (float) outputSequences;
 		percent /= (float) inputSequences;
 		percent *= 100.00;
 
-		System.out.format(java.util.Locale.ENGLISH,"MarDRe: non duplicated paired reads %d/%d (%.2f %%)\n", outputSequences, inputSequences, percent);
+		System.out.format(java.util.Locale.ENGLISH,"MarDRe: non duplicate reads %d/%d (%.2f %%)\n", outputSequences, inputSequences, percent);
 		System.out.format(java.util.Locale.ENGLISH,"MarDRe: execution time was %.3f seconds\n", timer.readTotal(T_TOTAL));
 		System.out.format(java.util.Locale.ENGLISH,"\tInitialization took %.3f seconds\n", timer.readTotal(T_INIT));
 		if (options.isPaired())
 			System.out.format(java.util.Locale.ENGLISH,"\tSequences were paired in %.3f seconds\n", timer.readTotal(T_PREPARE_PSEQ));
-		System.out.format(java.util.Locale.ENGLISH,"\tDuplicated reads were removed in %.3f seconds\n", timer.readTotal(T_REMOVE_DUP));
+		System.out.format(java.util.Locale.ENGLISH,"\tDuplicate reads were removed in %.3f seconds\n", timer.readTotal(T_REMOVE_DUP));
 		if (Configuration.MERGE)
 			System.out.format(java.util.Locale.ENGLISH,"\tOutput files were merged in %.3f seconds\n", timer.readTotal(T_PRINT_SEQ));
 
