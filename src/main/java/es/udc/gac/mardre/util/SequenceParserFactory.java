@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017 Universidade da Coruña
  * 
- * This file is part of MaRDRe.
+ * This file is part of MarDRe.
  * 
- * MaRDRe is free software: you can redistribute it and/or modify
+ * MarDRe is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * 
- * MaRDRe is distributed in the hope that it will be useful,
+ * MarDRe is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with MaRDRe.  If not, see <http://www.gnu.org/licenses/>.
+ * along with MarDRe.  If not, see <http://www.gnu.org/licenses/>.
  */
 package es.udc.gac.mardre.util;
 
@@ -64,15 +64,15 @@ public class SequenceParserFactory {
 		}
 
 		if (str == null) {
-			System.out.println("MaRDRe: Unrecognized file format");
+			System.out.println("MarDRe: Unrecognized file format");
 		} else if (str.charAt(0) == '@') {
-			System.out.println("MaRDRe: FASTQ format identified");
+			System.out.println("MarDRe: FASTQ format identified");
 			format = FileFormat.FILE_FORMAT_FASTQ;
 		} else if (str.charAt(0) == '>') {
-			System.out.println("MaRDRe: FASTA format identified");
+			System.out.println("MarDRe: FASTA format identified");
 			format = FileFormat.FILE_FORMAT_FASTA;        	
 		} else {
-			System.out.println("MaRDRe: Unrecognized file format");
+			System.out.println("MarDRe: Unrecognized file format");
 		}
 
 		reader.close();

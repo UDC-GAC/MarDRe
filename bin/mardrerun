@@ -10,5 +10,5 @@ if [ -z "$MARDRE_HOME" ]; then
         exit -1;
 fi
 
-$HADOOP_HOME/bin/hadoop jar $MARDRE_HOME/target/MaRDRe-1.0.jar es.udc.gac.mardre.RunMaRDRe "$@"
+$HADOOP_HOME/bin/hadoop jar $MARDRE_HOME/target/MarDRe-1.0.jar es.udc.gac.mardre.RunMarDRe "$@"
 

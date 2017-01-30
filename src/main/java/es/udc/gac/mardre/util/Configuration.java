@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017 Universidade da Coruña
  * 
- * This file is part of MaRDRe.
+ * This file is part of MarDRe.
  * 
- * MaRDRe is free software: you can redistribute it and/or modify
+ * MarDRe is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * 
- * MaRDRe is distributed in the hope that it will be useful,
+ * MarDRe is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with MaRDRe.  If not, see <http://www.gnu.org/licenses/>.
+ * along with MarDRe.  If not, see <http://www.gnu.org/licenses/>.
  */
 package es.udc.gac.mardre.util;
 
@@ -44,18 +44,18 @@ public class Configuration {
 	public static FileFormat fileFormat;
 	public static String inputPath1;
 
-	public static final String IO_BUFFER_SIZE_PARAM = "MaRDRe_ioBufferSize";
-	public static final String IN_MAPPER_COMBINER_PARAM = "MaRDRe_inMapperCombiner";
-	public static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "MaRDRe_inMapperCombinerCacheSize";
-	public static final String PREFIXLENGTH_PARAM = "MaRDRe_prefixLength";
-	public static final String MISSMATCH_PARAM = "MaRDRe_missMatch";
-	public static final String FILE_FORMAT_PARAM = "MaRDRe_fileFormat";
-	public static final String INPUT_PATH_1_PARAM = "MaRDRe_inputPath1";
+	public static final String IO_BUFFER_SIZE_PARAM = "MarDRe_ioBufferSize";
+	public static final String IN_MAPPER_COMBINER_PARAM = "MarDRe_inMapperCombiner";
+	public static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "MarDRe_inMapperCombinerCacheSize";
+	public static final String PREFIXLENGTH_PARAM = "MarDRe_prefixLength";
+	public static final String MISSMATCH_PARAM = "MarDRe_missMatch";
+	public static final String FILE_FORMAT_PARAM = "MarDRe_fileFormat";
+	public static final String INPUT_PATH_1_PARAM = "MarDRe_inputPath1";
 
-	public static final String TEMP_INPUT_PATH_1 = "/MaRDRe/tmp/input1";
-	public static final String TEMP_INPUT_PATH_2 = "/MaRDRe/tmp/input2";
-	public static final String TEMP_OUTPUT_PATH_1 = "/MaRDRe/tmp/output1";
-	public static final String TEMP_OUTPUT_PATH_2 = "/MaRDRe/tmp/output2";
+	public static final String TEMP_INPUT_PATH_1 = "/MarDRe/tmp/input1";
+	public static final String TEMP_INPUT_PATH_2 = "/MarDRe/tmp/input2";
+	public static final String TEMP_OUTPUT_PATH_1 = "/MarDRe/tmp/output1";
+	public static final String TEMP_OUTPUT_PATH_2 = "/MarDRe/tmp/output2";
 	public static final String OUTPUT_PATH_2 = Configuration.TEMP_OUTPUT_PATH_2+"/part";
 	private static final String MARDRE_CONFIGURATION_FILE = "mardre.conf";
 	private static String configFileName = null;
