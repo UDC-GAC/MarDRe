@@ -40,7 +40,7 @@ public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWr
 					boolean insert = true;
 
 					for (PairedSequence seq : seqsInCache) {
-						if (newSeq.equal(seq, Configuration.missMatch)) {
+						if (newSeq.equal(seq, Configuration.misMatch)) {
 							insert = false;
 							break;
 						}

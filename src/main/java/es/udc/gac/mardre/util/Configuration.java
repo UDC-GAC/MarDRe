@@ -40,7 +40,7 @@ public class Configuration {
 	public static int IN_MAPPER_COMBINER_CACHE_SIZE;
 
 	public static short prefixLength;
-	public static short missMatch;
+	public static short misMatch;
 	public static FileFormat fileFormat;
 	public static String inputPath1;
 
@@ -48,7 +48,7 @@ public class Configuration {
 	public static final String IN_MAPPER_COMBINER_PARAM = "MarDRe_inMapperCombiner";
 	public static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "MarDRe_inMapperCombinerCacheSize";
 	public static final String PREFIXLENGTH_PARAM = "MarDRe_prefixLength";
-	public static final String MISSMATCH_PARAM = "MarDRe_missMatch";
+	public static final String MISMATCH_PARAM = "MarDRe_misMatch";
 	public static final String FILE_FORMAT_PARAM = "MarDRe_fileFormat";
 	public static final String INPUT_PATH_1_PARAM = "MarDRe_inputPath1";
 
@@ -95,7 +95,7 @@ public class Configuration {
 
 	public static void setParameters(org.apache.hadoop.conf.Configuration jobConf) {
 		prefixLength = Short.parseShort(jobConf.get(Configuration.PREFIXLENGTH_PARAM));
-		missMatch = Short.parseShort(jobConf.get(Configuration.MISSMATCH_PARAM));
+		misMatch = Short.parseShort(jobConf.get(Configuration.MISMATCH_PARAM));
 		fileFormat = FileFormat.values()[Integer.parseInt(jobConf.get(Configuration.FILE_FORMAT_PARAM))];
 		inputPath1 = jobConf.get(Configuration.INPUT_PATH_1_PARAM);
 	}

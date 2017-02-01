@@ -38,7 +38,7 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	private static Sequence seq1 = new Sequence();
 	private static Sequence seq2 = new Sequence();
 	private static LongWritable longKey = new LongWritable();
-	private static SeqStringParser parser;
+	private static SeqStringParser parser1, parser2;
 
 	private static final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
 			new CombiningFunction<LongWritable, PairedSequence>() {
@@ -48,7 +48,7 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 					boolean insert = true;
 
 					for (PairedSequence seq : seqsInCache) {
-						if (newSeq.equal(seq, Configuration.missMatch)) {
+						if (newSeq.equal(seq, Configuration.misMatch)) {
 							insert = false;
 							break;
 						}
@@ -68,7 +68,8 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	protected void setup(Context context) {
 		org.apache.hadoop.conf.Configuration jobConf = context.getConfiguration();
 		Configuration.setParameters(jobConf);
-		parser = SequenceParserFactory.createParser(Configuration.fileFormat, Configuration.prefixLength);
+		parser1 = SequenceParserFactory.createParser(Configuration.fileFormat, Configuration.prefixLength);
+		parser2 = SequenceParserFactory.createParser(Configuration.fileFormat, (short) 0);
 
 		if (Boolean.parseBoolean(jobConf.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
 			// Disable the in-Mapper combiner
@@ -88,8 +89,8 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	public void map(LongWritable key, TupleWritable value, Context context)
 			throws IOException, InterruptedException {
 
-		if (parser.getSeq(value.get(0).toString(), seq1) != 0) {
-			if (parser.getSeq(value.get(1).toString(), seq2) != 0) {
+		if (parser1.getSeq(value.get(0).toString(), seq1) != 0) {
+			if (parser2.getSeq(value.get(1).toString(), seq2) != 0) {
 				pairedSeq.setFirstSeq(seq1);
 				pairedSeq.setSecondSeq(seq2);
 				longKey.set(pairedSeq.getKey());

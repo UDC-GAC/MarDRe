@@ -82,14 +82,14 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		for (Sequence newSeq : values) {
 			inputClusterSize++;
 
-			if (newSeq.setDist(first) > Configuration.missMatch) {
+			if (newSeq.setDist(first) > Configuration.misMatch) {
 				insert = true;
 
 				for (Sequence seq : sequences) {
 					diff = newSeq.getDist() - seq.getDist();
 
-					if (fastABS(diff) <= Configuration.missMatch) {
-						if(newSeq.equal(seq, Configuration.missMatch)) {
+					if (fastABS(diff) <= Configuration.misMatch) {
+						if(newSeq.equal(seq, Configuration.misMatch)) {
 							insert = false;
 							break;
 						}

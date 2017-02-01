@@ -90,7 +90,7 @@ public class Sequence implements Writable {
 		_key = 0;
 		_compressSuffix = null;
 		_length = -1;
-		_isFirstSeq = false;
+		_isFirstSeq = true;
 		_quals = null;
 		_avgQual = -1;
 		_dist = -1;
@@ -229,37 +229,37 @@ public class Sequence implements Writable {
 		}
 	}
 
-	public boolean equal(Sequence seq2, short missMatch) {
+	public boolean equal(Sequence seq2, short misMatch) {
 
-		short numMissMatch = 0;
+		short numMisMatch = 0;
 		int popc, i;
 
 		for (i = 0; i < _compressSuffix.length; i++) {
 			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
-			numMissMatch += popc >> 1;
+			numMisMatch += popc >> 1;
 
 		if ((popc % 2) > 0)
-			numMissMatch++;
+			numMisMatch++;
 
-		if (numMissMatch > missMatch)
+		if (numMisMatch > misMatch)
 			return false;
 		}
 
 		return true;
 	}
 
-	public boolean equal(Sequence seq2, short missMatch, short[] numMissMatch) {
+	public boolean equal(Sequence seq2, short misMatch, short[] numMisMatch) {
 
 		int popc, i;
 
 		for (i = 0; i < _compressSuffix.length; i++) {
 			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
-			numMissMatch[0] += popc >> 1;
+			numMisMatch[0] += popc >> 1;
 
 		if ((popc % 2) > 0)
-			numMissMatch[0]++;
+			numMisMatch[0]++;
 
-		if (numMissMatch[0] > missMatch)
+		if (numMisMatch[0] > misMatch)
 			return false;
 		}
 
@@ -322,7 +322,8 @@ public class Sequence implements Writable {
 			bufferedWriter.newLine();
 
 			// Decode the bases
-			char[] bases = decodeBases(Configuration.prefixLength);
+			short prefixLength = (_isFirstSeq)? Configuration.prefixLength : 0;
+			char[] bases = decodeBases(prefixLength);
 
 			// Print the bases
 			bufferedWriter.write(bases);

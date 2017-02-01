@@ -25,7 +25,7 @@ public class Options {
 	private String _writeFileName1;
 	private String _writeFileName2;
 	private boolean _paired;
-	private short _missMatch;
+	private short _misMatch;
 	private short _prefixLength;
 
 	public Options() {
@@ -34,7 +34,7 @@ public class Options {
 		_writeFileName1 = null;
 		_writeFileName2 = null;
 		_paired = false;
-		_missMatch = 0;
+		_misMatch = 0;
 		_prefixLength = 20;
 	}
 
@@ -74,12 +74,12 @@ public class Options {
 		return _paired;
 	}
 
-	public short getMissMatch() {
-		return _missMatch;
+	public short getMisMatch() {
+		return _misMatch;
 	}
 
-	public void setMissMatch(short missMatch) {
-		_missMatch = missMatch;
+	public void setMisMatch(short misMatch) {
+		_misMatch = misMatch;
 	}
 
 	public short getPrefixLength() {
@@ -103,8 +103,8 @@ public class Options {
 				"    -p <string> readFile2 (sequence file in FASTQ format for paired scenarios)");
 		System.out.println("Computation:");
 		System.out.print(
-				"    -m <short> (number of allowed missmatches, default ");
-		System.out.print(_missMatch);
+				"    -m <short> (number of allowed mismatches, default ");
+		System.out.print(_misMatch);
 		System.out.println(")");
 		System.out.print(
 				"    -l <short> (prefix length used for clustering, default ");
@@ -149,13 +149,13 @@ public class Options {
 					return false;
 				}
 			} else if (args[argInd].equals("-m")) {
-				// Number of missmatches
+				// Number of mismatches
 				argInd++;
 				if (argInd < args.length) {
-					_missMatch = Short.parseShort(args[argInd]);
+					_misMatch = Short.parseShort(args[argInd]);
 
-					if (_missMatch < 0)
-						_missMatch = 0;
+					if (_misMatch < 0)
+						_misMatch = 0;
 
 					argInd++;
 				} else {

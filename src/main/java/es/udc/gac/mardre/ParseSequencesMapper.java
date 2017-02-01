@@ -38,12 +38,16 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 
 	@Override
 	protected void setup(Context context) throws IOException {
-		Configuration.setParameters(context.getConfiguration());		
-		parser = SequenceParserFactory.createParser(Configuration.fileFormat, Configuration.prefixLength);
+		Configuration.setParameters(context.getConfiguration());
 		String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
 
 		if (!inputSplitPath.equals(Configuration.inputPath1))
 			isFirstInputPath = false;
+
+		if (isFirstInputPath)
+			parser = SequenceParserFactory.createParser(Configuration.fileFormat, Configuration.prefixLength);
+		else
+			parser = SequenceParserFactory.createParser(Configuration.fileFormat, (short) 0);
 	}
 
 	@Override

@@ -88,14 +88,14 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		for (PairedSequence newSeq : values) {
 			inputClusterSize++;
 
-			if (newSeq.setDist(first) > Configuration.missMatch) {
+			if (newSeq.setDist(first) > Configuration.misMatch) {
 				insert = true;
 
 				for (PairedSequence seq : sequences) {
 					diff = newSeq.getDist() - seq.getDist();
 
-					if (fastABS(diff) <= Configuration.missMatch) {
-						if(newSeq.equal(seq, Configuration.missMatch)) {
+					if (fastABS(diff) <= Configuration.misMatch) {
+						if(newSeq.equal(seq, Configuration.misMatch)) {
 							insert = false;
 							break;
 						}

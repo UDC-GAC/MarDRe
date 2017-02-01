@@ -237,7 +237,7 @@ public class RunMarDRe {
 
 		// Set parameters to be used for mapper/reducer classes
 		conf.setInt(Configuration.PREFIXLENGTH_PARAM, options.getPrefixLength());
-		conf.setInt(Configuration.MISSMATCH_PARAM, options.getMissMatch());
+		conf.setInt(Configuration.MISMATCH_PARAM, options.getMisMatch());
 		conf.setInt(Configuration.FILE_FORMAT_PARAM, format.ordinal());
 		conf.set(Configuration.INPUT_PATH_1_PARAM, inputPath1.toString());
 		conf.setInt(Configuration.IO_BUFFER_SIZE_PARAM, Configuration.IO_FILE_BUFFER_SIZE);
@@ -245,7 +245,7 @@ public class RunMarDRe {
 		conf.setInt(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM, Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
 
 		System.out.println("MarDRe: prefix length = "+options.getPrefixLength());
-		System.out.println("MarDRe: allowed missmatches = "+options.getMissMatch());
+		System.out.println("MarDRe: allowed mismatches = "+options.getMisMatch());
 		System.out.println("MarDRe: input buffer size = "+Configuration.IO_FILE_BUFFER_SIZE);
 		System.out.println("MarDRe: in-Mapper combiner = "+Configuration.IN_MAPPER_COMBINER);
 		System.out.println("MarDRe: in-Mapper combiner cache size = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
