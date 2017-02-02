@@ -50,6 +50,7 @@ public class PairedSequence implements Writable {
 
 	public void setFirstSeq(Sequence firstSeq) {
 		this.firstSeq = firstSeq;
+		this.firstSeq.setIsFirstSeq(true);
 	}
 
 	public Sequence getSecondSeq() {
@@ -58,6 +59,7 @@ public class PairedSequence implements Writable {
 
 	public void setSecondSeq(Sequence secondSeq) {
 		this.secondSeq = secondSeq;
+		this.secondSeq.setIsFirstSeq(false);
 	}
 
 	public short getDist() {
