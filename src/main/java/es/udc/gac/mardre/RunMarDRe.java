@@ -223,7 +223,6 @@ public class RunMarDRe {
 		} else if (format == FileFormat.FILE_FORMAT_FASTA) {
 			inputFormatClass = FastAInputFormat.class;
 		} else {
-			System.out.println("MarDRe: Unrecognized file format");
 			System.exit(-1);			
 		}
 

@@ -98,9 +98,9 @@ public class Options {
 				"WARNING: Current version does not use qualities for selecting the representative sequence when duplicated");
 		System.out.println("Input:");
 		System.out.println(
-				"    -i <string> readFile (sequence file in FASTQ format)");
+				"    -i <string> readFile (sequence file in FASTQ/FASTA format)");
 		System.out.println(
-				"    -p <string> readFile2 (sequence file in FASTQ format for paired scenarios)");
+				"    -p <string> readFile2 (sequence file in FASTQ/FASTA format for paired scenarios)");
 		System.out.println("Computation:");
 		System.out.print(
 				"    -m <short> (number of allowed mismatches, default ");
