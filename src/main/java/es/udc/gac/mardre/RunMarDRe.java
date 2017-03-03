@@ -210,9 +210,9 @@ public class RunMarDRe {
 			return;
 		}
 		// FOA, detect the file format
-		System.out.println("MarDRe: detecting file format from input file "+options.getReadFileName1());
 		FileSystem fs = FileSystem.get(conf);
 		Path inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
+		System.out.println("MarDRe: detecting file format from input file "+inputPath1);
 		FileFormat format = SequenceParserFactory.detectFileFormat(fs, inputPath1);
 
 		// Set input format class
