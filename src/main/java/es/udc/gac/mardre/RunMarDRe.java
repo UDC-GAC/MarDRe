@@ -21,6 +21,7 @@ package es.udc.gac.mardre;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.io.LongWritable;
@@ -37,7 +38,8 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.mapreduce.lib.join.CompositeInputFormat;
-import org.apache.hadoop.util.GenericOptionsParser;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
 
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.Options;
@@ -47,7 +49,7 @@ import es.udc.gac.mardre.util.Timer;
 import es.udc.gac.mardre.util.SequenceParserFactory;
 import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
-public class RunMarDRe {
+public class RunMarDRe extends Configured implements Tool {
 
 	// Timers
 	private static final Timer timer = new Timer();
@@ -56,6 +58,10 @@ public class RunMarDRe {
 	private static final int T_PREPARE_PSEQ = 2;
 	private static final int T_REMOVE_DUP = 3;
 	private static final int T_PRINT_SEQ = 4;
+
+	public static void main(String[] args) throws Exception {
+		System.exit(ToolRunner.run(new org.apache.hadoop.conf.Configuration(), new RunMarDRe(), args));
+	}
 
 	private static Job configureSingleEndJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
 
@@ -186,11 +192,8 @@ public class RunMarDRe {
 		return job;
 	}
 
-	/**
-	 * @param args
-	 * @throws Exception
-	 */
-	public static void main(String[] args) throws Exception {
+	@Override
+	public int run(String[] args) throws Exception {
 
 		boolean status = true;
 
@@ -200,15 +203,15 @@ public class RunMarDRe {
 
 		timer.start(T_INIT);
 		Configuration.loadConfiguration();
-		org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
-		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		org.apache.hadoop.conf.Configuration conf = this.getConf();
 
 		// Parse command line options
 		Options options = new Options();
-		if (!options.parse(otherArgs)) {
+		if (!options.parse(args)) {
 			options.printUsage(RunMarDRe.class.getName());
-			return;
+			return -1;
 		}
+
 		// FOA, detect the file format
 		FileSystem fs = FileSystem.get(conf);
 		Path inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
@@ -223,7 +226,7 @@ public class RunMarDRe {
 		} else if (format == FileFormat.FILE_FORMAT_FASTA) {
 			inputFormatClass = FastAInputFormat.class;
 		} else {
-			System.exit(-1);			
+			return -1;			
 		}
 
 		Path outputPath1 = new Path(options.getWriteFileName1());
@@ -333,7 +336,7 @@ public class RunMarDRe {
 
 		if (!status) {
 			System.out.println("MarDRe: job failed!");
-			System.exit(-1);
+			return -1;
 		}
 
 		if (Configuration.MERGE) {
@@ -381,6 +384,6 @@ public class RunMarDRe {
 		if (Configuration.MERGE)
 			System.out.format(java.util.Locale.ENGLISH,"\tOutput files were merged in %.3f seconds\n", timer.readTotal(T_PRINT_SEQ));
 
-		System.exit(0);
+		return 0;
 	}
 }
