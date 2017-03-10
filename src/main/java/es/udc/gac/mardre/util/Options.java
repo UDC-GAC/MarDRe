@@ -93,14 +93,19 @@ public class Options {
 	public void printUsage(String name) {
 		System.out.println();
 		System.out.println(
-				"Usage: " + name + " -i readFile1 [-p readFile2] [options]");
+				"Usage: " + name + " -i inFile1 [-p inFile2] [-o outFile1 -r outFile2] [options]");
 		System.out.println(
 				"WARNING: Current version does not use qualities for selecting the representative sequence when duplicated");
 		System.out.println("Input:");
 		System.out.println(
-				"    -i <string> readFile (sequence file in FASTQ/FASTA format)");
+				"    -i <string> inFile1 (input sequence file in FASTQ/FASTA format)");
 		System.out.println(
-				"    -p <string> readFile2 (sequence file in FASTQ/FASTA format for paired scenarios)");
+				"    -p <string> inFile2 (input sequence file in FASTQ/FASTA format for paired scenarios)");
+		System.out.println("Output:");
+		System.out.println(
+				"    -o <string> outFile1 (output sequence file in FASTQ/FASTA format, default = inFile1.NonDup)");
+		System.out.println(
+				"    -r <string> outFile2 (output sequence file in FASTQ/FASTA format for paired scenarios, default = inFile2.NonDup)");		
 		System.out.println("Computation:");
 		System.out.print(
 				"    -m <short> (number of allowed mismatches, default ");
@@ -123,14 +128,17 @@ public class Options {
 			return false;
 		}
 
+		boolean withInputFile = false;
+		boolean withOutputFile = false;
+		boolean withPairedOutputFile = false;
+
 		while (argInd < args.length) {
 			// Single-end sequence files
 			if (args[argInd].equals("-i")) {
 				argInd++;
 				if (argInd < args.length) {
 					_readFileName1 = args[argInd];
-					_writeFileName1 = args[argInd];
-					_writeFileName1 = _writeFileName1.concat(".NonDup");
+					withInputFile = true;
 					argInd++;
 				} else {
 					System.out.println("No value specified for parameter -i");
@@ -140,12 +148,30 @@ public class Options {
 				argInd++;
 				if (argInd < args.length) {
 					_readFileName2 = args[argInd];
-					_writeFileName2 = args[argInd];
-					_writeFileName2 = _writeFileName2.concat(".NonDup");
 					_paired = true;
 					argInd++;
 				} else {
 					System.out.println("No value specified for parameter -p");
+					return false;
+				}
+			} else if (args[argInd].equals("-o")) {
+				argInd++;
+				if (argInd < args.length) {
+					_writeFileName1 = args[argInd];
+					withOutputFile = true;
+					argInd++;
+				} else {
+					System.out.println("No value specified for parameter -o");
+					return false;
+				}
+			} else if (args[argInd].equals("-r")) {
+				argInd++;
+				if (argInd < args.length) {
+					_writeFileName2 = args[argInd];
+					withPairedOutputFile = true;
+					argInd++;
+				} else {
+					System.out.println("No value specified for parameter -r");
 					return false;
 				}
 			} else if (args[argInd].equals("-m")) {
@@ -187,6 +213,18 @@ public class Options {
 				System.out.println("Parameter " + args[argInd] + " is not valid");
 				return false;
 			}
+		}
+
+		if (!withInputFile) {
+			System.out.println("No input file specified with -i");
+			return false;
+		}
+
+		if (!withOutputFile)
+			_writeFileName1 = _readFileName1+".NonDup";
+
+		if (!withPairedOutputFile && _paired) {
+			_writeFileName2 = _readFileName2+".NonDup";
 		}
 
 		return true;
