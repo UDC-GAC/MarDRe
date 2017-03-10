@@ -199,7 +199,7 @@ public class RunMarDRe extends Configured implements Tool {
 
 		timer.start(T_TOTAL);
 
-		System.out.println("MarDRe: starting from "+Configuration.MARDRE_HOME);
+		System.out.println("MarDRe: starting from MARDRE_HOME = "+Configuration.MARDRE_HOME);
 
 		timer.start(T_INIT);
 		Configuration.loadConfiguration();

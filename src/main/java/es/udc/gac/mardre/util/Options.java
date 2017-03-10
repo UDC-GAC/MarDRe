@@ -93,7 +93,7 @@ public class Options {
 	public void printUsage(String name) {
 		System.out.println();
 		System.out.println(
-				"Usage: " + name + " -i inFile1 [-p inFile2] [-o outFile1 -r outFile2] [options]");
+				"Usage: " + name + " -i inFile1 [-o outFile1] [-p inFile2] [-r outFile2] [options]");
 		System.out.println(
 				"WARNING: Current version does not use qualities for selecting the representative sequence when duplicated");
 		System.out.println("Input:");
@@ -223,9 +223,8 @@ public class Options {
 		if (!withOutputFile)
 			_writeFileName1 = _readFileName1+".NonDup";
 
-		if (!withPairedOutputFile && _paired) {
+		if (!withPairedOutputFile && _paired)
 			_writeFileName2 = _readFileName2+".NonDup";
-		}
 
 		return true;
 	}
