@@ -237,6 +237,9 @@ public class RunMarDRe extends Configured implements Tool {
 		Path tmpOutputPath2 = null;
 		Job jobRemoveDuplicate = null;
 
+		if (fs.exists(tmpOutputPath1))
+			fs.delete(tmpOutputPath1, true);
+		
 		// Set parameters to be used for mapper/reducer classes
 		conf.setInt(Configuration.PREFIXLENGTH_PARAM, options.getPrefixLength());
 		conf.setInt(Configuration.MISMATCH_PARAM, options.getMisMatch());
@@ -267,6 +270,13 @@ public class RunMarDRe extends Configured implements Tool {
 			System.out.println("MarDRe: input path = "+inputPath1);
 			System.out.println("MarDRe: input path = "+inputPath2);
 
+			if (fs.exists(tmpInputPath1))
+				fs.delete(tmpInputPath1, true);
+			if (fs.exists(tmpInputPath2))
+				fs.delete(tmpInputPath2, true);
+			if (fs.exists(tmpOutputPath2))
+				fs.delete(tmpOutputPath2, true);
+			
 			// Configure job to remove duplicate reads
 			jobRemoveDuplicate = RunMarDRe.configurePairedEndJob(conf);
 			FileOutputFormat.setOutputPath(jobRemoveDuplicate, tmpOutputPath1);
@@ -340,12 +350,20 @@ public class RunMarDRe extends Configured implements Tool {
 		}
 
 		if (Configuration.MERGE) {
+			if (fs.exists(outputPath1))
+				fs.delete(outputPath1, true);
+			
 			// Merge output files
 			System.out.print("MarDRe: merging output files...");
 			timer.start(T_PRINT_SEQ);
 			FileUtil.copyMerge(fs, tmpOutputPath1, fs, outputPath1, Configuration.DELETE_TEMP, conf, null);
-			if (options.isPaired())
+			
+			if (options.isPaired()) {
+				if (fs.exists(outputPath2))
+					fs.delete(outputPath2, true);
+				
 				FileUtil.copyMerge(fs, tmpOutputPath2, fs, outputPath2, Configuration.DELETE_TEMP, conf, null);
+			}
 			timer.stop(T_PRINT_SEQ);
 			System.out.println("done");
 		} else {
