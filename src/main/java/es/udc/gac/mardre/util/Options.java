@@ -116,7 +116,8 @@ public class Options {
 		System.out.print(_prefixLength);
 		System.out.println(")");
 		System.out.println("Others:");
-		System.out.println("    -h (print out the usage of the program)");
+		System.out.println(
+				"    -h (print out the usage of the program)");
 		System.out.println();
 	}
 
