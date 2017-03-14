@@ -60,7 +60,8 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
-		System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f sec (largest cluster %d/%d in %.3f sec)\n", numOutputSequences, numInputSequences, timer.readTotal(T_TOTAL), maxOutputClusterSize, maxInputClusterSize, maxTime);
+		if (numInputSequences > 0)
+			System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f sec (largest cluster %d/%d in %.3f sec)\n", numOutputSequences, numInputSequences, timer.readTotal(T_TOTAL), maxOutputClusterSize, maxInputClusterSize, maxTime);
 	}
 
 	@Override
