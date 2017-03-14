@@ -76,7 +76,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		PairedSequence first;
 		boolean insert;
-		long inputClusterSize = 0, outputClusterSize = 0;
+		long inputClusterSize = 1, outputClusterSize = 1;
 		int diff;
 
 		timer.start(T_TOTAL);
@@ -114,14 +114,14 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 		}
 
-		outputClusterSize = sequences.size();
+		outputClusterSize += sequences.size();
 		sequences.clear();
 
 		timer.stop(T_TOTAL);
 
 		// Update stats
-		numInputSequences+=inputClusterSize;
-		numOutputSequences+=outputClusterSize;
+		numInputSequences += inputClusterSize;
+		numOutputSequences += outputClusterSize;
 
 		if (outputClusterSize > maxOutputClusterSize) {
 			maxInputClusterSize = inputClusterSize;
