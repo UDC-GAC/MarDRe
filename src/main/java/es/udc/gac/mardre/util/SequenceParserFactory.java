@@ -44,7 +44,7 @@ public class SequenceParserFactory {
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
 	}
 
-	public static FileFormat detectFileFormat(FileSystem fs, Path file) throws IOException {
+	public static FileFormat detectFileFormat(FileSystem fs, Path file, short prefixLength) throws IOException {
 
 		BufferedReader reader = null;
 		FileFormat format = FileFormat.FILE_FORMAT_UNKNOWN;
@@ -73,6 +73,14 @@ public class SequenceParserFactory {
 			format = FileFormat.FILE_FORMAT_FASTA;        	
 		} else {
 			System.out.println("MarDRe: Unrecognized file format");
+		}
+
+		// Read second line
+		str = reader.readLine();
+
+		if (str.length() < prefixLength) {
+			throw new IllegalArgumentException("The length of the prefix "
+					+ "("+prefixLength+") can not be greater than the length of the reads ("+str.length()+")");
 		}
 
 		reader.close();

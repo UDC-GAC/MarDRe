@@ -216,7 +216,7 @@ public class RunMarDRe extends Configured implements Tool {
 		FileSystem fs = FileSystem.get(conf);
 		Path inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
 		System.out.println("MarDRe: detecting file format from input file "+inputPath1);
-		FileFormat format = SequenceParserFactory.detectFileFormat(fs, inputPath1);
+		FileFormat format = SequenceParserFactory.detectFileFormat(fs, inputPath1, options.getPrefixLength());
 
 		// Set input format class
 		Class<? extends TextInputFormat> inputFormatClass = null;

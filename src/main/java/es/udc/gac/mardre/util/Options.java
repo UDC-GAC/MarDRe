@@ -198,7 +198,8 @@ public class Options {
 						_prefixLength = 1;
 
 					if (_prefixLength > 27) {
-						System.out.println("WARNING: The length of the prefix can not be higher than 27. Using 27 instead");
+						System.out.println("WARNING: The length of the prefix "
+								+ "("+_prefixLength+") can not be greater than 27. Using 27 instead");
 						_prefixLength = 27;
 					}
 
