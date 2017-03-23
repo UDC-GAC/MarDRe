@@ -3,6 +3,21 @@ MarDRe Changelog
 This file briefly describes the main changes for each version of
 the MarDRe software package.
 
+MarDRe v1.1 - 2017-XX-XX
+------------------------
+A point release for the MarDRe 1.x line
+
+
+MarDRe v1.0.1 - 2017-03-23
+--------------------------
+A point release for the MarDRe 1.x line
+
+	- User's guide has been updated to specify that the current version of MarDRe 
+	does not take into account the quality scores for selecting the representative 
+	sequence when duplicated
+
+	- Fix bug with the distribution tarball to include the parent directory
+
 
 MarDRe v1.0 - 2017-02-01
 ------------------------

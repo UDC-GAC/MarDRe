@@ -26,8 +26,7 @@ Quick User's Guide
 
   3.1) On Linux/Mac OS, just follow the instructions below:
 
-      $ mkdir /path/to/mardre
-      $ tar xzf MarDRe-v1.0.tgz -C /path/to/mardre
+      $ tar xzf MarDRe-v1.1.tgz
 
   3.2) Alternatively use your preferred archive extraction tool
 
