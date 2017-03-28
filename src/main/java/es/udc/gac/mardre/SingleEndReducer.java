@@ -50,7 +50,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	}
 
 	@Override
-	protected void setup(Context context) {
+	protected void setup(Context context) throws IOException, InterruptedException {
 		Configuration.setParameters(context.getConfiguration());
 		numInputSequences = 0;
 		numOutputSequences = 0;

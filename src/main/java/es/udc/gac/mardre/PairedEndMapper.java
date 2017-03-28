@@ -57,7 +57,7 @@ public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWr
 			);
 
 	@Override
-	protected void setup(Context context) {
+	protected void setup(Context context) throws IOException, InterruptedException {
 		org.apache.hadoop.conf.Configuration jobConf = context.getConfiguration();
 		Configuration.setParameters(jobConf);
 

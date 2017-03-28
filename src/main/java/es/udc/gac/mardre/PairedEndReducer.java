@@ -53,7 +53,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	}
 
 	@Override
-	protected void setup(Context context) {
+	protected void setup(Context context) throws IOException, InterruptedException {
 		Configuration.setParameters(context.getConfiguration());
 		mos = new MultipleOutputs<NullWritable,Sequence>(context);
 		numInputSequences = 0;

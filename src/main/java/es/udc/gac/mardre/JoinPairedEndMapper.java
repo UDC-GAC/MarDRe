@@ -65,7 +65,7 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 			);
 
 	@Override
-	protected void setup(Context context) {
+	protected void setup(Context context) throws IOException, InterruptedException {
 		org.apache.hadoop.conf.Configuration jobConf = context.getConfiguration();
 		Configuration.setParameters(jobConf);
 		parser1 = SequenceParserFactory.createParser(Configuration.fileFormat, Configuration.prefixLength);

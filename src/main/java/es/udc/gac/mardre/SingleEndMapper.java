@@ -62,7 +62,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 			);
 
 	@Override
-	protected void setup(Context context) {
+	protected void setup(Context context) throws IOException, InterruptedException {
 		org.apache.hadoop.conf.Configuration jobConf = context.getConfiguration();
 		Configuration.setParameters(jobConf);
 		parser = SequenceParserFactory.createParser(Configuration.fileFormat, Configuration.prefixLength);

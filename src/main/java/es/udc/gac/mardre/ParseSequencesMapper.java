@@ -37,7 +37,7 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 	private static boolean isFirstInputPath = true;
 
 	@Override
-	protected void setup(Context context) throws IOException {
+	protected void setup(Context context) throws IOException, InterruptedException {
 		Configuration.setParameters(context.getConfiguration());
 		String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
 
