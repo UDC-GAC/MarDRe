@@ -42,32 +42,16 @@ public class Options {
 		return _readFileName1;
 	}
 
-	public void setReadFileName1(String readFileName) {
-		_readFileName1 = readFileName;
-	}
-
 	public String getReadFileName2() {
 		return _readFileName2;
-	}
-
-	public void setReadFileName2(String readFileName) {
-		_readFileName2 = readFileName;
 	}
 
 	public String getWriteFileName1() {
 		return _writeFileName1;
 	}
 
-	public void setWriteFileName1(String writeFileName) {
-		_writeFileName1 = writeFileName;
-	}
-
 	public String getWriteFileName2() {
 		return _writeFileName2;
-	}
-
-	public void setWriteFileName2(String writeFileName) {
-		_writeFileName2 = writeFileName;
 	}
 
 	public boolean isPaired() {
@@ -78,34 +62,26 @@ public class Options {
 		return _misMatch;
 	}
 
-	public void setMisMatch(short misMatch) {
-		_misMatch = misMatch;
-	}
-
 	public short getPrefixLength() {
 		return _prefixLength;
-	}
-
-	public void setPrefixLength(short prefixLength) {
-		_prefixLength = prefixLength;
 	}
 
 	public void printUsage(String name) {
 		System.out.println();
 		System.out.println(
-				"Usage: " + name + " -i inFile1 [-o outFile1] [-p inFile2] [-r outFile2] [options]");
+				"Usage: " + name + " -i inputFile1 [-o outputFile1] [-p inputFile1] [-r outputFile2] [options]");
 		System.out.println(
 				"WARNING: Current version does not use qualities for selecting the representative sequence when duplicated");
 		System.out.println("Input:");
 		System.out.println(
-				"    -i <string> inFile1 (input sequence file in FASTQ/FASTA format)");
+				"    -i <string> inputFile1 (input file in FASTQ/FASTA format)");
 		System.out.println(
-				"    -p <string> inFile2 (input sequence file in FASTQ/FASTA format for paired scenarios)");
+				"    -p <string> inputFile2 (input file in FASTQ/FASTA format for paired-end scenarios)");
 		System.out.println("Output:");
 		System.out.println(
-				"    -o <string> outFile1 (output sequence file in FASTQ/FASTA format, default = inFile1.NonDup)");
+				"    -o <string> outputFile1 (output file in FASTQ/FASTA format, default = inputFile1.NonDup)");
 		System.out.println(
-				"    -r <string> outFile2 (output sequence file in FASTQ/FASTA format for paired scenarios, default = inFile2.NonDup)");		
+				"    -r <string> outputFile2 (output file in FASTQ/FASTA format for paired-end scenarios, default = inputFile2.NonDup)");		
 		System.out.println("Computation:");
 		System.out.print(
 				"    -m <short> (number of allowed mismatches, default ");
