@@ -28,9 +28,9 @@ import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 import java.util.Map;
 
-public class Configuration {
+public final class Configuration {
 
-	public static String MARDRE_HOME = null;
+	public static final String MARDRE_HOME;
 	public static boolean MERGE; 
 	public static boolean DELETE_TEMP;
 	public static boolean PAIRED_JOIN;
@@ -58,7 +58,7 @@ public class Configuration {
 	public static final String TEMP_OUTPUT_PATH_2 = "/MarDRe/tmp/output2";
 	public static final String OUTPUT_PATH_2 = Configuration.TEMP_OUTPUT_PATH_2+"/part";
 	private static final String MARDRE_CONFIGURATION_FILE = "mardre.conf";
-	private static String configFileName = null;
+	private static final String configFileName;
 	private static Properties properties = new Properties();
 
 	static {
@@ -71,6 +71,8 @@ public class Configuration {
 		String slash = System.getProperty("file.separator");
 		configFileName = MARDRE_HOME+slash+"etc"+slash+MARDRE_CONFIGURATION_FILE;
 	}
+
+	private Configuration() {}
 
 	public static void loadConfiguration() throws FileNotFoundException {
 		try {
