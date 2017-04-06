@@ -40,7 +40,7 @@ public class FastQSeqStringParser extends SeqStringParser {
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
 					+ ": no name available");
-		seq.setName(st.nextToken().split("\\s+")[0]);
+		seq.setName(st.nextToken());
 
 		// Read the sequence bases
 		if (!st.hasMoreTokens())

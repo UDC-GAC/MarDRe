@@ -131,10 +131,14 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 
 				if (temp.charAt(0) != '@') {
 					i = 2;
+					//Trim spaces in sequence name
+					LineReader.trim(newLine, ' ', 1);
 					newLine.append(temp.getBytes(), 0, temp.getLength());
 				} else {
 					i = 1;
 					key.set(this.pos-secondRead);
+					//Trim spaces in sequence name
+					LineReader.trim(temp, ' ', 1);
 					value.append(temp.getBytes(), 0, temp.getLength());
 					continue;
 				}

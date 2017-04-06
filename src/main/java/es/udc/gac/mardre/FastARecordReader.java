@@ -121,6 +121,8 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 					break;
 				} else {
 					key.set(this.pos-read);
+					//Trim spaces in sequence name
+					LineReader.trim(newLine, ' ', 1);
 					found = true;
 				}
 			}
