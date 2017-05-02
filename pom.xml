@@ -1,19 +1,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-  <groupId>es.udc.gac</groupId>
-  <artifactId>MarDRe</artifactId>
-  <version>1.1</version>
-  <packaging>jar</packaging>
+	<groupId>es.udc.gac</groupId>
+	<artifactId>MarDRe</artifactId>
+	<version>1.1</version>
+	<packaging>jar</packaging>
 
-  <name>MarDRe</name>
+	<name>MarDRe</name>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 
-  <repositories>
+	<repositories>
 		<repository>
 			<id>central</id>
 			<url>http://repo1.maven.org/maven2</url>
@@ -24,7 +24,7 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
-  </repositories>
+	</repositories>
 
 	<dependencies>
 		<dependency>
