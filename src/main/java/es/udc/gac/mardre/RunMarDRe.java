@@ -195,6 +195,12 @@ public class RunMarDRe extends Configured implements Tool {
 	@Override
 	public int run(String[] args) throws Exception {
 
+		Job jobRemoveDuplicate = null;
+		Path inputPath1 = null, inputPath2 = null;
+		Path tmpInputPath1 = null, tmpInputPath2 = null;
+		Path outputPath1 = null, outputPath2 = null;
+		Path tmpOutputPath1 = null, tmpOutputPath2 = null;
+		long inputPath1Length = 0, inputPath2Length = 0;
 		boolean status = true;
 
 		timer.start(T_TOTAL);
@@ -202,10 +208,10 @@ public class RunMarDRe extends Configured implements Tool {
 		System.out.println("MarDRe: starting from MARDRE_HOME = "+Configuration.MARDRE_HOME);
 
 		timer.start(T_INIT);
-		
+
 		// Load MarDRe configuration
 		Configuration.loadConfiguration();
-		
+
 		// Load Hadoop configuration
 		org.apache.hadoop.conf.Configuration conf = this.getConf();
 
@@ -218,7 +224,8 @@ public class RunMarDRe extends Configured implements Tool {
 
 		// FOA, detect the file format
 		FileSystem fs = FileSystem.get(conf);
-		Path inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
+		inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
+		inputPath1Length = fs.getFileStatus(inputPath1).getLen();
 		System.out.println("MarDRe: detecting file format from input file "+inputPath1);
 		FileFormat format = SequenceParserFactory.detectFileFormat(fs, inputPath1, options.getPrefixLength());
 
@@ -233,13 +240,8 @@ public class RunMarDRe extends Configured implements Tool {
 			return -1;			
 		}
 
-		Path outputPath1 = new Path(options.getWriteFileName1());
-		Path tmpOutputPath1 = new Path(Configuration.TEMP_OUTPUT_PATH_1);
-		Path outputPath2 = null;
-		Path tmpInputPath1 = null;
-		Path tmpInputPath2 = null;
-		Path tmpOutputPath2 = null;
-		Job jobRemoveDuplicate = null;
+		outputPath1 = new Path(options.getWriteFileName1());
+		tmpOutputPath1 = new Path(Configuration.TEMP_OUTPUT_PATH_1);
 
 		if (fs.exists(tmpOutputPath1))
 			fs.delete(tmpOutputPath1, true);
@@ -253,26 +255,30 @@ public class RunMarDRe extends Configured implements Tool {
 		conf.setBoolean(Configuration.IN_MAPPER_COMBINER_PARAM, Configuration.IN_MAPPER_COMBINER);
 		conf.setInt(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM, Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
 
+		// Print command line options and configuration parameters
 		System.out.println("MarDRe: prefix length = "+options.getPrefixLength());
 		System.out.println("MarDRe: allowed mismatches = "+options.getMisMatch());
-		System.out.println("MarDRe: input buffer size = "+Configuration.IO_FILE_BUFFER_SIZE);
+		System.out.println("MarDRe: I/O buffer size = "+Configuration.IO_FILE_BUFFER_SIZE+" bytes");
 		System.out.println("MarDRe: in-Mapper combiner = "+Configuration.IN_MAPPER_COMBINER);
 		System.out.println("MarDRe: in-Mapper combiner cache size = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
 
 		if (options.isPaired()) {
 			System.out.println("MarDRe: using paired-end mode");
 
-			if (Configuration.COMPRESS_TEMP)
-				System.out.println("MarDRe: using Snappy compression");
-
 			// Paired-end mode reads (and writes) a second file
-			Path inputPath2 = fs.resolvePath(new Path(options.getReadFileName2()));
+			inputPath2 = fs.resolvePath(new Path(options.getReadFileName2()));
+			inputPath2Length = fs.getFileStatus(inputPath2).getLen();
 			outputPath2 = new Path(options.getWriteFileName2());
 			tmpOutputPath2 = new Path(Configuration.TEMP_OUTPUT_PATH_2);
 			tmpInputPath1 = new Path(Configuration.TEMP_INPUT_PATH_1);
 			tmpInputPath2 = new Path(Configuration.TEMP_INPUT_PATH_2);
-			System.out.println("MarDRe: input path = "+inputPath1);
-			System.out.println("MarDRe: input path = "+inputPath2);
+			System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1Length+" bytes)");
+			System.out.println("MarDRe: input path = "+inputPath2+" ("+inputPath2Length+" bytes)");
+
+			if (inputPath1Length != inputPath2Length) {
+				System.err.println("MarDRe: input files must be the same size in paired-end mode");
+				return -1;
+			}
 
 			if (fs.exists(tmpInputPath1))
 				fs.delete(tmpInputPath1, true);
@@ -280,6 +286,9 @@ public class RunMarDRe extends Configured implements Tool {
 				fs.delete(tmpInputPath2, true);
 			if (fs.exists(tmpOutputPath2))
 				fs.delete(tmpOutputPath2, true);
+
+			if (Configuration.COMPRESS_TEMP)
+				System.out.println("MarDRe: using Snappy compression");
 
 			// Configure job to remove duplicate reads
 			jobRemoveDuplicate = RunMarDRe.configurePairedEndJob(conf);
@@ -331,7 +340,7 @@ public class RunMarDRe extends Configured implements Tool {
 		} else {
 			// Single-end mode reads (and writes) one file
 			System.out.println("MarDRe: using single-end mode");
-			System.out.println("MarDRe: input path = "+inputPath1);
+			System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1Length+" bytes)");
 
 			// Configure job
 			jobRemoveDuplicate = RunMarDRe.configureSingleEndJob(conf, inputFormatClass);
