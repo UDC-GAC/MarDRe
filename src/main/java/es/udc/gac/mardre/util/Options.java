@@ -101,7 +101,7 @@ public class Options {
 		int argInd = 0;
 
 		if (args.length < 2) {
-			System.out.println("Not enough parameters");
+			System.err.println("Not enough parameters");
 			return false;
 		}
 
@@ -118,7 +118,7 @@ public class Options {
 					withInputFile = true;
 					argInd++;
 				} else {
-					System.out.println("No value specified for parameter -i");
+					System.err.println("No value specified for parameter -i");
 					return false;
 				}
 			} else if (args[argInd].equals("-p")) {
@@ -128,7 +128,7 @@ public class Options {
 					_paired = true;
 					argInd++;
 				} else {
-					System.out.println("No value specified for parameter -p");
+					System.err.println("No value specified for parameter -p");
 					return false;
 				}
 			} else if (args[argInd].equals("-o")) {
@@ -138,7 +138,7 @@ public class Options {
 					withOutputFile = true;
 					argInd++;
 				} else {
-					System.out.println("No value specified for parameter -o");
+					System.err.println("No value specified for parameter -o");
 					return false;
 				}
 			} else if (args[argInd].equals("-r")) {
@@ -148,7 +148,7 @@ public class Options {
 					withPairedOutputFile = true;
 					argInd++;
 				} else {
-					System.out.println("No value specified for parameter -r");
+					System.err.println("No value specified for parameter -r");
 					return false;
 				}
 			} else if (args[argInd].equals("-m")) {
@@ -162,7 +162,7 @@ public class Options {
 
 					argInd++;
 				} else {
-					System.out.println("No value specified for parameter -m");
+					System.err.println("No value specified for parameter -m");
 					return false;
 				}
 			} else if (args[argInd].equals("-l")) {
@@ -175,26 +175,26 @@ public class Options {
 
 					if (_prefixLength > 27) {
 						System.out.println("WARNING: The length of the prefix "
-								+ "("+_prefixLength+") can not be greater than 27. Using 27 instead");
+								+ "(-l "+_prefixLength+") can not be greater than 27. Using 27 instead");
 						_prefixLength = 27;
 					}
 
 					argInd++;
 				} else {
-					System.out.println("No value specified for parameter -l");
+					System.err.println("No value specified for parameter -l");
 					return false;
 				}
 			} else if (args[argInd].equals("-h")) {
 				// Check the help
 				return false;
 			} else {
-				System.out.println("Parameter " + args[argInd] + " is not valid");
+				System.err.println("Parameter " + args[argInd] + " is not valid");
 				return false;
 			}
 		}
 
 		if (!withInputFile) {
-			System.out.println("No input file specified with -i");
+			System.err.println("No input file specified with -i");
 			return false;
 		}
 
