@@ -74,7 +74,7 @@ public final class Configuration {
 
 	private Configuration() {}
 
-	public static void loadConfiguration() throws FileNotFoundException {
+	public static boolean loadConfiguration() throws FileNotFoundException {
 		try {
 			FileInputStream configFile = new FileInputStream(configFileName);
 			properties.load(configFile);
@@ -93,6 +93,18 @@ public final class Configuration {
 
 		if (MERGE == false)
 			DELETE_TEMP = false;
+
+		if (IO_FILE_BUFFER_SIZE <= 0) {
+			System.err.println("ioBufferSize="+IO_FILE_BUFFER_SIZE+" value is not valid");
+			return false;
+		}
+
+		if (IN_MAPPER_COMBINER_CACHE_SIZE <= 0) {
+			System.err.println("inMapperCombinerCacheSize="+IN_MAPPER_COMBINER_CACHE_SIZE+" value is not valid");
+			return false;
+		}
+
+		return true;
 	}
 
 	public static void setParameters(org.apache.hadoop.conf.Configuration jobConf) {

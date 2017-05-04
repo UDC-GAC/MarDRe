@@ -210,9 +210,10 @@ public class RunMarDRe extends Configured implements Tool {
 		timer.start(T_INIT);
 
 		// Load MarDRe configuration
-		Configuration.loadConfiguration();
+		if (!Configuration.loadConfiguration())
+			return -1;
 
-		// Load Hadoop configuration
+		// Get Hadoop configuration
 		org.apache.hadoop.conf.Configuration conf = this.getConf();
 
 		// Parse command line options
@@ -226,7 +227,7 @@ public class RunMarDRe extends Configured implements Tool {
 		FileSystem fs = FileSystem.get(conf);
 		inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
 		inputPath1Length = fs.getFileStatus(inputPath1).getLen();
-		System.out.println("MarDRe: detecting file format from input file "+inputPath1);
+		System.out.println("MarDRe: detecting input file format from "+inputPath1);
 		FileFormat format = SequenceParserFactory.detectFileFormat(fs, inputPath1, options.getPrefixLength());
 
 		// Set input format class
@@ -260,7 +261,7 @@ public class RunMarDRe extends Configured implements Tool {
 		System.out.println("MarDRe: allowed mismatches = "+options.getMisMatch());
 		System.out.println("MarDRe: I/O buffer size = "+Configuration.IO_FILE_BUFFER_SIZE+" bytes");
 		System.out.println("MarDRe: in-Mapper combiner = "+Configuration.IN_MAPPER_COMBINER);
-		System.out.println("MarDRe: in-Mapper combiner cache size = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
+		System.out.println("MarDRe: in-Mapper combiner cache = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE+" entries");
 
 		if (options.isPaired()) {
 			System.out.println("MarDRe: using paired-end mode");
