@@ -185,9 +185,8 @@ public class Options {
 				return false;
 			} else if (args[argInd].equals("-v")) {
 				// Check the version
-				System.out.println("MarDRe "+Configuration.MARDRE_VERSION);
-				System.out.println();
-				System.out.println("More info available at http://mardre.des.udc.es");
+				System.out.println("MarDRe: "+Configuration.MARDRE_VERSION);
+				System.out.println("MarDRe: more info available at http://mardre.des.udc.es");
 				return false;
 			} else {
 				System.err.println("Parameter " + args[argInd] + " is not valid");
