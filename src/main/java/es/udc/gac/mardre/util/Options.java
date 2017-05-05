@@ -98,7 +98,6 @@ public class Options {
 				"    -h (print out the usage of the program)");
 		System.out.println(
 				"    -v (print out the version of the program)");
-		System.out.println();
 	}
 
 	public boolean parse(String[] args) {
