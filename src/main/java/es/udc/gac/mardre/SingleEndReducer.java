@@ -39,9 +39,13 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static final List<Sequence> sequences = new ArrayList<Sequence>();
 	private static long maxInputClusterSize;
 	private static long maxOutputClusterSize;
+	private static double maxInputClusterTime;
+	private static long maxInputClusterTimeSize;
+	private static long maxOutputClusterTimeSize;
+	private static double maxClusterTime;
 	private static long numInputSequences;
 	private static long numOutputSequences;
-	private static double maxTime;
+	private static long numClusters;
 
 	private static final int fastABS(int value) {
 		// Very fast abs value computation for integers
@@ -54,9 +58,15 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		Configuration.setParameters(context.getConfiguration());
 		numInputSequences = 0;
 		numOutputSequences = 0;
+		numClusters = 0;
 		maxInputClusterSize = -1;
 		maxOutputClusterSize = -1;
-		maxTime = -1;
+		maxInputClusterTime = -1;
+		maxInputClusterTime = -1;
+		maxInputClusterTimeSize = -1;
+		maxOutputClusterTimeSize = -1;
+		maxClusterTime = -1;
+		
 		timer.start(T_TOTAL);
 	}
 
@@ -64,8 +74,9 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	protected void cleanup(Context context) throws IOException, InterruptedException {
 		timer.stop(T_TOTAL);
 
-		if (numInputSequences > 0)
-			System.out.format(java.util.Locale.ENGLISH,"Time to analyze %d/%d reads: %.3f sec (largest cluster %d/%d in %.3f sec)\n", numOutputSequences, numInputSequences, timer.readTotal(T_TOTAL), maxOutputClusterSize, maxInputClusterSize, maxTime);
+		if (numInputSequences > 0) {
+			System.out.format(java.util.Locale.ENGLISH,"%d/%d reads in %d clusters: %.3f sec (largest cluster %d/%d: %.3f sec, highest time %d/%d: %.3f sec)\n", numOutputSequences, numInputSequences, numClusters, timer.readTotal(T_TOTAL), maxOutputClusterSize, maxInputClusterSize, maxInputClusterTime, maxOutputClusterTimeSize, maxInputClusterTimeSize, maxClusterTime);
+		}
 	}
 
 	@Override
@@ -74,14 +85,14 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		Sequence first;
 		boolean insert;
+		double time;
 		long inputClusterSize = 1, outputClusterSize = 1;
 		int diff;
 
 		timer.start(T_CLUSTER);
 
-		// Get and write the first sequence
+		// Get the first sequence
 		first = new Sequence(values.iterator().next());
-		context.write(nullKey, first);
 
 		// Iterate over the remaining sequences
 		for (Sequence newSeq : values) {
@@ -91,9 +102,9 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 				insert = true;
 
 				for (Sequence seq : sequences) {
-					diff = newSeq.getDist() - seq.getDist();
+					diff = fastABS(newSeq.getDist() - seq.getDist());
 
-					if (fastABS(diff) <= Configuration.misMatch) {
+					if (diff <= Configuration.misMatch) {
 						if(newSeq.equal(seq, Configuration.misMatch)) {
 							insert = false;
 							break;
@@ -106,8 +117,9 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		}
 
 		// Print non-duplicate sequences
-		for (Sequence seq : sequences)
-			context.write(nullKey, seq);
+		context.write(nullKey, first);
+		for (Sequence outSeq : sequences)
+			context.write(nullKey, outSeq);
 
 		outputClusterSize += sequences.size();
 		sequences.clear();
@@ -117,11 +129,19 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		// Update stats
 		numInputSequences += inputClusterSize;
 		numOutputSequences += outputClusterSize;
+		numClusters++;
+		time = timer.readLast(T_CLUSTER);
 
 		if (inputClusterSize > maxInputClusterSize) {
 			maxInputClusterSize = inputClusterSize;
 			maxOutputClusterSize = outputClusterSize;
-			maxTime = timer.readLast(T_CLUSTER);
+			maxInputClusterTime = time;
+		}
+
+		if (time > maxClusterTime) {
+			maxInputClusterTimeSize = inputClusterSize;
+			maxOutputClusterTimeSize = outputClusterSize;
+			maxClusterTime = time;
 		}
 	}
 }
