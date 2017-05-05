@@ -21,10 +21,10 @@ package es.udc.gac.mardre.util;
 public class Timer {
 
 	public static final int MAX_TIMERS = 8;
+	private static final double TENTO9 = new Long(1000000000L).doubleValue();
 	private double startTime[] = new double[MAX_TIMERS];
 	private double elapsedTime[] = new double[MAX_TIMERS];
 	private double totalTime[] = new double[MAX_TIMERS];
-	private static final double TENTO9 = new Long(1000000000L).doubleValue();
 
 	public Timer() {
 		for(int i=0; i<MAX_TIMERS; i++) {
@@ -40,16 +40,15 @@ public class Timer {
 
 	public void stop(int n) {
 		elapsedTime[n] = System.nanoTime()-startTime[n];
-		elapsedTime[n] /= Timer.TENTO9;
 		totalTime[n] += elapsedTime[n];
 	}
 
 	public double readLast(int n) {
-		return elapsedTime[n];
+		return elapsedTime[n] / Timer.TENTO9;
 	}
-	
+
 	public double readTotal(int n) {
-		return totalTime[n];
+		return totalTime[n] / Timer.TENTO9;
 	}
 
 	public void reset(int n) {
