@@ -218,10 +218,8 @@ public class RunMarDRe extends Configured implements Tool {
 
 		// Parse command line options
 		Options options = new Options();
-		if (!options.parse(args)) {
-			options.printUsage(RunMarDRe.class.getName());
+		if (!options.parse(args))
 			return -1;
-		}
 
 		// FOA, detect the file format
 		FileSystem fs = FileSystem.get(conf);

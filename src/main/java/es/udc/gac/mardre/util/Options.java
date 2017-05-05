@@ -18,6 +18,8 @@
  */
 package es.udc.gac.mardre.util;
 
+import es.udc.gac.mardre.RunMarDRe;
+
 public class Options {
 
 	private String _readFileName1;
@@ -66,7 +68,7 @@ public class Options {
 		return _prefixLength;
 	}
 
-	public void printUsage(String name) {
+	private void printUsage(String name) {
 		System.out.println();
 		System.out.println(
 				"Usage: " + name + " -i inputFile1 [-o outputFile1] [-p inputFile1] [-r outputFile2] [options]");
@@ -182,10 +184,11 @@ public class Options {
 				}
 			} else if (args[argInd].equals("-h")) {
 				// Check the help
+				printUsage(RunMarDRe.class.getName());
 				return false;
 			} else if (args[argInd].equals("-v")) {
 				// Check the version
-				System.out.println("MarDRe: "+Configuration.MARDRE_VERSION);
+				System.out.println("MarDRe: version "+Configuration.MARDRE_VERSION);
 				System.out.println("MarDRe: more info available at http://mardre.des.udc.es");
 				return false;
 			} else {

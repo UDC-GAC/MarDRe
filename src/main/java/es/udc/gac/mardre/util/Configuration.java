@@ -30,7 +30,7 @@ import java.util.Map;
 
 public final class Configuration {
 
-	public static final String MARDRE_VERSION = "v1.1";
+	public static final String MARDRE_VERSION = "1.1";
 	public static final String MARDRE_HOME;
 	public static boolean MERGE; 
 	public static boolean DELETE_TEMP;
