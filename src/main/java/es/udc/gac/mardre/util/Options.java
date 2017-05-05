@@ -94,17 +94,13 @@ public class Options {
 		System.out.println("Others:");
 		System.out.println(
 				"    -h (print out the usage of the program)");
+		System.out.println(
+				"    -v (print out the version of the program)");
 		System.out.println();
 	}
 
 	public boolean parse(String[] args) {
 		int argInd = 0;
-
-		if (args.length < 2) {
-			System.err.println("Not enough parameters");
-			return false;
-		}
-
 		boolean withInputFile = false;
 		boolean withOutputFile = false;
 		boolean withPairedOutputFile = false;
@@ -186,6 +182,12 @@ public class Options {
 				}
 			} else if (args[argInd].equals("-h")) {
 				// Check the help
+				return false;
+			} else if (args[argInd].equals("-v")) {
+				// Check the version
+				System.out.println("MarDRe "+Configuration.MARDRE_VERSION);
+				System.out.println();
+				System.out.println("More info available at http://mardre.des.udc.es");
 				return false;
 			} else {
 				System.err.println("Parameter " + args[argInd] + " is not valid");
