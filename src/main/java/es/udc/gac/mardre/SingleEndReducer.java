@@ -37,7 +37,6 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static final int T_CLUSTER = 1;
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final List<Sequence> sequences = new ArrayList<Sequence>();
-	private static Sequence seq;
 	private static Sequence firstSeq;
 	private static Sequence iterSeq;
 	private static long maxInputClusterSize;
@@ -108,27 +107,28 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			if (newSeq.setDist(firstSeq) > Configuration.misMatch) {
 				insert = true;
 
-				for (j=0; j<sequences.size(); j++) {
+				for (j=0; j<outputClusterSize; j++) {
 					iterSeq = sequences.get(j);
 					diff = fastABS(newSeq.getDist() - iterSeq.getDist());
 
 					if (diff <= Configuration.misMatch && newSeq.equal(iterSeq, Configuration.misMatch)) {
 						insert = false;
 
-						//if (newSeq.getAvgQual() > iterSeq.getAvgQual())
-						//	sequences.set(j, new Sequence(newSeq));
+						if (newSeq.getAvgQual() > iterSeq.getAvgQual())
+							// Update existing element in the list
+							iterSeq.set(newSeq);
 
 						break;
 					}
 				}
 
 				if (insert) {
-					if(outputClusterSize >= sequences.size()) {
-						sequences.add(new Sequence(newSeq));
+					if(outputClusterSize < sequences.size()) {
+						// Update existing element in the list
+						sequences.get(outputClusterSize).set(newSeq);
 					} else {
-						seq = sequences.get(outputClusterSize);
-						seq.set(newSeq);
-						sequences.set(outputClusterSize, seq);
+						// Not enough space in the list
+						sequences.add(new Sequence(newSeq));
 					}
 					outputClusterSize++;
 				}
