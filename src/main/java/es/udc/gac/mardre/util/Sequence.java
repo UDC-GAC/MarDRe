@@ -36,12 +36,12 @@ public class Sequence implements Writable {
 	private static int suffixLengthDiv = 0;
 	private static int suffixLengthMod = 0;
 	private static int compressLength = 0;
-
 	private static final StringWriter stringWriter = new StringWriter();
 
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
 
-	private static final short[] codePrefixTab = { 0, 4, 1, 4, 4, 4, 2, // A -> G
+	private static final short[] codePrefixTab = {
+			0, 4, 1, 4, 4, 4, 2, // A -> G
 			4, 4, 4, 4, 4, 4, 4, // H->N
 			4, 4, 4, 4, 4, 3, 4, // O->U
 			4, 4, 4, 4, 4 // V->Z
@@ -49,7 +49,8 @@ public class Sequence implements Writable {
 
 	private static final short[] decodeTab = { 'N', 'A', 'C', 'N', 'G', 'N', 'N', 'N', 'T' };
 
-	private static final short[] codeTab = { 1, 0, 2, 0, 0, 0, 4, // A -> G
+	private static final short[] codeTab = {
+			1, 0, 2, 0, 0, 0, 4, // A -> G
 			0, 0, 0, 0, 0, 0, 0, // H->N
 			0, 0, 0, 0, 0, 8, 0, // O->U
 			0, 0, 0, 0, 0 // V->Z
@@ -104,6 +105,17 @@ public class Sequence implements Writable {
 	}
 
 	public Sequence(Sequence s) {
+		_name = s._name;
+		_key = s._key;
+		_compressSuffix = s._compressSuffix;
+		_length = s._length;
+		_isFirstSeq = s._isFirstSeq;
+		_quals = s._quals;
+		_avgQual = s._avgQual;
+		_dist = s._dist;
+	}
+
+	public void set(Sequence s) {
 		_name = s._name;
 		_key = s._key;
 		_compressSuffix = s._compressSuffix;
@@ -326,8 +338,7 @@ public class Sequence implements Writable {
 			bufferedWriter.newLine();
 
 			// Decode the bases
-			short prefixLength = (_isFirstSeq)? Configuration.prefixLength : 0;
-			decodeBases(prefixLength);
+			decodeBases((_isFirstSeq)? Configuration.prefixLength : 0);
 
 			// Print the bases
 			bufferedWriter.write(Sequence.bases);

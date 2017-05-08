@@ -37,6 +37,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static final int T_CLUSTER = 1;
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final List<Sequence> sequences = new ArrayList<Sequence>();
+	private static Sequence seq;
 	private static Sequence firstSeq;
 	private static Sequence iterSeq;
 	private static long maxInputClusterSize;
@@ -89,7 +90,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	public void reduce(LongWritable key, Iterable<Sequence> values,
 			Context context) throws IOException, InterruptedException {
 
-		long inputClusterSize = 1, outputClusterSize = 1;
+		int inputClusterSize = 1, outputClusterSize = 0;
 		double time;
 		boolean insert;
 		int diff, j;
@@ -114,25 +115,35 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 					if (diff <= Configuration.misMatch && newSeq.equal(iterSeq, Configuration.misMatch)) {
 						insert = false;
 
-						if (newSeq.getAvgQual() > iterSeq.getAvgQual())
-							sequences.set(j, new Sequence(newSeq));
+						//if (newSeq.getAvgQual() > iterSeq.getAvgQual())
+						//	sequences.set(j, new Sequence(newSeq));
 
 						break;
 					}
 				}
-				if (insert)
-					sequences.add(new Sequence(newSeq));
+
+				if (insert) {
+					if(outputClusterSize >= sequences.size()) {
+						sequences.add(new Sequence(newSeq));
+					} else {
+						seq = sequences.get(outputClusterSize);
+						seq.set(newSeq);
+						sequences.set(outputClusterSize, seq);
+					}
+					outputClusterSize++;
+				}
 			}
 		}
 
 		// Write non-duplicate sequences
-		for (Sequence outSeq : sequences)
-			context.write(nullKey, outSeq);
+		for (j=0; j<outputClusterSize; j++)
+			context.write(nullKey, sequences.get(j));
 
-		outputClusterSize += sequences.size();
+		// Add the first sequence 
+		outputClusterSize++;
 
-		if (sequences.size() > 0)
-			sequences.clear();
+		//if (sequences.size() > 0)
+		//	sequences.clear();
 
 		timer.stop(T_CLUSTER);
 
