@@ -337,13 +337,13 @@ public class Sequence implements Writable {
 			bufferedWriter.write(_name, 0, _name.length());
 			bufferedWriter.newLine();
 
-			// Decode the bases
+			// Decode bases
 			decodeBases((_isFirstSeq)? Configuration.prefixLength : 0);
 
-			// Print the bases
+			// Print bases
 			bufferedWriter.write(Sequence.bases);
 
-			// Print the quality scores if available
+			// Print quality scores if available
 			if (_quals != null) {
 				bufferedWriter.newLine();
 				bufferedWriter.write('+');

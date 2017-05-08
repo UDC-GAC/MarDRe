@@ -89,7 +89,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	public void reduce(LongWritable key, Iterable<Sequence> values,
 			Context context) throws IOException, InterruptedException {
 
-		int inputClusterSize = 1, outputClusterSize = 0;
+		int inputClusterSize = 0, outputClusterSize = 0;
 		double time;
 		boolean insert;
 		int diff, j;
@@ -124,7 +124,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 				if (insert) {
 					if(outputClusterSize < sequences.size()) {
-						// Update existing element in the list
+						// Replace existing element in the list
 						sequences.get(outputClusterSize).set(newSeq);
 					} else {
 						// Not enough space in the list
@@ -139,11 +139,9 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		for (j=0; j<outputClusterSize; j++)
 			context.write(nullKey, sequences.get(j));
 
-		// Add the first sequence 
+		// Take into account the first sequence
+		inputClusterSize++;
 		outputClusterSize++;
-
-		//if (sequences.size() > 0)
-		//	sequences.clear();
 
 		timer.stop(T_CLUSTER);
 
