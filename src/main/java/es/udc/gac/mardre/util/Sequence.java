@@ -30,6 +30,7 @@ import org.apache.hadoop.io.Writable;
 
 public class Sequence implements Writable {
 
+	private static char[] bases = null;
 	private static int length = 0;
 	private static int suffixLength = 0;
 	private static int suffixLengthDiv = 0;
@@ -192,12 +193,12 @@ public class Sequence implements Writable {
 		return _compressSuffix;
 	}
 
-	public void setSuffix(String bases, int length, int prefixLength) {
+	public void setSuffix(String bases, int prefixLength) {
 		int iterBases = prefixLength;
 
 		// 16 bases per element
-		if (Sequence.length != length) {
-			Sequence.length = length;
+		if (Sequence.length != bases.length()) {
+			Sequence.length = bases.length();
 			Sequence.suffixLength = Sequence.length - prefixLength;
 			Sequence.suffixLengthDiv = suffixLength >> 4;
 		Sequence.suffixLengthMod = suffixLength & 15;
@@ -268,16 +269,19 @@ public class Sequence implements Writable {
 		return true;
 	}
 
-	private char[] decodeBases(short prefixLength) {
+	private void decodeBases(short prefixLength) {
 
-		char[] bases = new char[_length];
+		if (Sequence.bases == null || Sequence.bases.length != _length) {
+			Sequence.bases = new char[_length];
+			Sequence.suffixLengthMod = (_length - prefixLength) & 15;
+		}
 
 		// Decode the prefix
 		int iterBases = prefixLength - 1;
 		long auxKey = _key;
 
 		for (int i = 0; i < prefixLength; i++) {
-			bases[iterBases] = (char) Sequence.decodePrefixTab[(int) (auxKey % 5)];
+			Sequence.bases[iterBases] = (char) Sequence.decodePrefixTab[(int) (auxKey % 5)];
 			auxKey *= 0.2;
 			iterBases--;
 		}
@@ -286,12 +290,11 @@ public class Sequence implements Writable {
 		iterBases = _length - 1;
 		int iterSuffix = _compressSuffix.length - 1;
 		long auxCompress = _compressSuffix[iterSuffix];
-		int suffixLengthMod = (_length - prefixLength) & 15;
 		int numDecoded = 0;
 
-		if (suffixLengthMod > 0) {
-			for (int i = 0; i < suffixLengthMod; i++) {
-				bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
+		if (Sequence.suffixLengthMod > 0) {
+			for (int i = 0; i < Sequence.suffixLengthMod; i++) {
+				Sequence.bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
 				auxCompress >>= 4;
 			iterBases--;
 			}
@@ -303,14 +306,12 @@ public class Sequence implements Writable {
 			auxCompress = _compressSuffix[iterSuffix];
 
 			for (int j = 0; j < 16; j++) {
-				bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
+				Sequence.bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
 				auxCompress >>= 4;
 			iterBases--;
 			}
 			iterSuffix--;
 		}
-
-		return bases;
 	}
 
 	@Override
@@ -326,10 +327,10 @@ public class Sequence implements Writable {
 
 			// Decode the bases
 			short prefixLength = (_isFirstSeq)? Configuration.prefixLength : 0;
-			char[] bases = decodeBases(prefixLength);
+			decodeBases(prefixLength);
 
 			// Print the bases
-			bufferedWriter.write(bases);
+			bufferedWriter.write(Sequence.bases);
 
 			// Print the quality scores if available
 			if (_quals != null) {

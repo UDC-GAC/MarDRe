@@ -69,7 +69,7 @@ public class FastQSeqStringParser extends SeqStringParser {
 
 		seq.setQuals(strQuals.getBytes(StandardCharsets.US_ASCII));
 		seq.setKey(bases, this.getPrefixLength());
-		seq.setSuffix(bases, bases.length(), this.getPrefixLength());
+		seq.setSuffix(bases, this.getPrefixLength());
 
 		return bases.length();
 	}
