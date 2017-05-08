@@ -39,7 +39,7 @@ public class Timer {
 	}
 
 	public void stop(int n) {
-		elapsedTime[n] = System.nanoTime()-startTime[n];
+		elapsedTime[n] = System.nanoTime() - startTime[n];
 		totalTime[n] += elapsedTime[n];
 	}
 
