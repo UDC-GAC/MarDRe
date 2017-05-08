@@ -72,8 +72,6 @@ public class Options {
 		System.out.println();
 		System.out.println(
 				"Usage: " + name + " -i inputFile1 [-o outputFile1] [-p inputFile1] [-r outputFile2] [options]");
-		System.out.println(
-				"WARNING: Current version does not use qualities for selecting the representative sequence when duplicated");
 		System.out.println("Input:");
 		System.out.println(
 				"    -i <string> inputFile1 (input file in FASTQ/FASTA format)");
