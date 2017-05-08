@@ -405,7 +405,7 @@ public class RunMarDRe extends Configured implements Tool {
 		percent /= (float) inputSequences;
 		percent *= 100.00;
 
-		System.out.format(java.util.Locale.ENGLISH,"MarDRe: non duplicate reads %d/%d (%.2f %%)\n", outputSequences, inputSequences, percent);
+		System.out.format(java.util.Locale.ENGLISH,"MarDRe: non duplicate reads %d/%d (%.2f%%)\n", outputSequences, inputSequences, percent);
 		System.out.format(java.util.Locale.ENGLISH,"MarDRe: execution time was %.3f seconds\n", timer.readTotal(T_TOTAL));
 		System.out.format(java.util.Locale.ENGLISH,"\tInitialization took %.3f seconds\n", timer.readTotal(T_INIT));
 		if (options.isPaired())

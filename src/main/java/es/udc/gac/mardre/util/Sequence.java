@@ -142,12 +142,11 @@ public class Sequence implements Writable {
 	public float getAvgQual() {
 		if ((_avgQual == -1) && (_quals != null)) {
 			_avgQual = 0;
-			int length = _quals.length;
 
-			for (int i = 0; i < length; i++) {
+			for (int i = 0; i < _quals.length; i++)
 				_avgQual += _quals[i];
-			}
-			_avgQual /= (float) length;
+
+			_avgQual /= (float) _quals.length;
 		}
 
 		return _avgQual;

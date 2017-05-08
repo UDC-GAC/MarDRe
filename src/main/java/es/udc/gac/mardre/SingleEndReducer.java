@@ -29,6 +29,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.Sequence;
 import es.udc.gac.mardre.util.Timer;
+import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
 
@@ -37,6 +38,8 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static final int T_CLUSTER = 1;
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final List<Sequence> sequences = new ArrayList<Sequence>();
+	private static Sequence firstSeq;
+	private static Sequence iterSeq;
 	private static long maxInputClusterSize;
 	private static long maxOutputClusterSize;
 	private static double maxInputClusterTime;
@@ -87,49 +90,25 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	public void reduce(LongWritable key, Iterable<Sequence> values,
 			Context context) throws IOException, InterruptedException {
 
-		Sequence first, seq;
-		boolean insert;
-		double time;
 		long inputClusterSize = 1, outputClusterSize = 1;
-		int diff, j;
+		double time;
 
 		timer.start(T_CLUSTER);
 
-		// Get and write the first sequence
-		first = new Sequence(values.iterator().next());
-		context.write(nullKey, first);
-
-		// Iterate over the remaining sequences
-		for (Sequence newSeq : values) {
-			inputClusterSize++;
-
-			if (newSeq.setDist(first) > Configuration.misMatch) {
-				insert = true;
-
-				for (j=0; j<sequences.size(); j++) {
-					seq = sequences.get(j);
-					diff = fastABS(newSeq.getDist() - seq.getDist());
-
-					if (diff <= Configuration.misMatch) {
-						if(newSeq.equal(seq, Configuration.misMatch)) {
-							insert = false;
-							if (newSeq.getAvgQual() > seq.getAvgQual())
-                                                                sequences.set(j, new Sequence(newSeq));
-							break;
-						}
-					}
-				}
-				if (insert)
-					sequences.add(new Sequence(newSeq));
-			}
-		}
+		// Remove non-duplicate sequences
+		if (Configuration.fileFormat == FileFormat.FILE_FORMAT_FASTQ)
+			inputClusterSize += SingleEndReducer.removeFASTQ(values, context);
+		else
+			inputClusterSize += SingleEndReducer.removeFASTA(values, context);
 
 		// Write non-duplicate sequences
 		for (Sequence outSeq : sequences)
 			context.write(nullKey, outSeq);
 
 		outputClusterSize += sequences.size();
-		sequences.clear();
+
+		if (sequences.size() > 0)
+			sequences.clear();
 
 		timer.stop(T_CLUSTER);
 
@@ -150,5 +129,75 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			maxOutputClusterTimeSize = outputClusterSize;
 			maxClusterTime = time;
 		}
+	}
+
+	private static long removeFASTQ(Iterable<Sequence> inputSequences, Context context) throws IOException, InterruptedException {
+		boolean insert;
+		long clusterSize = 0;
+		int diff, j;
+
+		// Get and write the first sequence
+		firstSeq = new Sequence(inputSequences.iterator().next());
+		context.write(nullKey, firstSeq);
+
+		// Iterate over the remaining sequences
+		for (Sequence newSeq : inputSequences) {
+			clusterSize++;
+
+			if (newSeq.setDist(firstSeq) > Configuration.misMatch) {
+				insert = true;
+
+				for (j=0; j<sequences.size(); j++) {
+					iterSeq = sequences.get(j);
+					diff = fastABS(newSeq.getDist() - iterSeq.getDist());
+
+					if (diff <= Configuration.misMatch && newSeq.equal(iterSeq, Configuration.misMatch)) {
+						insert = false;
+
+						if (newSeq.getAvgQual() > iterSeq.getAvgQual())
+							sequences.set(j, new Sequence(newSeq));
+
+						break;
+					}
+				}
+				if (insert)
+					sequences.add(new Sequence(newSeq));
+			}
+		}
+
+		return clusterSize;
+	}
+
+	private static long removeFASTA(Iterable<Sequence> inputSequences, Context context) throws IOException, InterruptedException {
+		boolean insert;
+		long clusterSize = 0;
+		int diff, j;
+
+		// Get and write the first sequence
+		firstSeq = new Sequence(inputSequences.iterator().next());
+		context.write(nullKey, firstSeq);
+
+		// Iterate over the remaining sequences
+		for (Sequence newSeq : inputSequences) {
+			clusterSize++;
+
+			if (newSeq.setDist(firstSeq) > Configuration.misMatch) {
+				insert = true;
+
+				for (j=0; j<sequences.size(); j++) {
+					iterSeq = sequences.get(j);
+					diff = fastABS(newSeq.getDist() - iterSeq.getDist());
+
+					if (diff <= Configuration.misMatch && newSeq.equal(iterSeq, Configuration.misMatch)) {
+						insert = false;
+						break;
+					}
+				}
+				if (insert)
+					sequences.add(new Sequence(newSeq));
+			}
+		}
+
+		return clusterSize;
 	}
 }

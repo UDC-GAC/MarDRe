@@ -31,6 +31,7 @@ import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.Sequence;
 import es.udc.gac.mardre.util.Timer;
+import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, NullWritable, Sequence> {
 
@@ -40,6 +41,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final List<PairedSequence> sequences = new ArrayList<PairedSequence>();
 	private static MultipleOutputs<NullWritable,Sequence> mos;
+	private static PairedSequence firstSeq;
+	private static PairedSequence iterSeq;
 	private static long maxInputClusterSize;
 	private static long maxOutputClusterSize;
 	private static double maxInputClusterTime;
@@ -93,40 +96,16 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
 			throws IOException, InterruptedException {
 
-		PairedSequence first;
-		boolean insert;
-		double time;
 		long inputClusterSize = 1, outputClusterSize = 1;
-		int diff;
+		double time;
 
 		timer.start(T_CLUSTER);
 
-		// Get and write the first sequence
-		first = new PairedSequence(values.iterator().next());
-		context.write(nullKey, first.getFirstSeq());
-		mos.write("output2", nullKey, first.getSecondSeq(), Configuration.OUTPUT_PATH_2);
-
-		// Iterate over the remaining sequences
-		for (PairedSequence newSeq : values) {
-			inputClusterSize++;
-
-			if (newSeq.setDist(first) > Configuration.misMatch) {
-				insert = true;
-
-				for (PairedSequence seq : sequences) {
-					diff = fastABS(newSeq.getDist() - seq.getDist());
-
-					if (diff <= Configuration.misMatch) {
-						if(newSeq.equal(seq, Configuration.misMatch)) {
-							insert = false;
-							break;
-						}
-					}
-				}
-				if (insert)
-					sequences.add(new PairedSequence(newSeq));
-			}
-		}
+		// Remove non-duplicate sequences
+		if (Configuration.fileFormat == FileFormat.FILE_FORMAT_FASTQ)
+			inputClusterSize += PairedEndReducer.removeFASTQ(values, context);
+		else
+			inputClusterSize += PairedEndReducer.removeFASTA(values, context);
 
 		// Write non-duplicate sequences
 		for (PairedSequence seq : sequences) {
@@ -135,7 +114,9 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		}
 
 		outputClusterSize += sequences.size();
-		sequences.clear();
+
+		if (sequences.size() > 0)
+			sequences.clear();
 
 		timer.stop(T_CLUSTER);
 
@@ -156,5 +137,78 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			maxOutputClusterTimeSize = outputClusterSize;
 			maxClusterTime = time;
 		}
+	}
+
+	private static long removeFASTQ(Iterable<PairedSequence> inputSequences, Context context) throws IOException, InterruptedException {
+		boolean insert;
+		long clusterSize = 0;
+		int diff, j;
+
+		// Get and write the first sequence
+		firstSeq = new PairedSequence(inputSequences.iterator().next());
+		context.write(nullKey, firstSeq.getFirstSeq());
+		mos.write("output2", nullKey, firstSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
+
+		// Iterate over the remaining sequences
+		for (PairedSequence newSeq : inputSequences) {
+			clusterSize++;
+
+			if (newSeq.setDist(firstSeq) > Configuration.misMatch) {
+				insert = true;
+
+				for (j=0; j<sequences.size(); j++) {
+					iterSeq = sequences.get(j);
+					diff = fastABS(newSeq.getDist() - iterSeq.getDist());
+
+					if (diff <= Configuration.misMatch && newSeq.equal(iterSeq, Configuration.misMatch)) {
+						insert = false;
+
+						if (newSeq.getFirstSeq().getAvgQual() + newSeq.getSecondSeq().getAvgQual() 
+								> iterSeq.getFirstSeq().getAvgQual() + iterSeq.getSecondSeq().getAvgQual())
+							sequences.set(j, new PairedSequence(newSeq));
+
+						break;
+					}
+				}
+				if (insert)
+					sequences.add(new PairedSequence(newSeq));
+			}
+		}
+
+		return clusterSize;
+	}
+
+	private static long removeFASTA(Iterable<PairedSequence> inputSequences, Context context) throws IOException, InterruptedException {
+		boolean insert;
+		long clusterSize = 0;
+		int diff, j;
+
+		// Get and write the first sequence
+		firstSeq = new PairedSequence(inputSequences.iterator().next());
+		context.write(nullKey, firstSeq.getFirstSeq());
+		mos.write("output2", nullKey, firstSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
+
+		// Iterate over the remaining sequences
+		for (PairedSequence newSeq : inputSequences) {
+			clusterSize++;
+
+			if (newSeq.setDist(firstSeq) > Configuration.misMatch) {
+				insert = true;
+
+				for (j=0; j<sequences.size(); j++) {
+					iterSeq = sequences.get(j);
+					diff = fastABS(newSeq.getDist() - iterSeq.getDist());
+
+					if (diff <= Configuration.misMatch && newSeq.equal(iterSeq, Configuration.misMatch)) {
+						insert = false;
+						break;
+					}
+				}
+				if (insert)
+					sequences.add(new PairedSequence(newSeq));
+			}
+		}
+
+		return clusterSize;
 	}
 }
