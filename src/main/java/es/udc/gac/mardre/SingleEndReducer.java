@@ -87,11 +87,11 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	public void reduce(LongWritable key, Iterable<Sequence> values,
 			Context context) throws IOException, InterruptedException {
 
-		Sequence first;
+		Sequence first, seq;
 		boolean insert;
 		double time;
 		long inputClusterSize = 1, outputClusterSize = 1;
-		int diff;
+		int diff, j;
 
 		timer.start(T_CLUSTER);
 
@@ -106,12 +106,15 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			if (newSeq.setDist(first) > Configuration.misMatch) {
 				insert = true;
 
-				for (Sequence seq : sequences) {
+				for (j=0; j<sequences.size(); j++) {
+					seq = sequences.get(j);
 					diff = fastABS(newSeq.getDist() - seq.getDist());
 
 					if (diff <= Configuration.misMatch) {
 						if(newSeq.equal(seq, Configuration.misMatch)) {
 							insert = false;
+							if (newSeq.getAvgQual() > seq.getAvgQual())
+                                                                sequences.set(j, new Sequence(newSeq));
 							break;
 						}
 					}
