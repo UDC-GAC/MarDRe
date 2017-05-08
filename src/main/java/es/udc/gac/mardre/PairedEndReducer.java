@@ -31,7 +31,6 @@ import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.Sequence;
 import es.udc.gac.mardre.util.Timer;
-import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, NullWritable, Sequence> {
 
@@ -98,14 +97,41 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		long inputClusterSize = 1, outputClusterSize = 1;
 		double time;
+		boolean insert;
+		int diff, j;
 
 		timer.start(T_CLUSTER);
 
-		// Remove non-duplicate sequences
-		if (Configuration.fileFormat == FileFormat.FILE_FORMAT_FASTQ)
-			inputClusterSize += PairedEndReducer.removeFASTQ(values, context);
-		else
-			inputClusterSize += PairedEndReducer.removeFASTA(values, context);
+		// Get and write the first sequence
+		firstSeq = new PairedSequence(values.iterator().next());
+		context.write(nullKey, firstSeq.getFirstSeq());
+		mos.write("output2", nullKey, firstSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
+
+		// Iterate over the remaining sequences
+		for (PairedSequence newSeq : values) {
+			inputClusterSize++;
+
+			if (newSeq.setDist(firstSeq) > Configuration.misMatch) {
+				insert = true;
+
+				for (j=0; j<sequences.size(); j++) {
+					iterSeq = sequences.get(j);
+					diff = fastABS(newSeq.getDist() - iterSeq.getDist());
+
+					if (diff <= Configuration.misMatch && newSeq.equal(iterSeq, Configuration.misMatch)) {
+						insert = false;
+
+						if (newSeq.getFirstSeq().getAvgQual() + newSeq.getSecondSeq().getAvgQual() 
+								> iterSeq.getFirstSeq().getAvgQual() + iterSeq.getSecondSeq().getAvgQual())
+							sequences.set(j, new PairedSequence(newSeq));
+
+						break;
+					}
+				}
+				if (insert)
+					sequences.add(new PairedSequence(newSeq));
+			}
+		}
 
 		// Write non-duplicate sequences
 		for (PairedSequence seq : sequences) {
@@ -137,78 +163,5 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			maxOutputClusterTimeSize = outputClusterSize;
 			maxClusterTime = time;
 		}
-	}
-
-	private static long removeFASTQ(Iterable<PairedSequence> inputSequences, Context context) throws IOException, InterruptedException {
-		boolean insert;
-		long clusterSize = 0;
-		int diff, j;
-
-		// Get and write the first sequence
-		firstSeq = new PairedSequence(inputSequences.iterator().next());
-		context.write(nullKey, firstSeq.getFirstSeq());
-		mos.write("output2", nullKey, firstSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
-
-		// Iterate over the remaining sequences
-		for (PairedSequence newSeq : inputSequences) {
-			clusterSize++;
-
-			if (newSeq.setDist(firstSeq) > Configuration.misMatch) {
-				insert = true;
-
-				for (j=0; j<sequences.size(); j++) {
-					iterSeq = sequences.get(j);
-					diff = fastABS(newSeq.getDist() - iterSeq.getDist());
-
-					if (diff <= Configuration.misMatch && newSeq.equal(iterSeq, Configuration.misMatch)) {
-						insert = false;
-
-						if (newSeq.getFirstSeq().getAvgQual() + newSeq.getSecondSeq().getAvgQual() 
-								> iterSeq.getFirstSeq().getAvgQual() + iterSeq.getSecondSeq().getAvgQual())
-							sequences.set(j, new PairedSequence(newSeq));
-
-						break;
-					}
-				}
-				if (insert)
-					sequences.add(new PairedSequence(newSeq));
-			}
-		}
-
-		return clusterSize;
-	}
-
-	private static long removeFASTA(Iterable<PairedSequence> inputSequences, Context context) throws IOException, InterruptedException {
-		boolean insert;
-		long clusterSize = 0;
-		int diff, j;
-
-		// Get and write the first sequence
-		firstSeq = new PairedSequence(inputSequences.iterator().next());
-		context.write(nullKey, firstSeq.getFirstSeq());
-		mos.write("output2", nullKey, firstSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
-
-		// Iterate over the remaining sequences
-		for (PairedSequence newSeq : inputSequences) {
-			clusterSize++;
-
-			if (newSeq.setDist(firstSeq) > Configuration.misMatch) {
-				insert = true;
-
-				for (j=0; j<sequences.size(); j++) {
-					iterSeq = sequences.get(j);
-					diff = fastABS(newSeq.getDist() - iterSeq.getDist());
-
-					if (diff <= Configuration.misMatch && newSeq.equal(iterSeq, Configuration.misMatch)) {
-						insert = false;
-						break;
-					}
-				}
-				if (insert)
-					sequences.add(new PairedSequence(newSeq));
-			}
-		}
-
-		return clusterSize;
 	}
 }
