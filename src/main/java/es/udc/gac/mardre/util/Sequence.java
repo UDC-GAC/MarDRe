@@ -30,6 +30,12 @@ import org.apache.hadoop.io.Writable;
 
 public class Sequence implements Writable {
 
+	private static int length = 0;
+	private static int suffixLength = 0;
+	private static int suffixLengthDiv = 0;
+	private static int suffixLengthMod = 0;
+	private static int compressLength = 0;
+
 	private static final StringWriter stringWriter = new StringWriter();
 
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
@@ -115,14 +121,6 @@ public class Sequence implements Writable {
 		return _name;
 	}
 
-	public void setLength(int length) {
-		_length = (short) length;
-	}
-
-	public int getLength() {
-		return _length;
-	}
-
 	public void setIsFirstSeq(boolean val) {
 		_isFirstSeq = val;
 	}
@@ -194,20 +192,25 @@ public class Sequence implements Writable {
 		return _compressSuffix;
 	}
 
-	public void setSuffix(String bases, short prefixLength) {
-		// 16 bases per element
-		int suffixLength = _length - prefixLength;
-		int suffixLengthDiv = suffixLength >> 4;
-		int suffixLengthMod = suffixLength & 15;
-		int compressLength = suffixLengthDiv;
+	public void setSuffix(String bases, int length, int prefixLength) {
 		int iterBases = prefixLength;
 
-		if (suffixLengthMod > 0)
-			compressLength++;
+		// 16 bases per element
+		if (Sequence.length != length) {
+			Sequence.length = length;
+			Sequence.suffixLength = Sequence.length - prefixLength;
+			Sequence.suffixLengthDiv = suffixLength >> 4;
+		Sequence.suffixLengthMod = suffixLength & 15;
+		Sequence.compressLength = suffixLengthDiv;
 
-		_compressSuffix = new long[compressLength];
+		if (Sequence.suffixLengthMod > 0)
+			Sequence.compressLength++;
+		}
 
-		for (int i = 0; i < suffixLengthDiv; i++) {
+		_length = (short) Sequence.length;
+		_compressSuffix = new long[Sequence.compressLength];
+
+		for (int i = 0; i < Sequence.suffixLengthDiv; i++) {
 			_compressSuffix[i] = 0;
 
 			for (int j = 0; j < 16; j++) {
@@ -218,11 +221,11 @@ public class Sequence implements Writable {
 		}
 
 		if (suffixLengthMod > 0) {
-			_compressSuffix[compressLength - 1] = 0;
+			_compressSuffix[Sequence.compressLength - 1] = 0;
 
-			for (int i = 0; i < suffixLengthMod; i++) {
-				_compressSuffix[compressLength - 1] <<= 4;
-				_compressSuffix[compressLength - 1] += Sequence.code(bases.charAt(iterBases));
+			for (int i = 0; i < Sequence.suffixLengthMod; i++) {
+				_compressSuffix[Sequence.compressLength - 1] <<= 4;
+				_compressSuffix[Sequence.compressLength - 1] += Sequence.code(bases.charAt(iterBases));
 				iterBases++;
 			}
 		}
@@ -312,8 +315,9 @@ public class Sequence implements Writable {
 
 	@Override
 	public String toString() {
-		stringWriter.getBuffer().setLength(0);
-		BufferedWriter bufferedWriter = new BufferedWriter(stringWriter);
+
+		Sequence.stringWriter.getBuffer().setLength(0);
+		BufferedWriter bufferedWriter = new BufferedWriter(Sequence.stringWriter);
 
 		try {
 			// Print the name

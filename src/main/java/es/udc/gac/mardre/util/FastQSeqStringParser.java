@@ -47,7 +47,7 @@ public class FastQSeqStringParser extends SeqStringParser {
 			throw new IllegalArgumentException(
 					"Wrong Sequence format for string " + s
 					+ ": only name available");
-		String str = st.nextToken();
+		String bases = st.nextToken();
 
 		// Read the comment line
 		if (!st.hasMoreTokens())
@@ -64,14 +64,13 @@ public class FastQSeqStringParser extends SeqStringParser {
 		String strQuals = st.nextToken();
 
 		// For base-space reads
-		if (strQuals.length() != str.length())
+		if (strQuals.length() != bases.length())
 			throw new IllegalArgumentException("The number of bases is not equal to the number of quality scores");
 
-		seq.setLength(str.length());
 		seq.setQuals(strQuals.getBytes(StandardCharsets.US_ASCII));
-		seq.setKey(str, this.getPrefixLength());
-		seq.setSuffix(str,this.getPrefixLength());
+		seq.setKey(bases, this.getPrefixLength());
+		seq.setSuffix(bases, bases.length(), this.getPrefixLength());
 
-		return seq.getLength();
+		return bases.length();
 	}
 }
