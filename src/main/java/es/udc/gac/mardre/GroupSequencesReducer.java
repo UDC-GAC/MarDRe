@@ -19,17 +19,56 @@
 package es.udc.gac.mardre;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.mapreduce.ReduceContext;
 import org.apache.hadoop.mapreduce.Reducer;
 
+import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.Sequence;
+import es.udc.gac.mardre.util.Timer;
 
 public class GroupSequencesReducer extends Reducer<LongWritable, Sequence, LongWritable, PairedSequence> {
 
+	private static final Timer timer = new Timer();
+	private static final int T_TOTAL = 0;
+	private static final int T_REDUCE = 1;
 	private static PairedSequence pairedSeq = new PairedSequence();
 	private static LongWritable longKey = new LongWritable();
+
+	@Override
+	public void run(Reducer<LongWritable, Sequence, LongWritable, PairedSequence>.Context context) throws IOException, InterruptedException {
+
+		timer.start(T_TOTAL);
+
+		Configuration.setParameters(context.getConfiguration());
+		int taskID = context.getTaskAttemptID().getTaskID().getId();
+
+		setup(context);
+
+		try {
+			timer.start(T_REDUCE);
+			while (context.nextKey()) {
+				reduce(context.getCurrentKey(), context.getValues(), context);
+				// If a back up store is used, reset it
+				Iterator<Sequence> iter = context.getValues().iterator();
+				if(iter instanceof ReduceContext.ValueIterator) {
+					((ReduceContext.ValueIterator<Sequence>)iter).resetBackupStore();        
+				}
+			}
+			timer.stop(T_REDUCE);
+		} finally {
+			cleanup(context);
+		}
+
+		timer.stop(T_TOTAL);
+
+		// Report stats
+		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f sec\n", taskID, timer.readTotal(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"\tReduce time: %.3f sec\n", timer.readTotal(T_REDUCE));
+	}
 
 	@Override
 	public void reduce(LongWritable key, Iterable<Sequence> values,

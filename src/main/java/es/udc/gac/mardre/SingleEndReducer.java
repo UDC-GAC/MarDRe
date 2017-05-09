@@ -20,10 +20,12 @@ package es.udc.gac.mardre;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.mapreduce.ReduceContext;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import es.udc.gac.mardre.util.Configuration;
@@ -34,7 +36,10 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 	private static final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
-	private static final int T_CLUSTER = 1;
+	private static final int T_SETUP = 1;
+	private static final int T_REDUCE = 2;
+	private static final int T_CLEANUP = 3;
+	private static final int T_CLUSTER = 4;
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final List<Sequence> sequences = new ArrayList<Sequence>();
 	private static Sequence firstSeq;
@@ -50,8 +55,53 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static long numClusters;
 
 	@Override
-	protected void setup(Context context) throws IOException, InterruptedException {
+	public void run(Reducer<LongWritable, Sequence, NullWritable, Sequence>.Context context) throws IOException, InterruptedException {
+
+		timer.start(T_TOTAL);
+
 		Configuration.setParameters(context.getConfiguration());
+		int taskID = context.getTaskAttemptID().getTaskID().getId();
+
+		timer.start(T_SETUP);
+		setup(context);
+		timer.stop(T_SETUP);
+
+		try {
+			timer.start(T_REDUCE);
+			while (context.nextKey()) {
+				reduce(context.getCurrentKey(), context.getValues(), context);
+				// If a back up store is used, reset it
+				Iterator<Sequence> iter = context.getValues().iterator();
+				if(iter instanceof ReduceContext.ValueIterator) {
+					((ReduceContext.ValueIterator<Sequence>)iter).resetBackupStore();        
+				}
+			}
+			timer.stop(T_REDUCE);
+		} finally {
+			timer.start(T_CLEANUP);
+			cleanup(context);
+			timer.stop(T_CLEANUP);
+		}
+
+		timer.stop(T_TOTAL);
+
+		// Report stats
+		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f sec\n", taskID, timer.readTotal(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"\tSetup time: %.3f sec\n", timer.readTotal(T_SETUP));
+		System.out.format(java.util.Locale.ENGLISH,"\tReduce time: %.3f sec\n", timer.readTotal(T_REDUCE));
+		System.out.format(java.util.Locale.ENGLISH,"\tCleanup time: %.3f sec\n", timer.readTotal(T_CLEANUP));
+
+		if (numInputSequences > 0) {
+			System.out.format(java.util.Locale.ENGLISH,"\n%d/%d reads in %d clusters: %.3f sec "
+					+ "(largest cluster %d/%d: %.3f sec, highest time %d/%d: %.3f sec)\n",
+					numOutputSequences, numInputSequences, numClusters, timer.readTotal(T_REDUCE),
+					maxOutputClusterSize, maxInputClusterSize, maxInputClusterTime, maxOutputClusterTimeSize,
+					maxInputClusterTimeSize, maxClusterTime);
+		}
+	}
+
+	@Override
+	protected void setup(Context context) throws IOException, InterruptedException {
 		numInputSequences = 0;
 		numOutputSequences = 0;
 		numClusters = 0;
@@ -62,21 +112,6 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		maxInputClusterTimeSize = -1;
 		maxOutputClusterTimeSize = -1;
 		maxClusterTime = -1;
-
-		timer.start(T_TOTAL);
-	}
-
-	@Override
-	protected void cleanup(Context context) throws IOException, InterruptedException {
-		timer.stop(T_TOTAL);
-
-		if (numInputSequences > 0) {
-			System.out.format(java.util.Locale.ENGLISH,"%d/%d reads in %d clusters: %.3f sec "
-					+ "(largest cluster %d/%d: %.3f sec, highest time %d/%d: %.3f sec)\n",
-					numOutputSequences, numInputSequences, numClusters, timer.readTotal(T_TOTAL),
-					maxOutputClusterSize, maxInputClusterSize, maxInputClusterTime, maxOutputClusterTimeSize,
-					maxInputClusterTimeSize, maxClusterTime);
-		}
 	}
 
 	@Override

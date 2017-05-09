@@ -29,16 +29,50 @@ import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.SeqStringParser;
 import es.udc.gac.mardre.util.Sequence;
 import es.udc.gac.mardre.util.SequenceParserFactory;
+import es.udc.gac.mardre.util.Timer;
 
 public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
 
+	private static final Timer timer = new Timer();
+	private static final int T_TOTAL = 0;
+	private static final int T_SETUP = 1;
+	private static final int T_MAP = 2;
 	private static Sequence seq = new Sequence();
 	private static SeqStringParser parser;
 	private static boolean isFirstInputPath = true;
 
 	@Override
-	protected void setup(Context context) throws IOException, InterruptedException {
+	public void run(Context context) throws IOException, InterruptedException {
+
+		timer.start(T_TOTAL);
+
 		Configuration.setParameters(context.getConfiguration());
+		int taskID = context.getTaskAttemptID().getTaskID().getId();
+
+		timer.start(T_SETUP);
+		setup(context);
+		timer.stop(T_SETUP);
+
+		try {
+			timer.start(T_MAP);
+			while (context.nextKeyValue()) {
+				map(context.getCurrentKey(), context.getCurrentValue(), context);
+			}
+			timer.stop(T_MAP);
+		} finally {
+			cleanup(context);
+		}
+
+		timer.stop(T_TOTAL);
+
+		// Report stats
+		System.out.format(java.util.Locale.ENGLISH,"Total time for mapper task %d: %.3f seconds\n", taskID, timer.readTotal(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"\tSetup time: %.3f seconds\n", timer.readTotal(T_SETUP));
+		System.out.format(java.util.Locale.ENGLISH,"\tMap time: %.3f seconds\n", timer.readTotal(T_MAP));
+	}
+
+	@Override
+	protected void setup(Context context) throws IOException, InterruptedException {
 		String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
 
 		if (!inputSplitPath.equals(Configuration.inputPath1))

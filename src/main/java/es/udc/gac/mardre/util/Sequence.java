@@ -214,7 +214,7 @@ public class Sequence implements Writable {
 		suffixLength = _length - prefixLength;
 
 		if (Sequence.suffixLength != suffixLength)
-			Sequence.setCompressSuffixLength(_length, suffixLength);
+			Sequence.setCompressSuffixLength(suffixLength);
 
 		// Code the suffix (16 bases per element)
 		_compressSuffix = new long[Sequence.compressSuffixLength];
@@ -379,7 +379,7 @@ public class Sequence implements Writable {
 		int suffixLength = _length - ((_isFirstSeq)? Configuration.prefixLength : 0);
 
 		if (Sequence.suffixLength != suffixLength)
-			Sequence.setCompressSuffixLength(_length, suffixLength);
+			Sequence.setCompressSuffixLength(suffixLength);
 
 		_compressSuffix = new long[Sequence.compressSuffixLength];
 
@@ -396,7 +396,7 @@ public class Sequence implements Writable {
 		}
 	}
 
-	private static final void setCompressSuffixLength(int length, int suffixLength) {
+	private static final void setCompressSuffixLength(int suffixLength) {
 		Sequence.suffixLength = suffixLength;
 		Sequence.suffixLengthDiv = suffixLength >> 4;
 		Sequence.suffixLengthMod = suffixLength & 15;
