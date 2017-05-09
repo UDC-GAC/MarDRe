@@ -165,6 +165,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		context.write(nullKey, firstSeq);
 		for (j=0; j<outputClusterSize; j++)
 			context.write(nullKey, sequences.get(j));
+
 		timer.stop(T_CLUSTER);
 
 		// Update stats
