@@ -49,12 +49,6 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static long numOutputSequences;
 	private static long numClusters;
 
-	private static final int fastABS(int value) {
-		// Very fast abs value computation for integers
-		int mask = value >> 31;
-		return (value + mask) ^ mask;
-	}
-
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
 		Configuration.setParameters(context.getConfiguration());
@@ -96,9 +90,8 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		timer.start(T_CLUSTER);
 
-		// Get and write the first sequence
+		// Get the first sequence
 		firstSeq = new Sequence(values.iterator().next());
-		context.write(nullKey, firstSeq);
 
 		// Iterate over the remaining sequences
 		for (Sequence newSeq : values) {
@@ -109,16 +102,18 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 				for (j=0; j<outputClusterSize; j++) {
 					iterSeq = sequences.get(j);
-					diff = fastABS(newSeq.getDist() - iterSeq.getDist());
+					diff = Configuration.fastABS(newSeq.getDist() - iterSeq.getDist());
 
-					if (diff <= Configuration.misMatch && newSeq.equal(iterSeq, Configuration.misMatch)) {
-						insert = false;
+					if (diff <= Configuration.misMatch) {
+						if(newSeq.equal(iterSeq, Configuration.misMatch)) {
+							insert = false;
 
-						if (newSeq.getAvgQual() > iterSeq.getAvgQual())
-							// Update existing element in the list
-							iterSeq.set(newSeq);
+							if (newSeq.getAvgQual() > iterSeq.getAvgQual())
+								// Update existing element in the list
+								iterSeq.set(newSeq);
 
-						break;
+							break;
+						}
 					}
 				}
 
@@ -135,19 +130,16 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			}
 		}
 
-		// Write non-duplicate sequences
+		// Write non-duplicate sequences including the first one
+		context.write(nullKey, firstSeq);
 		for (j=0; j<outputClusterSize; j++)
 			context.write(nullKey, sequences.get(j));
 
-		// Take into account the first sequence
-		inputClusterSize++;
-		outputClusterSize++;
-
 		timer.stop(T_CLUSTER);
 
-		// Update stats
-		numInputSequences += inputClusterSize;
-		numOutputSequences += outputClusterSize;
+		// Update stats taking into account the first sequence
+		numInputSequences += inputClusterSize + 1;
+		numOutputSequences += outputClusterSize + 1;
 		numClusters++;
 		time = timer.readLast(T_CLUSTER);
 

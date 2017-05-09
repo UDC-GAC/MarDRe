@@ -114,4 +114,10 @@ public final class Configuration {
 		fileFormat = FileFormat.values()[Integer.parseInt(jobConf.get(Configuration.FILE_FORMAT_PARAM))];
 		inputPath1 = jobConf.get(Configuration.INPUT_PATH_1_PARAM);
 	}
+
+	public static final int fastABS(int value) {
+		// Very fast ABS value computation for integers
+		int mask = value >> 31;
+		return (value + mask) ^ mask;
+	}
 }

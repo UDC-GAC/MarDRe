@@ -52,12 +52,6 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	private static long numOutputSequences;
 	private static long numClusters;
 
-	private static final int fastABS(int value) {
-		// Very fast abs value computation for integers
-		int mask = value >> 31;
-		return (value + mask) ^ mask;
-	}
-
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
 		Configuration.setParameters(context.getConfiguration());
@@ -95,17 +89,15 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
 			throws IOException, InterruptedException {
 
-		long inputClusterSize = 1, outputClusterSize = 1;
+		long inputClusterSize = 0, outputClusterSize = 0;
 		double time;
 		boolean insert;
 		int diff, j;
 
 		timer.start(T_CLUSTER);
 
-		// Get and write the first sequence
+		// Get the first sequence
 		firstSeq = new PairedSequence(values.iterator().next());
-		context.write(nullKey, firstSeq.getFirstSeq());
-		mos.write("output2", nullKey, firstSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 
 		// Iterate over the remaining sequences
 		for (PairedSequence newSeq : values) {
@@ -116,16 +108,18 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 				for (j=0; j<sequences.size(); j++) {
 					iterSeq = sequences.get(j);
-					diff = fastABS(newSeq.getDist() - iterSeq.getDist());
+					diff = Configuration.fastABS(newSeq.getDist() - iterSeq.getDist());
 
-					if (diff <= Configuration.misMatch && newSeq.equal(iterSeq, Configuration.misMatch)) {
-						insert = false;
+					if (diff <= Configuration.misMatch) {
+						if(newSeq.equal(iterSeq, Configuration.misMatch)) {
+							insert = false;
 
-						if (newSeq.getFirstSeq().getAvgQual() + newSeq.getSecondSeq().getAvgQual() 
-								> iterSeq.getFirstSeq().getAvgQual() + iterSeq.getSecondSeq().getAvgQual())
-							sequences.set(j, new PairedSequence(newSeq));
+							if (newSeq.getFirstSeq().getAvgQual() + newSeq.getSecondSeq().getAvgQual() 
+									> iterSeq.getFirstSeq().getAvgQual() + iterSeq.getSecondSeq().getAvgQual())
+								sequences.set(j, new PairedSequence(newSeq));
 
-						break;
+							break;
+						}
 					}
 				}
 				if (insert)
@@ -133,7 +127,9 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			}
 		}
 
-		// Write non-duplicate sequences
+		// Write non-duplicate sequences including the first one
+		context.write(nullKey, firstSeq.getFirstSeq());
+		mos.write("output2", nullKey, firstSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 		for (PairedSequence seq : sequences) {
 			context.write(nullKey, seq.getFirstSeq());
 			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
@@ -146,7 +142,9 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		timer.stop(T_CLUSTER);
 
-		// Update stats
+		// Update stats taking into account the first sequence
+		numInputSequences += inputClusterSize + 1;
+		numOutputSequences += outputClusterSize + 1;
 		numInputSequences += inputClusterSize;
 		numOutputSequences += outputClusterSize;
 		numClusters++;
