@@ -382,7 +382,8 @@ public class Sequence implements Writable {
 
 		if (Sequence.length != _length) {
 			Sequence.length = _length;
-			Sequence.suffixLength = Sequence.length - Configuration.prefixLength;
+			int prefixLength = (_isFirstSeq)? Configuration.prefixLength : 0;
+			Sequence.suffixLength = Sequence.length - prefixLength;
 			Sequence.suffixLengthDiv = Sequence.suffixLength >> 4;
 		Sequence.suffixLengthMod = Sequence.suffixLength & 15;
 		Sequence.compressLength = (Sequence.suffixLengthMod > 0)? Sequence.suffixLengthDiv+1 : Sequence.suffixLengthDiv;
