@@ -329,7 +329,7 @@ public class Sequence implements Writable {
 		BufferedWriter bufferedWriter = new BufferedWriter(Sequence.stringWriter);
 
 		try {
-			// Print the name
+			// Print name
 			bufferedWriter.write(_name, 0, _name.length());
 			bufferedWriter.newLine();
 
