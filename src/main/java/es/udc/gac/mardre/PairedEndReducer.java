@@ -89,7 +89,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
 			throws IOException, InterruptedException {
 
-		long inputClusterSize = 0, outputClusterSize = 0;
+		int inputClusterSize = 0, outputClusterSize = 0;
 		double time;
 		boolean insert;
 		int diff, j;
@@ -106,7 +106,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			if (newSeq.setDist(firstSeq) > Configuration.misMatch) {
 				insert = true;
 
-				for (j=0; j<sequences.size(); j++) {
+				for (j=0; j<outputClusterSize; j++) {
 					iterSeq = sequences.get(j);
 					diff = Configuration.fastABS(newSeq.getDist() - iterSeq.getDist());
 
@@ -114,39 +114,42 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 						if(newSeq.equal(iterSeq, Configuration.misMatch)) {
 							insert = false;
 
-							if (newSeq.getFirstSeq().getAvgQual() + newSeq.getSecondSeq().getAvgQual() 
-									> iterSeq.getFirstSeq().getAvgQual() + iterSeq.getSecondSeq().getAvgQual())
-								sequences.set(j, new PairedSequence(newSeq));
+							if (newSeq.getAvgQual() > iterSeq.getAvgQual())
+								// Update existing element in the list
+								iterSeq.set(newSeq);
 
 							break;
 						}
 					}
 				}
-				if (insert)
-					sequences.add(new PairedSequence(newSeq));
+
+				if (insert) {
+					if(outputClusterSize < sequences.size()) {
+						// Replace existing element in the list
+						sequences.get(outputClusterSize).set(newSeq);
+					} else {
+						// Not enough space in the list
+						sequences.add(new PairedSequence(newSeq));
+					}
+					outputClusterSize++;
+				}
 			}
 		}
 
 		// Write non-duplicate sequences including the first one
 		context.write(nullKey, firstSeq.getFirstSeq());
 		mos.write("output2", nullKey, firstSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
-		for (PairedSequence seq : sequences) {
-			context.write(nullKey, seq.getFirstSeq());
-			mos.write("output2", nullKey, seq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
+		for (j=0; j<outputClusterSize; j++) {
+			iterSeq = sequences.get(j);
+			context.write(nullKey, iterSeq.getFirstSeq());
+			mos.write("output2", nullKey, iterSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 		}
-
-		outputClusterSize += sequences.size();
-
-		if (sequences.size() > 0)
-			sequences.clear();
 
 		timer.stop(T_CLUSTER);
 
 		// Update stats taking into account the first sequence
 		numInputSequences += inputClusterSize + 1;
 		numOutputSequences += outputClusterSize + 1;
-		numInputSequences += inputClusterSize;
-		numOutputSequences += outputClusterSize;
 		numClusters++;
 		time = timer.readLast(T_CLUSTER);
 

@@ -151,7 +151,7 @@ public class Sequence implements Writable {
 	}
 
 	public float getAvgQual() {
-		if ((_avgQual == -1) && (_quals != null)) {
+		if ((_avgQual < 0) && (_quals != null)) {
 			_avgQual = 0;
 
 			for (int i = 0; i < _quals.length; i++)
