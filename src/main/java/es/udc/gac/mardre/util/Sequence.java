@@ -210,13 +210,13 @@ public class Sequence implements Writable {
 		int i,j;
 		int iterBases = prefixLength;
 
-		// 16 bases per element
+		// Code the suffix (16 bases per element)
 		if (Sequence.length != bases.length()) {
 			Sequence.length = bases.length();
 			Sequence.suffixLength = Sequence.length - prefixLength;
 			Sequence.suffixLengthDiv = Sequence.suffixLength >> 4;
 		Sequence.suffixLengthMod = Sequence.suffixLength & 15;
-		Sequence.compressLength = (Sequence.suffixLengthMod > 0)? suffixLengthDiv+1 : suffixLengthDiv;
+		Sequence.compressLength = (Sequence.suffixLengthMod > 0)? Sequence.suffixLengthDiv+1 : Sequence.suffixLengthDiv;
 		}
 
 		_length = (short) Sequence.length;
@@ -384,8 +384,8 @@ public class Sequence implements Writable {
 			Sequence.length = _length;
 			Sequence.suffixLength = Sequence.length - Configuration.prefixLength;
 			Sequence.suffixLengthDiv = Sequence.suffixLength >> 4;
-		Sequence.suffixLengthMod = suffixLength & 15;
-		Sequence.compressLength = (Sequence.suffixLengthMod > 0)? suffixLengthDiv+1 : suffixLengthDiv;
+		Sequence.suffixLengthMod = Sequence.suffixLength & 15;
+		Sequence.compressLength = (Sequence.suffixLengthMod > 0)? Sequence.suffixLengthDiv+1 : Sequence.suffixLengthDiv;
 		}
 
 		_compressSuffix = new long[Sequence.compressLength];
