@@ -38,8 +38,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static final int T_TOTAL = 0;
 	private static final int T_SETUP = 1;
 	private static final int T_REDUCE = 2;
-	private static final int T_CLEANUP = 3;
-	private static final int T_CLUSTER = 4;
+	private static final int T_CLUSTER = 3;
 	private static final NullWritable nullKey = NullWritable.get();
 	private static final List<Sequence> sequences = new ArrayList<Sequence>();
 	private static Sequence firstSeq;
@@ -78,9 +77,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 			}
 			timer.stop(T_REDUCE);
 		} finally {
-			timer.start(T_CLEANUP);
 			cleanup(context);
-			timer.stop(T_CLEANUP);
 		}
 
 		timer.stop(T_TOTAL);
@@ -89,7 +86,6 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds\n", taskID, timer.readTotal(T_TOTAL));
 		System.out.format(java.util.Locale.ENGLISH,"\tSetup time: %.3f seconds\n", timer.readTotal(T_SETUP));
 		System.out.format(java.util.Locale.ENGLISH,"\tReduce time: %.3f seconds\n", timer.readTotal(T_REDUCE));
-		System.out.format(java.util.Locale.ENGLISH,"\tCleanup time: %.3f seconds\n", timer.readTotal(T_CLEANUP));
 
 		if (numInputSequences > 0) {
 			System.out.format(java.util.Locale.ENGLISH,"\n%d/%d reads in %d clusters: %.3f sec "
