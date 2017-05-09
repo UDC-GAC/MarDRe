@@ -31,11 +31,10 @@ import org.apache.hadoop.io.Writable;
 public class Sequence implements Writable {
 
 	private static char[] bases = null;
-	private static int length = 0;
 	private static int suffixLength = 0;
 	private static int suffixLengthDiv = 0;
 	private static int suffixLengthMod = 0;
-	private static int compressLength = 0;
+	private static int compressSuffixLength = 0;
 	private static final StringWriter stringWriter = new StringWriter();
 
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
@@ -208,19 +207,17 @@ public class Sequence implements Writable {
 	public void setSuffix(String bases, int prefixLength) {
 
 		int i,j;
+		int suffixLength;
 		int iterBases = prefixLength;
 
-		// Code the suffix (16 bases per element)
-		if (Sequence.length != bases.length()) {
-			Sequence.length = bases.length();
-			Sequence.suffixLength = Sequence.length - prefixLength;
-			Sequence.suffixLengthDiv = Sequence.suffixLength >> 4;
-		Sequence.suffixLengthMod = Sequence.suffixLength & 15;
-		Sequence.compressLength = (Sequence.suffixLengthMod > 0)? Sequence.suffixLengthDiv+1 : Sequence.suffixLengthDiv;
-		}
+		_length = (short) bases.length();
+		suffixLength = _length - prefixLength;
 
-		_length = (short) Sequence.length;
-		_compressSuffix = new long[Sequence.compressLength];
+		if (Sequence.suffixLength != suffixLength)
+			Sequence.setCompressSuffixLength(_length, suffixLength);
+
+		// Code the suffix (16 bases per element)
+		_compressSuffix = new long[Sequence.compressSuffixLength];
 
 		for (i = 0; i < Sequence.suffixLengthDiv; i++) {
 			_compressSuffix[i] = 0;
@@ -282,10 +279,8 @@ public class Sequence implements Writable {
 
 	private void decodeBases(short prefixLength) {
 
-		if (Sequence.bases == null || Sequence.bases.length != _length) {
+		if (Sequence.bases == null || Sequence.bases.length != _length)
 			Sequence.bases = new char[_length];
-			Sequence.suffixLengthMod = (_length - prefixLength) & 15;
-		}
 
 		// Decode the prefix
 		int iterBases = prefixLength - 1;
@@ -299,6 +294,7 @@ public class Sequence implements Writable {
 		}
 
 		// Decode the suffix (16 bases per element)
+		Sequence.suffixLengthMod = (_length - prefixLength) & 15;
 		iterBases = _length - 1;
 		int iterSuffix = _compressSuffix.length - 1;
 		long auxCompress = _compressSuffix[iterSuffix];
@@ -380,16 +376,12 @@ public class Sequence implements Writable {
 		_name = in.readUTF();
 		_isFirstSeq = in.readBoolean();
 
-		if (Sequence.length != _length) {
-			Sequence.length = _length;
-			int prefixLength = (_isFirstSeq)? Configuration.prefixLength : 0;
-			Sequence.suffixLength = Sequence.length - prefixLength;
-			Sequence.suffixLengthDiv = Sequence.suffixLength >> 4;
-		Sequence.suffixLengthMod = Sequence.suffixLength & 15;
-		Sequence.compressLength = (Sequence.suffixLengthMod > 0)? Sequence.suffixLengthDiv+1 : Sequence.suffixLengthDiv;
-		}
+		int suffixLength = _length - ((_isFirstSeq)? Configuration.prefixLength : 0);
 
-		_compressSuffix = new long[Sequence.compressLength];
+		if (Sequence.suffixLength != suffixLength)
+			Sequence.setCompressSuffixLength(_length, suffixLength);
+
+		_compressSuffix = new long[Sequence.compressSuffixLength];
 
 		for (int i = 0; i < _compressSuffix.length; i++)
 			_compressSuffix[i] = in.readLong();
@@ -402,5 +394,12 @@ public class Sequence implements Writable {
 		} catch (EOFException ex) {
 			_quals = null;
 		}
+	}
+
+	private static final void setCompressSuffixLength(int length, int suffixLength) {
+		Sequence.suffixLength = suffixLength;
+		Sequence.suffixLengthDiv = suffixLength >> 4;
+		Sequence.suffixLengthMod = suffixLength & 15;
+		Sequence.compressSuffixLength = (Sequence.suffixLengthMod > 0)? Sequence.suffixLengthDiv+1 : Sequence.suffixLengthDiv;
 	}
 }
