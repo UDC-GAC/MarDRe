@@ -127,7 +127,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	public void reduce(LongWritable key, Iterable<PairedSequence> values, Context context)
 			throws IOException, InterruptedException {
 
-		int inputClusterSize = 0, outputClusterSize = 0;
+		int inputClusterSize = 1, outputClusterSize = 0;
 		double time;
 		boolean insert;
 		int diff, j;
@@ -185,9 +185,10 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		timer.stop(T_CLUSTER);
 
-		// Update stats taking into account the first sequence
-		numInputSequences += inputClusterSize + 1;
-		numOutputSequences += outputClusterSize + 1;
+		// Update stats
+		outputClusterSize++;
+		numInputSequences += inputClusterSize;
+		numOutputSequences += outputClusterSize;
 		numClusters++;
 		time = timer.readLast(T_CLUSTER);
 
