@@ -206,27 +206,26 @@ public class Sequence implements Writable {
 	}
 
 	public void setSuffix(String bases, int prefixLength) {
+
+		int i,j;
 		int iterBases = prefixLength;
 
 		// 16 bases per element
 		if (Sequence.length != bases.length()) {
 			Sequence.length = bases.length();
 			Sequence.suffixLength = Sequence.length - prefixLength;
-			Sequence.suffixLengthDiv = suffixLength >> 4;
-		Sequence.suffixLengthMod = suffixLength & 15;
-		Sequence.compressLength = suffixLengthDiv;
-
-		if (Sequence.suffixLengthMod > 0)
-			Sequence.compressLength++;
+			Sequence.suffixLengthDiv = Sequence.suffixLength >> 4;
+		Sequence.suffixLengthMod = Sequence.suffixLength & 15;
+		Sequence.compressLength = (Sequence.suffixLengthMod > 0)? suffixLengthDiv+1 : suffixLengthDiv;
 		}
 
 		_length = (short) Sequence.length;
 		_compressSuffix = new long[Sequence.compressLength];
 
-		for (int i = 0; i < Sequence.suffixLengthDiv; i++) {
+		for (i = 0; i < Sequence.suffixLengthDiv; i++) {
 			_compressSuffix[i] = 0;
 
-			for (int j = 0; j < 16; j++) {
+			for (j = 0; j < 16; j++) {
 				_compressSuffix[i] <<= 4;
 				_compressSuffix[i] += Sequence.code(bases.charAt(iterBases));
 				iterBases++;
@@ -234,11 +233,11 @@ public class Sequence implements Writable {
 		}
 
 		if (suffixLengthMod > 0) {
-			_compressSuffix[Sequence.compressLength - 1] = 0;
+			_compressSuffix[_compressSuffix.length - 1] = 0;
 
-			for (int i = 0; i < Sequence.suffixLengthMod; i++) {
-				_compressSuffix[Sequence.compressLength - 1] <<= 4;
-				_compressSuffix[Sequence.compressLength - 1] += Sequence.code(bases.charAt(iterBases));
+			for (i = 0; i < Sequence.suffixLengthMod; i++) {
+				_compressSuffix[_compressSuffix.length - 1] <<= 4;
+				_compressSuffix[_compressSuffix.length - 1] += Sequence.code(bases.charAt(iterBases));
 				iterBases++;
 			}
 		}
@@ -291,8 +290,9 @@ public class Sequence implements Writable {
 		// Decode the prefix
 		int iterBases = prefixLength - 1;
 		long auxKey = _key;
+		int i,j;
 
-		for (int i = 0; i < prefixLength; i++) {
+		for (i = 0; i < prefixLength; i++) {
 			Sequence.bases[iterBases] = (char) Sequence.decodePrefixTab[(int) (auxKey % 5)];
 			auxKey *= 0.2;
 			iterBases--;
@@ -305,7 +305,7 @@ public class Sequence implements Writable {
 		int numDecoded = 0;
 
 		if (Sequence.suffixLengthMod > 0) {
-			for (int i = 0; i < Sequence.suffixLengthMod; i++) {
+			for (i = 0; i < Sequence.suffixLengthMod; i++) {
 				Sequence.bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
 				auxCompress >>= 4;
 			iterBases--;
@@ -317,7 +317,7 @@ public class Sequence implements Writable {
 		for (; numDecoded < _compressSuffix.length; numDecoded++) {
 			auxCompress = _compressSuffix[iterSuffix];
 
-			for (int j = 0; j < 16; j++) {
+			for (j = 0; j < 16; j++) {
 				Sequence.bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
 				auxCompress >>= 4;
 			iterBases--;
@@ -365,7 +365,6 @@ public class Sequence implements Writable {
 		out.writeShort(_length);
 		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
-		out.writeByte(_compressSuffix.length);
 
 		for (int i = 0; i < _compressSuffix.length; i++)
 			out.writeLong(_compressSuffix[i]);
@@ -380,11 +379,18 @@ public class Sequence implements Writable {
 		_length = in.readShort();
 		_name = in.readUTF();
 		_isFirstSeq = in.readBoolean();
-		byte compressLength = in.readByte();
 
-		_compressSuffix = new long[compressLength];
+		if (Sequence.length != _length) {
+			Sequence.length = _length;
+			Sequence.suffixLength = Sequence.length - Configuration.prefixLength;
+			Sequence.suffixLengthDiv = Sequence.suffixLength >> 4;
+		Sequence.suffixLengthMod = suffixLength & 15;
+		Sequence.compressLength = (Sequence.suffixLengthMod > 0)? suffixLengthDiv+1 : suffixLengthDiv;
+		}
 
-		for (int i = 0; i < compressLength; i++)
+		_compressSuffix = new long[Sequence.compressLength];
+
+		for (int i = 0; i < _compressSuffix.length; i++)
 			_compressSuffix[i] = in.readLong();
 
 		try {
