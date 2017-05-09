@@ -3,9 +3,22 @@ MarDRe Changelog
 This file briefly describes the main changes for each version of
 the MarDRe software package.
 
-MarDRe v1.1 - 2017/XX/XX
+MarDRe v1.1 - 2017/05/XX
 ------------------------
 A point release for the MarDRe 1.x line
+
+	- Performance enhancements in duplicate removal by reducing memory footprint 
+	and GC overhead
+	
+	- When two FASTQ reads are collapsed, the one with the highest average 
+	quality is kept
+
+	- The user can specify the output file names using new command-line 
+	options (-o and -r)
+	
+	- Sanity checks for the value of some configuration parameters
+	
+	- Minor bug fixes
 
 
 MarDRe v1.0.1 - 2017/03/29
