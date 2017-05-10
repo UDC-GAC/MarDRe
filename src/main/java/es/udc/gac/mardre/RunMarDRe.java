@@ -68,6 +68,10 @@ public class RunMarDRe extends Configured implements Tool {
 		Job job = Job.getInstance(conf, "MarDRe_SingleEnd");
 		job.setJarByClass(RunMarDRe.class);
 
+		// Max Mapper and Reducer attempts
+		job.setMaxMapAttempts(1);
+		job.setMaxReduceAttempts(1);
+
 		// Explicitly turn off speculative execution
 		job.setSpeculativeExecution(false);
 
@@ -93,6 +97,10 @@ public class RunMarDRe extends Configured implements Tool {
 
 		Job job = Job.getInstance(conf, "MarDRe_PairedEnd");
 		job.setJarByClass(RunMarDRe.class);
+
+		// Max Mapper and Reducer attempts
+		job.setMaxMapAttempts(1);
+		job.setMaxReduceAttempts(1);
 
 		// Explicitly turn off speculative execution
 		job.setSpeculativeExecution(false);
@@ -125,6 +133,9 @@ public class RunMarDRe extends Configured implements Tool {
 	private static Job configureHadoopJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
 		Job job = Job.getInstance(conf, "MarDRe_HadoopJoinSequences");
 		job.setJarByClass(RunMarDRe.class);
+
+		// Max Mapper attempts
+		job.setMaxMapAttempts(1);
 
 		// Explicitly turn off speculative execution
 		job.setSpeculativeExecution(false);
@@ -161,6 +172,10 @@ public class RunMarDRe extends Configured implements Tool {
 	private static Job configureJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass) throws IOException {
 		Job job = Job.getInstance(conf, "MarDRe_JoinSequences");
 		job.setJarByClass(RunMarDRe.class);
+
+		// Max Mapper and Reducer attempts
+		job.setMaxMapAttempts(1);
+		job.setMaxReduceAttempts(1);
 
 		// Explicitly turn off speculative execution
 		job.setSpeculativeExecution(false);
