@@ -37,6 +37,8 @@ public class Sequence implements Writable {
 	private static int suffixLengthMod = 0;
 	private static int compressSuffixLength = 0;
 	private static final StringWriter stringWriter = new StringWriter();
+	private static final String newline = System.getProperty("line.separator");
+	private static final StringBuilder stringBuilder = new StringBuilder();
 
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
 
@@ -314,27 +316,25 @@ public class Sequence implements Writable {
 	@Override
 	public String toString() {
 
-		Sequence.stringWriter.getBuffer().setLength(0);
+		//Sequence.stringWriter.getBuffer().setLength(0);
+		Sequence.stringBuilder.setLength(0);
 		//BufferedWriter bufferedWriter = new BufferedWriter(Sequence.stringWriter);
-		String newline = System.getProperty("line.separator");
+
 
 		try {
 			// Print name
-			Sequence.stringWriter.write(Text.decode(_name.getBytes(), 0, _name.getLength()));
-			Sequence.stringWriter.write(newline);
+			Sequence.stringBuilder.append(Text.decode(_name.getBytes(), 0, _name.getLength())).append(newline);
 
 			// Decode bases
 			decodeBases((_isFirstSeq)? Configuration.prefixLength : 0);
 
 			// Print bases
-			Sequence.stringWriter.write(Sequence.bases);
+			Sequence.stringBuilder.append(Sequence.bases);
 
 			// Print quality scores if available
 			if (_quals != null) {
-				Sequence.stringWriter.write(newline);
-				Sequence.stringWriter.write('+');
-				Sequence.stringWriter.write(newline);
-				Sequence.stringWriter.write(new String(_quals, StandardCharsets.US_ASCII));
+				Sequence.stringBuilder.append(newline).append('+').append(newline);
+				Sequence.stringBuilder.append(new String(_quals, StandardCharsets.US_ASCII));
 			}
 
 			//bufferedWriter.close();
@@ -342,7 +342,7 @@ public class Sequence implements Writable {
 			throw new RuntimeException(e);
 		}
 
-		return stringWriter.toString();
+		return stringBuilder.toString();
 	}
 
 	@Override
