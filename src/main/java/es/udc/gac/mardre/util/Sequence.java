@@ -315,28 +315,29 @@ public class Sequence implements Writable {
 	public String toString() {
 
 		Sequence.stringWriter.getBuffer().setLength(0);
-		BufferedWriter bufferedWriter = new BufferedWriter(Sequence.stringWriter);
+		//BufferedWriter bufferedWriter = new BufferedWriter(Sequence.stringWriter);
+		String newline = System.getProperty("line.separator");
 
 		try {
 			// Print name
-			bufferedWriter.write(Text.decode(_name.getBytes(), 0, _name.getLength()));
-			bufferedWriter.newLine();
+			Sequence.stringWriter.write(Text.decode(_name.getBytes(), 0, _name.getLength()));
+			Sequence.stringWriter.write(newline);
 
 			// Decode bases
 			decodeBases((_isFirstSeq)? Configuration.prefixLength : 0);
 
 			// Print bases
-			bufferedWriter.write(Sequence.bases);
+			Sequence.stringWriter.write(Sequence.bases);
 
 			// Print quality scores if available
 			if (_quals != null) {
-				bufferedWriter.newLine();
-				bufferedWriter.write('+');
-				bufferedWriter.newLine();
-				bufferedWriter.write(new String(_quals, StandardCharsets.US_ASCII));
+				Sequence.stringWriter.write(newline);
+				Sequence.stringWriter.write('+');
+				Sequence.stringWriter.write(newline);
+				Sequence.stringWriter.write(new String(_quals, StandardCharsets.US_ASCII));
 			}
 
-			bufferedWriter.close();
+			//bufferedWriter.close();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
