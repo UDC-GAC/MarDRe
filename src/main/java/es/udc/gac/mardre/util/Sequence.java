@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
 public class Sequence implements Writable {
@@ -88,7 +89,8 @@ public class Sequence implements Writable {
 	private short _dist;
 	private long[] _compressSuffix;
 	private boolean _isFirstSeq;
-	private String _name;
+	//private String _name;
+	private Text _name;
 	private byte[] _quals;
 	private float _avgQual;
 
@@ -126,10 +128,14 @@ public class Sequence implements Writable {
 	}
 
 	public void setName(String name) {
-		_name = name;
+		_name = new Text(name);
 	}
 
-	public String getName() {
+	/*public String getName() {
+		return _name;
+	}*/
+
+	public Text getName() {
 		return _name;
 	}
 
@@ -330,7 +336,7 @@ public class Sequence implements Writable {
 
 		try {
 			// Print name
-			bufferedWriter.write(_name, 0, _name.length());
+			bufferedWriter.write(_name.toString(), 0, _name.getLength());
 			bufferedWriter.newLine();
 
 			// Decode bases
@@ -359,7 +365,8 @@ public class Sequence implements Writable {
 	public void write(DataOutput out) throws IOException {
 		out.writeLong(_key);
 		out.writeShort(_length);
-		out.writeUTF(_name);
+		//out.writeUTF(_name);
+		_name.write(out);
 		out.writeBoolean(_isFirstSeq);
 		out.writeByte(_compressSuffix.length);
 		
@@ -374,7 +381,8 @@ public class Sequence implements Writable {
 	public void readFields(DataInput in) throws IOException {
 		_key = in.readLong();
 		_length = in.readShort();
-		_name = in.readUTF();
+		//_name = in.readUTF();
+		_name.readFields(in);
 		_isFirstSeq = in.readBoolean();
 		Sequence.compressSuffixLength =  in.readByte();
 		
