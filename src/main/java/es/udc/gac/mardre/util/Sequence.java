@@ -18,12 +18,11 @@
  */
 package es.udc.gac.mardre.util;
 
-import java.io.BufferedWriter;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.StringWriter;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.hadoop.io.Text;
@@ -36,9 +35,8 @@ public class Sequence implements Writable {
 	private static int suffixLengthDiv = 0;
 	private static int suffixLengthMod = 0;
 	private static int compressSuffixLength = 0;
-	private static final StringWriter stringWriter = new StringWriter();
-	private static final String newline = System.getProperty("line.separator");
-	private static final StringBuilder stringBuilder = new StringBuilder();
+	private static final String newLine = System.getProperty("line.separator");
+	private static final StringBuilder stringBuilder = new StringBuilder(2048);
 
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
 
@@ -316,14 +314,11 @@ public class Sequence implements Writable {
 	@Override
 	public String toString() {
 
-		//Sequence.stringWriter.getBuffer().setLength(0);
 		Sequence.stringBuilder.setLength(0);
-		//BufferedWriter bufferedWriter = new BufferedWriter(Sequence.stringWriter);
-
 
 		try {
 			// Print name
-			Sequence.stringBuilder.append(Text.decode(_name.getBytes(), 0, _name.getLength())).append(newline);
+			Sequence.stringBuilder.append(Text.decode(_name.getBytes(), 0, _name.getLength())).append(newLine);
 
 			// Decode bases
 			decodeBases((_isFirstSeq)? Configuration.prefixLength : 0);
@@ -333,12 +328,10 @@ public class Sequence implements Writable {
 
 			// Print quality scores if available
 			if (_quals != null) {
-				Sequence.stringBuilder.append(newline).append('+').append(newline);
+				Sequence.stringBuilder.append(newLine).append('+').append(newLine);
 				Sequence.stringBuilder.append(new String(_quals, StandardCharsets.US_ASCII));
 			}
-
-			//bufferedWriter.close();
-		} catch (IOException e) {
+		} catch (CharacterCodingException e) {
 			throw new RuntimeException(e);
 		}
 
