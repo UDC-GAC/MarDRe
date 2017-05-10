@@ -361,7 +361,8 @@ public class Sequence implements Writable {
 		out.writeShort(_length);
 		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
-
+		out.writeByte(_compressSuffix.length);
+		
 		for (int i = 0; i < _compressSuffix.length; i++)
 			out.writeLong(_compressSuffix[i]);
 
@@ -375,11 +376,12 @@ public class Sequence implements Writable {
 		_length = in.readShort();
 		_name = in.readUTF();
 		_isFirstSeq = in.readBoolean();
+		Sequence.compressSuffixLength =  in.readByte();
+		
+		//int suffixLength = _length - ((_isFirstSeq)? Configuration.prefixLength : 0);
 
-		int suffixLength = _length - ((_isFirstSeq)? Configuration.prefixLength : 0);
-
-		if (Sequence.suffixLength != suffixLength)
-			Sequence.setCompressSuffixLength(suffixLength);
+		//if (Sequence.suffixLength != suffixLength)
+		//	Sequence.setCompressSuffixLength(suffixLength);
 
 		_compressSuffix = new long[Sequence.compressSuffixLength];
 
