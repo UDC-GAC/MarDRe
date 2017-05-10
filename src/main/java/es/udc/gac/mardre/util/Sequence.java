@@ -89,7 +89,6 @@ public class Sequence implements Writable {
 	private short _dist;
 	private long[] _compressSuffix;
 	private boolean _isFirstSeq;
-	//private String _name;
 	private Text _name;
 	private byte[] _quals;
 	private float _avgQual;
@@ -131,24 +130,12 @@ public class Sequence implements Writable {
 		_name = new Text(name);
 	}
 
-	/*public String getName() {
-		return _name;
-	}*/
-
-	public Text getName() {
-		return _name;
-	}
-
 	public void setIsFirstSeq(boolean val) {
 		_isFirstSeq = val;
 	}
 
 	public boolean isFirstSeq() {
 		return _isFirstSeq;
-	}
-
-	public byte[] getQuals() {
-		return _quals;
 	}
 
 	public void setQuals(byte[] quals) {
@@ -204,10 +191,6 @@ public class Sequence implements Writable {
 			_key *= 5;
 			_key += Sequence.codePrefix(bases.charAt(i));
 		}
-	}
-
-	public long[] getSufix() {
-		return _compressSuffix;
 	}
 
 	public void setSuffix(String bases, int prefixLength) {
@@ -336,7 +319,7 @@ public class Sequence implements Writable {
 
 		try {
 			// Print name
-			bufferedWriter.write(_name.toString(), 0, _name.getLength());
+			bufferedWriter.write(Text.decode(_name.getBytes(), 0, _name.getLength()));
 			bufferedWriter.newLine();
 
 			// Decode bases
@@ -365,11 +348,10 @@ public class Sequence implements Writable {
 	public void write(DataOutput out) throws IOException {
 		out.writeLong(_key);
 		out.writeShort(_length);
-		//out.writeUTF(_name);
 		_name.write(out);
 		out.writeBoolean(_isFirstSeq);
 		out.writeByte(_compressSuffix.length);
-		
+
 		for (int i = 0; i < _compressSuffix.length; i++)
 			out.writeLong(_compressSuffix[i]);
 
@@ -381,15 +363,10 @@ public class Sequence implements Writable {
 	public void readFields(DataInput in) throws IOException {
 		_key = in.readLong();
 		_length = in.readShort();
-		//_name = in.readUTF();
+		_name = new Text();
 		_name.readFields(in);
 		_isFirstSeq = in.readBoolean();
 		Sequence.compressSuffixLength =  in.readByte();
-		
-		//int suffixLength = _length - ((_isFirstSeq)? Configuration.prefixLength : 0);
-
-		//if (Sequence.suffixLength != suffixLength)
-		//	Sequence.setCompressSuffixLength(suffixLength);
 
 		_compressSuffix = new long[Sequence.compressSuffixLength];
 
