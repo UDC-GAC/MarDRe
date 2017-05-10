@@ -89,7 +89,8 @@ public class Sequence implements Writable {
 	private short _dist;
 	private long[] _compressSuffix;
 	private boolean _isFirstSeq;
-	private Text _name;
+	//private Text _name;
+	private String _name;
 	private byte[] _quals;
 	private float _avgQual;
 
@@ -127,7 +128,7 @@ public class Sequence implements Writable {
 	}
 
 	public void setName(String name) {
-		_name = new Text(name);
+		_name = name;
 	}
 
 	public void setIsFirstSeq(boolean val) {
@@ -316,25 +317,27 @@ public class Sequence implements Writable {
 
 		Sequence.stringBuilder.setLength(0);
 
-		try {
-			// Print name
-			Sequence.stringBuilder.append(Text.decode(_name.getBytes(), 0, _name.getLength())).append(newLine);
+		//try {
+		// Print name
+		//Sequence.stringBuilder.append(Text.decode(_name.getBytes(), 0, _name.getLength())).append(newLine);
+		Sequence.stringBuilder.append(_name).append(newLine);
 
-			// Decode bases
-			decodeBases((_isFirstSeq)? Configuration.prefixLength : 0);
+		// Decode bases
+		decodeBases((_isFirstSeq)? Configuration.prefixLength : 0);
 
-			// Print bases
-			Sequence.stringBuilder.append(Sequence.bases);
+		// Print bases
+		Sequence.stringBuilder.append(Sequence.bases);
 
-			// Print quality scores if available
-			if (_quals != null) {
-				Sequence.stringBuilder.append(newLine).append('+').append(newLine);
-				Sequence.stringBuilder.append(new String(_quals, StandardCharsets.US_ASCII));
-			}
-		} catch (CharacterCodingException e) {
+		// Print quality scores if available
+		if (_quals != null) {
+			Sequence.stringBuilder.append(newLine).append('+').append(newLine);
+			Sequence.stringBuilder.append(new String(_quals, StandardCharsets.US_ASCII));
+		}
+		/*		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-
+		 */
+		
 		return stringBuilder.toString();
 	}
 
@@ -342,7 +345,8 @@ public class Sequence implements Writable {
 	public void write(DataOutput out) throws IOException {
 		out.writeLong(_key);
 		out.writeShort(_length);
-		_name.write(out);
+		//_name.write(out);
+		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
 		out.writeByte(_compressSuffix.length);
 
@@ -357,8 +361,9 @@ public class Sequence implements Writable {
 	public void readFields(DataInput in) throws IOException {
 		_key = in.readLong();
 		_length = in.readShort();
-		_name = new Text();
-		_name.readFields(in);
+		//_name = new Text();
+		//_name.readFields(in);
+		_name = in.readUTF();
 		_isFirstSeq = in.readBoolean();
 		Sequence.compressSuffixLength =  in.readByte();
 
