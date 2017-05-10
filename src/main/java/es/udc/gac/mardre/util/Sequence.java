@@ -18,10 +18,12 @@
  */
 package es.udc.gac.mardre.util;
 
+import java.io.BufferedWriter;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 
@@ -37,6 +39,7 @@ public class Sequence implements Writable {
 	private static int compressSuffixLength = 0;
 	private static final String newLine = System.getProperty("line.separator");
 	private static final StringBuilder stringBuilder = new StringBuilder(2048);
+	private static final StringWriter stringWriter = new StringWriter();
 
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
 
@@ -315,6 +318,36 @@ public class Sequence implements Writable {
 	@Override
 	public String toString() {
 
+		stringWriter.getBuffer().setLength(0);
+		BufferedWriter bufferedWriter = new BufferedWriter(stringWriter);
+
+		try {
+			// Print the name
+			bufferedWriter.write(_name, 0, _name.length());
+			bufferedWriter.newLine();
+
+			// Decode the bases
+			decodeBases((_isFirstSeq)? Configuration.prefixLength : 0);
+
+			// Print the bases
+			bufferedWriter.write(bases);
+
+			// Print the quality scores if available
+			if (_quals != null) {
+				bufferedWriter.newLine();
+				bufferedWriter.write('+');
+				bufferedWriter.newLine();
+				bufferedWriter.write(new String(_quals, StandardCharsets.US_ASCII));
+			}
+
+			bufferedWriter.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+
+		return stringWriter.toString();
+
+		/*
 		Sequence.stringBuilder.setLength(0);
 
 		//try {
@@ -333,12 +366,12 @@ public class Sequence implements Writable {
 			Sequence.stringBuilder.append(newLine).append('+').append(newLine);
 			Sequence.stringBuilder.append(new String(_quals, StandardCharsets.US_ASCII));
 		}
-		/*		} catch (IOException e) {
+				} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		 */
-		
+
 		return stringBuilder.toString();
+		 */
 	}
 
 	@Override
