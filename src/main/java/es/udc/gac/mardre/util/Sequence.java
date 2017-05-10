@@ -32,14 +32,14 @@ import org.apache.hadoop.io.Writable;
 
 public class Sequence implements Writable {
 
+	private static final String newLine = System.getProperty("line.separator");
+	private static final StringBuilder stringBuilder = new StringBuilder(2048);
+	private static final StringWriter stringWriter = new StringWriter();
 	private static char[] bases = null;
 	private static int suffixLength = 0;
 	private static int suffixLengthDiv = 0;
 	private static int suffixLengthMod = 0;
 	private static int compressSuffixLength = 0;
-	private static final String newLine = System.getProperty("line.separator");
-	private static final StringBuilder stringBuilder = new StringBuilder(2048);
-	private static final StringWriter stringWriter = new StringWriter();
 
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
 
