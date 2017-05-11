@@ -32,8 +32,6 @@ import org.apache.hadoop.io.Writable;
 
 public class Sequence implements Writable {
 
-	private static final String newLine = System.getProperty("line.separator");
-	private static final StringBuilder stringBuilder = new StringBuilder(2048);
 	private static final StringWriter stringWriter = new StringWriter();
 	private static char[] bases = null;
 	private static int suffixLength = 0;
@@ -94,7 +92,8 @@ public class Sequence implements Writable {
 	private boolean _isFirstSeq;
 	//private Text _name;
 	private String _name;
-	private byte[] _quals;
+	//private byte[] _quals;
+	private String _quals;
 	private float _avgQual;
 
 	public Sequence() {
@@ -142,10 +141,14 @@ public class Sequence implements Writable {
 		return _isFirstSeq;
 	}
 
-	public void setQuals(byte[] quals) {
+	/*public void setQuals(byte[] quals) {
+		_quals = quals;
+	}*/
+
+	public void setQuals(String quals) {
 		_quals = quals;
 	}
-
+	/*	
 	public float getAvgQual() {
 		if ((_avgQual < 0) && (_quals != null)) {
 			_avgQual = 0;
@@ -154,6 +157,19 @@ public class Sequence implements Writable {
 				_avgQual += _quals[i];
 
 			_avgQual /= (float) _quals.length;
+		}
+
+		return _avgQual;
+	}
+	 */
+	public float getAvgQual() {
+		if ((_avgQual < 0) && (_quals != null)) {
+			_avgQual = 0;
+
+			for (int i = 0; i < _quals.length(); i++)
+				_avgQual += (int) _quals.charAt(i);
+
+			_avgQual /= (float) _quals.length();
 		}
 
 		return _avgQual;
@@ -322,22 +338,21 @@ public class Sequence implements Writable {
 		BufferedWriter bufferedWriter = new BufferedWriter(stringWriter);
 
 		try {
-			// Print the name
-			bufferedWriter.write(_name, 0, _name.length());
-			bufferedWriter.newLine();
-
 			// Decode the bases
 			decodeBases((_isFirstSeq)? Configuration.prefixLength : 0);
 
-			// Print the bases
-			bufferedWriter.write(bases);
+			// Print name and bases
+			bufferedWriter.write(_name);
+			bufferedWriter.newLine();
+			bufferedWriter.write(Sequence.bases);
 
-			// Print the quality scores if available
+			// Print quality scores if available
 			if (_quals != null) {
 				bufferedWriter.newLine();
 				bufferedWriter.write('+');
 				bufferedWriter.newLine();
-				bufferedWriter.write(new String(_quals, StandardCharsets.US_ASCII));
+				//				bufferedWriter.write(new String(_quals, StandardCharsets.US_ASCII));
+				bufferedWriter.write(_quals);
 			}
 
 			bufferedWriter.close();
@@ -346,32 +361,6 @@ public class Sequence implements Writable {
 		}
 
 		return stringWriter.toString();
-
-		/*
-		Sequence.stringBuilder.setLength(0);
-
-		//try {
-		// Print name
-		//Sequence.stringBuilder.append(Text.decode(_name.getBytes(), 0, _name.getLength())).append(newLine);
-		Sequence.stringBuilder.append(_name).append(newLine);
-
-		// Decode bases
-		decodeBases((_isFirstSeq)? Configuration.prefixLength : 0);
-
-		// Print bases
-		Sequence.stringBuilder.append(Sequence.bases);
-
-		// Print quality scores if available
-		if (_quals != null) {
-			Sequence.stringBuilder.append(newLine).append('+').append(newLine);
-			Sequence.stringBuilder.append(new String(_quals, StandardCharsets.US_ASCII));
-		}
-				} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-
-		return stringBuilder.toString();
-		 */
 	}
 
 	@Override
@@ -387,7 +376,7 @@ public class Sequence implements Writable {
 			out.writeLong(_compressSuffix[i]);
 
 		if (_quals != null)
-			out.write(_quals);
+			out.writeUTF(_quals);
 	}
 
 	@Override
@@ -406,11 +395,14 @@ public class Sequence implements Writable {
 			_compressSuffix[i] = in.readLong();
 
 		try {
-			byte firstByte = in.readByte();
+			/*byte firstByte = in.readByte();
 			_quals = new byte[_length];
 			_quals[0] = firstByte;
-			in.readFully(_quals, 1, _length-1);
+			in.readFully(_quals, 1, _length-1);*/
+			_quals = in.readUTF();
 		} catch (EOFException ex) {
+			_quals = null;
+		} catch (IOException ex) {
 			_quals = null;
 		}
 	}

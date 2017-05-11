@@ -40,7 +40,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static final int T_REDUCE = 2;
 	private static final int T_CLUSTER = 3;
 	private static final NullWritable nullKey = NullWritable.get();
-	private static final List<Sequence> sequences = new ArrayList<Sequence>();
+	private static final List<Sequence> sequences = new ArrayList<Sequence>(50000);
 	private static Sequence firstSeq;
 	private static Sequence iterSeq;
 	private static long maxInputClusterSize;
