@@ -93,7 +93,7 @@ public final class Configuration {
 		IO_FILE_BUFFER_SIZE = Integer.parseInt(properties.getProperty("ioBufferSize", "65536"));
 		IN_MAPPER_COMBINER = Boolean.parseBoolean(properties.getProperty("inMapperCombiner", "false"));
 		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(properties.getProperty("inMapperCombinerCacheSize", InMapperCombiner.CACHE_SIZE.toString()));
-		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(properties.getProperty("clusterInitialCapacity", "50000"));
+		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(properties.getProperty("clusterInitialCapacity", "65536"));
 
 		if (MERGE == false)
 			DELETE_TEMP = false;
