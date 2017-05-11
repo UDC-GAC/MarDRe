@@ -29,6 +29,7 @@ import org.apache.hadoop.mapreduce.ReduceContext;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 
+import es.udc.gac.mardre.util.ClusterStats;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.Sequence;
@@ -38,31 +39,14 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 	private static final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
-	private static final int T_SETUP = 1;
-	private static final int T_REDUCE = 2;
-	private static final int T_CLEANUP = 3;
-	private static final int T_CLUSTER = 4;
-	private static final int T_WRITE = 5;
+	private static final int T_REDUCE = 1;
+	private static final int T_CLUSTER = 2;
+	private static final int T_WRITE = 3;
 	private static final NullWritable nullKey = NullWritable.get();
 	private static List<PairedSequence> sequences;
-	private static MultipleOutputs<NullWritable,Sequence> mos;
 	private static PairedSequence firstSeq;
 	private static PairedSequence iterSeq;
-	private static long maxInputClusterSize;
-	private static long maxOutputClusterSize;
-	private static double maxInputClusterTime;
-	private static double maxInputWriteTime;
-	private static long maxInputClusterTimeSize;
-	private static long maxOutputClusterTimeSize;
-	private static double maxClusterTime;
-	private static double maxClusterWriteTime;
-	private static long maxInputWriteTimeSize;
-	private static long maxOutputWriteTimeSize;
-	private static double maxWriteClusterTime;
-	private static double maxWriteTime;
-	private static long numInputSequences;
-	private static long numOutputSequences;
-	private static long numClusters;
+	private static MultipleOutputs<NullWritable,Sequence> mos;
 
 	@Override
 	public void run(Reducer<LongWritable, PairedSequence, NullWritable, Sequence>.Context context) throws IOException, InterruptedException {		
@@ -74,9 +58,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		sequences = new ArrayList<PairedSequence>(Configuration.CLUSTER_LIST_INITIAL_CAPACITY);
 
-		timer.start(T_SETUP);
 		setup(context);
-		timer.stop(T_SETUP);
 
 		try {
 			timer.start(T_REDUCE);
@@ -90,45 +72,26 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			}
 			timer.stop(T_REDUCE);
 		} finally {
-			timer.start(T_CLEANUP);
 			cleanup(context);
-			timer.stop(T_CLEANUP);
 		}
 
 		timer.stop(T_TOTAL);
 
-		// Report stats
-		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds\n", taskID, timer.readTotal(T_TOTAL));
-		System.out.format(java.util.Locale.ENGLISH,"\tSetup time: %.3f seconds\n", timer.readTotal(T_SETUP));
-		System.out.format(java.util.Locale.ENGLISH,"\tReduce time: %.3f seconds\n", timer.readTotal(T_REDUCE));
-		System.out.format(java.util.Locale.ENGLISH,"\tClustering time: %.3f seconds\n", timer.readTotal(T_CLUSTER));
-		System.out.format(java.util.Locale.ENGLISH,"\tCleanup time: %.3f seconds\n", timer.readTotal(T_CLEANUP));
+		double reduceTime = timer.readTotal(T_REDUCE);
 
-		if (numInputSequences > 0) {
-			System.out.format(java.util.Locale.ENGLISH,"\n%d/%d reads in %d clusters: %.3f sec => "
-					+ "largest cluster %d/%d: %.3f sec (%.3f/%.3f), "
-					+ "highest cluster time %d/%d: %.3f sec (%.3f/%.3f), "
-					+ "highest write time %d/%d: %.3f sec (%.3f/%.3f)\n",
-					numOutputSequences, numInputSequences, numClusters, timer.readTotal(T_REDUCE),
-					maxOutputClusterSize, maxInputClusterSize, maxInputClusterTime + maxInputWriteTime,maxInputClusterTime, maxInputWriteTime,
-					maxOutputClusterTimeSize, maxInputClusterTimeSize, maxClusterTime + maxClusterWriteTime, maxClusterTime, maxClusterWriteTime,
-					maxOutputWriteTimeSize, maxInputWriteTimeSize, maxWriteClusterTime + maxWriteTime, maxWriteClusterTime, maxWriteTime);
-		}
+		// Report times
+		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds\n", taskID, timer.readTotal(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"\tReduce time: %.3f seconds\n", reduceTime);
+		System.out.format(java.util.Locale.ENGLISH,"\tClustering time: %.3f seconds\n", timer.readTotal(T_CLUSTER));
+		System.out.format(java.util.Locale.ENGLISH,"\tWrite time: %.3f seconds\n", timer.readTotal(T_WRITE));
+
+		// Report stats
+		ClusterStats.report(reduceTime);
 	}
 
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
 		mos = new MultipleOutputs<NullWritable,Sequence>(context);
-		numInputSequences = 0;
-		numOutputSequences = 0;
-		numClusters = 0;
-		maxInputClusterSize = -1;
-		maxOutputClusterSize = -1;
-		maxInputClusterTime = -1;
-		maxInputClusterTime = -1;
-		maxInputClusterTimeSize = -1;
-		maxOutputClusterTimeSize = -1;
-		maxClusterTime = -1;
 	}
 
 	@Override
@@ -141,7 +104,6 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			throws IOException, InterruptedException {
 
 		int inputClusterSize = 1, outputClusterSize = 0;
-		double clusterTime, writeTime;
 		boolean insert;
 		int diff, j;
 
@@ -187,6 +149,10 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			}
 		}
 
+		timer.stop(T_CLUSTER);
+
+		timer.start(T_WRITE);
+
 		// Write non-duplicate sequences including the first one
 		context.write(nullKey, firstSeq.getFirstSeq());
 		mos.write("output2", nullKey, firstSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
@@ -196,35 +162,11 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 			mos.write("output2", nullKey, iterSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
 		}
 
-		timer.stop(T_CLUSTER);
+		outputClusterSize++;
+
+		timer.stop(T_WRITE);
 
 		// Update stats
-		outputClusterSize++;
-		numInputSequences += inputClusterSize;
-		numOutputSequences += outputClusterSize;
-		numClusters++;
-		clusterTime = timer.readLast(T_CLUSTER);
-		writeTime = timer.readLast(T_WRITE);
-
-		if (inputClusterSize > maxInputClusterSize) {
-			maxInputClusterSize = inputClusterSize;
-			maxOutputClusterSize = outputClusterSize;
-			maxInputClusterTime = clusterTime;
-			maxInputWriteTime = writeTime;
-		}
-
-		if (clusterTime > maxClusterTime) {
-			maxInputClusterTimeSize = inputClusterSize;
-			maxOutputClusterTimeSize = outputClusterSize;
-			maxClusterTime = clusterTime;
-			maxClusterWriteTime = writeTime;
-		}
-
-		if (writeTime > maxWriteTime) {
-			maxInputWriteTimeSize = inputClusterSize;
-			maxOutputWriteTimeSize = outputClusterSize;
-			maxWriteClusterTime = clusterTime;
-			maxWriteTime = writeTime;
-		}
+		ClusterStats.update(inputClusterSize, outputClusterSize, timer.readLast(T_CLUSTER), timer.readLast(T_WRITE));
 	}
 }
