@@ -8,7 +8,7 @@ MarDRe v1.1 - 2017/05/XX
 A point release for the MarDRe 1.x line
 
 	- Performance enhancements by reducing memory footprint, GC overhead and
-	network traffic during the shuffle phase
+	sequence parsing
 	
 	- When two FASTQ reads are collapsed, the one with the highest average 
 	quality is kept
