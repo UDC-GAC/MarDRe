@@ -20,7 +20,7 @@ package es.udc.gac.mardre.util;
 
 public abstract class SeqStringParser {
 
-	private short _prefixLength;
+	private final short _prefixLength;
 
 	public SeqStringParser(short prefixLength) {
 		this._prefixLength = prefixLength;
@@ -28,10 +28,6 @@ public abstract class SeqStringParser {
 
 	public short getPrefixLength() {
 		return _prefixLength;
-	}
-
-	public void setPrefixLength(short _prefixLength) {
-		this._prefixLength = _prefixLength;
 	}
 
 	public abstract int getSeq(String s, Sequence seq);

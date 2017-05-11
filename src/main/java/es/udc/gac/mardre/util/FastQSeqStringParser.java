@@ -18,8 +18,6 @@
  */
 package es.udc.gac.mardre.util;
 
-import java.util.StringTokenizer;
-
 public class FastQSeqStringParser extends SeqStringParser {
 
 	public FastQSeqStringParser(short prefixLength) {
@@ -27,38 +25,38 @@ public class FastQSeqStringParser extends SeqStringParser {
 	}
 
 	@Override
-	public int getSeq(String s, Sequence seq) {
+	public int getSeq(String value, Sequence seq) {
 
-		if (s.equals(""))
-			throw new IllegalArgumentException("Found empty string " + s);
+		if (value.equals(""))
+			throw new IllegalArgumentException("Found empty string " + value);
 
-		StringTokenizer st = new StringTokenizer(s, "\n");
+		OptimizedStringTokenizer st = new OptimizedStringTokenizer(value, '\n');
 
 		// Read the sequence name
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
-					"Wrong Sequence format for string " + s
+					"Wrong Sequence format for string " + value
 					+ ": no name available");
 		seq.setName(st.nextToken());
 
 		// Read the sequence bases
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
-					"Wrong Sequence format for string " + s
+					"Wrong Sequence format for string " + value
 					+ ": only name available");
 		String bases = st.nextToken();
 
 		// Read the comment line
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
-					"Wrong Sequence format for string " + s
+					"Wrong Sequence format for string " + value
 					+ ": no comment available");
 		st.nextToken();
 
 		// Read the qualities
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
-					"Wrong Sequence format for string " + s
+					"Wrong Sequence format for string " + value
 					+ ": no qualities available");
 		String strQuals = st.nextToken();
 
