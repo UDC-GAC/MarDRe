@@ -40,7 +40,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static final int T_REDUCE = 2;
 	private static final int T_CLUSTER = 3;
 	private static final NullWritable nullKey = NullWritable.get();
-	private static final List<Sequence> sequences = new ArrayList<Sequence>(50000);
+	private static List<Sequence> sequences;
 	private static Sequence firstSeq;
 	private static Sequence iterSeq;
 	private static long maxInputClusterSize;
@@ -60,6 +60,8 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		Configuration.setParameters(context.getConfiguration());
 		int taskID = context.getTaskAttemptID().getTaskID().getId();
+
+		sequences = new ArrayList<Sequence>(Configuration.CLUSTER_LIST_INITIAL_CAPACITY);
 
 		timer.start(T_SETUP);
 		setup(context);
@@ -129,15 +131,15 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		for (Sequence newSeq : values) {
 			inputClusterSize++;
 
-			if (newSeq.setDist(firstSeq) > Configuration.misMatch) {
+			if (newSeq.setDist(firstSeq) > Configuration.MISMATCH) {
 				insert = true;
 
 				for (j=0; j<outputClusterSize; j++) {
 					iterSeq = sequences.get(j);
 					diff = Configuration.fastABS(newSeq.getDist() - iterSeq.getDist());
 
-					if (diff <= Configuration.misMatch) {
-						if(newSeq.equal(iterSeq, Configuration.misMatch)) {
+					if (diff <= Configuration.MISMATCH) {
+						if(newSeq.equal(iterSeq, Configuration.MISMATCH)) {
 							insert = false;
 
 							if (newSeq.getAvgQual() > iterSeq.getAvgQual())

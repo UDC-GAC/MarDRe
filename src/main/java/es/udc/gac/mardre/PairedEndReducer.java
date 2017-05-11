@@ -43,7 +43,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	private static final int T_CLEANUP = 3;
 	private static final int T_CLUSTER = 4;
 	private static final NullWritable nullKey = NullWritable.get();
-	private static final List<PairedSequence> sequences = new ArrayList<PairedSequence>();
+	private static List<PairedSequence> sequences;
 	private static MultipleOutputs<NullWritable,Sequence> mos;
 	private static PairedSequence firstSeq;
 	private static PairedSequence iterSeq;
@@ -64,6 +64,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		Configuration.setParameters(context.getConfiguration());
 		int taskID = context.getTaskAttemptID().getTaskID().getId();
+
+		sequences = new ArrayList<PairedSequence>(Configuration.CLUSTER_LIST_INITIAL_CAPACITY);
 
 		timer.start(T_SETUP);
 		setup(context);
@@ -142,15 +144,15 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		for (PairedSequence newSeq : values) {
 			inputClusterSize++;
 
-			if (newSeq.setDist(firstSeq) > Configuration.misMatch) {
+			if (newSeq.setDist(firstSeq) > Configuration.MISMATCH) {
 				insert = true;
 
 				for (j=0; j<outputClusterSize; j++) {
 					iterSeq = sequences.get(j);
 					diff = Configuration.fastABS(newSeq.getDist() - iterSeq.getDist());
 
-					if (diff <= Configuration.misMatch) {
-						if(newSeq.equal(iterSeq, Configuration.misMatch)) {
+					if (diff <= Configuration.MISMATCH) {
+						if(newSeq.equal(iterSeq, Configuration.MISMATCH)) {
 							insert = false;
 
 							if (newSeq.getAvgQual() > iterSeq.getAvgQual())

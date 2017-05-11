@@ -46,7 +46,7 @@ public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWr
 					boolean insert = true;
 
 					for (PairedSequence seq : seqsInCache) {
-						if (newSeq.equal(seq, Configuration.misMatch)) {
+						if (newSeq.equal(seq, Configuration.MISMATCH)) {
 							insert = false;
 							break;
 						}
@@ -97,14 +97,11 @@ public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWr
 
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
-		org.apache.hadoop.conf.Configuration jobConf = context.getConfiguration();
-
-		if (Boolean.parseBoolean(jobConf.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
+		if (Configuration.IN_MAPPER_COMBINER == false) {
 			// Disable the in-Mapper combiner
 			combiner.setCombiningFunction(null);
 		} else {
-			int cacheCapacity = Integer.parseInt(jobConf.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
-			combiner.setMaxCacheCapacity(cacheCapacity);
+			combiner.setMaxCacheCapacity(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
 		}
 	}
 

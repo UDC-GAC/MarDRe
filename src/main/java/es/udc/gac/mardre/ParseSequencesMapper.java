@@ -75,11 +75,11 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 	protected void setup(Context context) throws IOException, InterruptedException {
 		String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
 
-		if (!inputSplitPath.equals(Configuration.inputPath1))
+		if (!inputSplitPath.equals(Configuration.INPUT_PATH1))
 			isFirstInputPath = false;
 
-		short prefixLength = (isFirstInputPath)? Configuration.prefixLength : 0;		
-		parser = SequenceParserFactory.createParser(Configuration.fileFormat, prefixLength);
+		short prefixLength = (isFirstInputPath)? Configuration.PREFIX_LENGTH : 0;		
+		parser = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, prefixLength);
 	}
 
 	@Override

@@ -268,6 +268,7 @@ public class RunMarDRe extends Configured implements Tool {
 		conf.setInt(Configuration.IO_BUFFER_SIZE_PARAM, Configuration.IO_FILE_BUFFER_SIZE);
 		conf.setBoolean(Configuration.IN_MAPPER_COMBINER_PARAM, Configuration.IN_MAPPER_COMBINER);
 		conf.setInt(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM, Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
+		conf.setInt(Configuration.CLUSTER_LIST_INITIAL_CAPACITY_PARAM, Configuration.CLUSTER_LIST_INITIAL_CAPACITY);
 
 		// Print command line options and configuration parameters
 		System.out.println("MarDRe: prefix length = "+options.getPrefixLength());

@@ -51,7 +51,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 					boolean insert = true;
 
 					for (Sequence seq : seqsInCache) {
-						if (newSeq.equal(seq, Configuration.misMatch)) {
+						if (newSeq.equal(seq, Configuration.MISMATCH)) {
 							insert = false;
 							break;
 						}
@@ -102,15 +102,13 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
-		org.apache.hadoop.conf.Configuration jobConf = context.getConfiguration();
-		parser = SequenceParserFactory.createParser(Configuration.fileFormat, Configuration.prefixLength);
+		parser = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, Configuration.PREFIX_LENGTH);
 
-		if (Boolean.parseBoolean(jobConf.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
+		if (Configuration.IN_MAPPER_COMBINER == false) {
 			// Disable the in-Mapper combiner
 			combiner.setCombiningFunction(null);
 		} else {
-			int cacheCapacity = Integer.parseInt(jobConf.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
-			combiner.setMaxCacheCapacity(cacheCapacity);
+			combiner.setMaxCacheCapacity(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
 		}
 	}
 

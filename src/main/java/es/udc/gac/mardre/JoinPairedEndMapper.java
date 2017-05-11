@@ -54,7 +54,7 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 					boolean insert = true;
 
 					for (PairedSequence seq : seqsInCache) {
-						if (newSeq.equal(seq, Configuration.misMatch)) {
+						if (newSeq.equal(seq, Configuration.MISMATCH)) {
 							insert = false;
 							break;
 						}
@@ -105,16 +105,14 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
-		org.apache.hadoop.conf.Configuration jobConf = context.getConfiguration();
-		parser1 = SequenceParserFactory.createParser(Configuration.fileFormat, Configuration.prefixLength);
-		parser2 = SequenceParserFactory.createParser(Configuration.fileFormat, (short) 0);
+		parser1 = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, Configuration.PREFIX_LENGTH);
+		parser2 = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, (short) 0);
 
-		if (Boolean.parseBoolean(jobConf.get(Configuration.IN_MAPPER_COMBINER_PARAM)) == false) {
+		if (Configuration.IN_MAPPER_COMBINER == false) {
 			// Disable the in-Mapper combiner
 			combiner.setCombiningFunction(null);
 		} else {
-			int cacheCapacity = Integer.parseInt(jobConf.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
-			combiner.setMaxCacheCapacity(cacheCapacity);
+			combiner.setMaxCacheCapacity(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
 		}
 	}
 

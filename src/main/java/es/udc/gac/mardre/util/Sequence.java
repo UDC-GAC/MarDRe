@@ -316,7 +316,7 @@ public class Sequence implements Writable {
 
 		try {
 			// Decode the bases
-			decodeBases((_isFirstSeq)? Configuration.prefixLength : 0);
+			decodeBases((_isFirstSeq)? Configuration.PREFIX_LENGTH : 0);
 
 			// Print name and bases
 			bufferedWriter.write(_name);

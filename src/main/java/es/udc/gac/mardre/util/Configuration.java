@@ -32,6 +32,21 @@ public final class Configuration {
 
 	public static final String MARDRE_VERSION = "1.1";
 	public static final String MARDRE_HOME;
+	public static final String TEMP_INPUT_PATH_1 = "/MarDRe/tmp/input1";
+	public static final String TEMP_INPUT_PATH_2 = "/MarDRe/tmp/input2";
+	public static final String TEMP_OUTPUT_PATH_1 = "/MarDRe/tmp/output1";
+	public static final String TEMP_OUTPUT_PATH_2 = "/MarDRe/tmp/output2";
+	public static final String OUTPUT_PATH_2 = Configuration.TEMP_OUTPUT_PATH_2+"/part";
+
+	public static final String IO_BUFFER_SIZE_PARAM = "MarDRe_ioBufferSize";
+	public static final String IN_MAPPER_COMBINER_PARAM = "MarDRe_inMapperCombiner";
+	public static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "MarDRe_inMapperCombinerCacheSize";
+	public static final String CLUSTER_LIST_INITIAL_CAPACITY_PARAM = "MarDRe_clusterListInitialCapacity";
+	public static final String PREFIXLENGTH_PARAM = "MarDRe_prefixLength";
+	public static final String MISMATCH_PARAM = "MarDRe_misMatch";
+	public static final String FILE_FORMAT_PARAM = "MarDRe_fileFormat";
+	public static final String INPUT_PATH_1_PARAM = "MarDRe_inputPath1";
+
 	public static boolean MERGE; 
 	public static boolean DELETE_TEMP;
 	public static boolean PAIRED_JOIN;
@@ -39,27 +54,14 @@ public final class Configuration {
 	public static int IO_FILE_BUFFER_SIZE;
 	public static boolean IN_MAPPER_COMBINER;
 	public static int IN_MAPPER_COMBINER_CACHE_SIZE;
+	public static int CLUSTER_LIST_INITIAL_CAPACITY;
+	public static short PREFIX_LENGTH;
+	public static short MISMATCH;
+	public static FileFormat FILE_FORMAT;
+	public static String INPUT_PATH1;
 
-	public static short prefixLength;
-	public static short misMatch;
-	public static FileFormat fileFormat;
-	public static String inputPath1;
-
-	public static final String IO_BUFFER_SIZE_PARAM = "MarDRe_ioBufferSize";
-	public static final String IN_MAPPER_COMBINER_PARAM = "MarDRe_inMapperCombiner";
-	public static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "MarDRe_inMapperCombinerCacheSize";
-	public static final String PREFIXLENGTH_PARAM = "MarDRe_prefixLength";
-	public static final String MISMATCH_PARAM = "MarDRe_misMatch";
-	public static final String FILE_FORMAT_PARAM = "MarDRe_fileFormat";
-	public static final String INPUT_PATH_1_PARAM = "MarDRe_inputPath1";
-
-	public static final String TEMP_INPUT_PATH_1 = "/MarDRe/tmp/input1";
-	public static final String TEMP_INPUT_PATH_2 = "/MarDRe/tmp/input2";
-	public static final String TEMP_OUTPUT_PATH_1 = "/MarDRe/tmp/output1";
-	public static final String TEMP_OUTPUT_PATH_2 = "/MarDRe/tmp/output2";
-	public static final String OUTPUT_PATH_2 = Configuration.TEMP_OUTPUT_PATH_2+"/part";
-	private static final String MARDRE_CONFIGURATION_FILE = "mardre.conf";
-	private static final String configFileName;
+	private static String MARDRE_CONFIGURATION_FILE = "mardre.conf";
+	private static String configFileName;
 	private static Properties properties = new Properties();
 
 	static {
@@ -91,6 +93,7 @@ public final class Configuration {
 		IO_FILE_BUFFER_SIZE = Integer.parseInt(properties.getProperty("ioBufferSize", "65536"));
 		IN_MAPPER_COMBINER = Boolean.parseBoolean(properties.getProperty("inMapperCombiner", "false"));
 		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(properties.getProperty("inMapperCombinerCacheSize", InMapperCombiner.CACHE_SIZE.toString()));
+		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(properties.getProperty("clusterInitialCapacity", "50000"));
 
 		if (MERGE == false)
 			DELETE_TEMP = false;
@@ -105,14 +108,22 @@ public final class Configuration {
 			return false;
 		}
 
+		if (CLUSTER_LIST_INITIAL_CAPACITY < 0) {
+			System.err.println("clusterInitialCapacity="+CLUSTER_LIST_INITIAL_CAPACITY+" value is not valid");
+			return false;
+		}
+
 		return true;
 	}
 
 	public static void setParameters(org.apache.hadoop.conf.Configuration jobConf) {
-		prefixLength = Short.parseShort(jobConf.get(Configuration.PREFIXLENGTH_PARAM));
-		misMatch = Short.parseShort(jobConf.get(Configuration.MISMATCH_PARAM));
-		fileFormat = FileFormat.values()[Integer.parseInt(jobConf.get(Configuration.FILE_FORMAT_PARAM))];
-		inputPath1 = jobConf.get(Configuration.INPUT_PATH_1_PARAM);
+		PREFIX_LENGTH = Short.parseShort(jobConf.get(Configuration.PREFIXLENGTH_PARAM));
+		MISMATCH = Short.parseShort(jobConf.get(Configuration.MISMATCH_PARAM));
+		FILE_FORMAT = FileFormat.values()[Integer.parseInt(jobConf.get(Configuration.FILE_FORMAT_PARAM))];
+		INPUT_PATH1 = jobConf.get(Configuration.INPUT_PATH_1_PARAM);
+		IN_MAPPER_COMBINER = Boolean.parseBoolean(jobConf.get(Configuration.IN_MAPPER_COMBINER_PARAM));
+		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(jobConf.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
+		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(jobConf.get(Configuration.CLUSTER_LIST_INITIAL_CAPACITY_PARAM));
 	}
 
 	public static final int fastABS(int value) {
