@@ -21,13 +21,9 @@ package es.udc.gac.mardre.util;
 import java.io.BufferedWriter;
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.StandardCharsets;
 
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
 public class Sequence implements Writable {
@@ -90,9 +86,7 @@ public class Sequence implements Writable {
 	private short _dist;
 	private long[] _compressSuffix;
 	private boolean _isFirstSeq;
-	//private Text _name;
 	private String _name;
-	//private byte[] _quals;
 	private String _quals;
 	private float _avgQual;
 
@@ -141,27 +135,10 @@ public class Sequence implements Writable {
 		return _isFirstSeq;
 	}
 
-	/*public void setQuals(byte[] quals) {
-		_quals = quals;
-	}*/
-
 	public void setQuals(String quals) {
 		_quals = quals;
 	}
-	/*	
-	public float getAvgQual() {
-		if ((_avgQual < 0) && (_quals != null)) {
-			_avgQual = 0;
 
-			for (int i = 0; i < _quals.length; i++)
-				_avgQual += _quals[i];
-
-			_avgQual /= (float) _quals.length;
-		}
-
-		return _avgQual;
-	}
-	 */
 	public float getAvgQual() {
 		if ((_avgQual < 0) && (_quals != null)) {
 			_avgQual = 0;
@@ -351,7 +328,6 @@ public class Sequence implements Writable {
 				bufferedWriter.newLine();
 				bufferedWriter.write('+');
 				bufferedWriter.newLine();
-				//				bufferedWriter.write(new String(_quals, StandardCharsets.US_ASCII));
 				bufferedWriter.write(_quals);
 			}
 
@@ -367,7 +343,6 @@ public class Sequence implements Writable {
 	public void write(DataOutput out) throws IOException {
 		out.writeLong(_key);
 		out.writeShort(_length);
-		//_name.write(out);
 		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
 		out.writeByte(_compressSuffix.length);
@@ -383,8 +358,6 @@ public class Sequence implements Writable {
 	public void readFields(DataInput in) throws IOException {
 		_key = in.readLong();
 		_length = in.readShort();
-		//_name = new Text();
-		//_name.readFields(in);
 		_name = in.readUTF();
 		_isFirstSeq = in.readBoolean();
 		Sequence.compressSuffixLength =  in.readByte();
@@ -395,13 +368,7 @@ public class Sequence implements Writable {
 			_compressSuffix[i] = in.readLong();
 
 		try {
-			/*byte firstByte = in.readByte();
-			_quals = new byte[_length];
-			_quals[0] = firstByte;
-			in.readFully(_quals, 1, _length-1);*/
 			_quals = in.readUTF();
-		} catch (EOFException ex) {
-			_quals = null;
 		} catch (IOException ex) {
 			_quals = null;
 		}

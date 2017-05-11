@@ -18,7 +18,6 @@
  */
 package es.udc.gac.mardre.util;
 
-import java.nio.charset.StandardCharsets;
 import java.util.StringTokenizer;
 
 public class FastQSeqStringParser extends SeqStringParser {
@@ -69,7 +68,6 @@ public class FastQSeqStringParser extends SeqStringParser {
 
 		seq.setKey(bases, this.getPrefixLength());
 		seq.setSuffix(bases, this.getPrefixLength());
-		//seq.setQuals(strQuals.getBytes(StandardCharsets.US_ASCII));
 		seq.setQuals(strQuals);
 
 		return bases.length();
