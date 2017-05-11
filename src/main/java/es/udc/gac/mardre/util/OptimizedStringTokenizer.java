@@ -39,7 +39,7 @@ public final class OptimizedStringTokenizer {
 	public final String nextToken() {
 		int init = pos;
 
-		while( pos < len && str.charAt(pos) != delim)
+		while(pos < len && str.charAt(pos) != delim)
 			pos++;
 
 		// Skip delimiter

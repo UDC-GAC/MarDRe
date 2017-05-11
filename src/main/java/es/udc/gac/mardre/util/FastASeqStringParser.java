@@ -18,8 +18,6 @@
  */
 package es.udc.gac.mardre.util;
 
-import java.util.StringTokenizer;
-
 public class FastASeqStringParser extends SeqStringParser {
 
 	public FastASeqStringParser(short prefixLength) {
@@ -27,23 +25,20 @@ public class FastASeqStringParser extends SeqStringParser {
 	}
 
 	@Override
-	public int getSeq(String s, Sequence seq) {
+	public int getSeq(String value, Sequence seq) {
 
-		if (s.equals(""))
-			throw new IllegalArgumentException("Found empty string " + s);
-
-		StringTokenizer st = new StringTokenizer(s, "\n");
+		OptimizedStringTokenizer st = new OptimizedStringTokenizer(value, '\n');
 
 		// Read the sequence name
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
-					"Wrong Sequence format for string " + s
+					"Wrong Sequence format for string " + value
 					+ ": no name available");
 		seq.setName(st.nextToken());
 
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
-					"Wrong Sequence format for string " + s
+					"Wrong Sequence format for string " + value
 					+ ": only name available");
 
 		// Read the sequence bases

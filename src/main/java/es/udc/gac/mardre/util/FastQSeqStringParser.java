@@ -27,9 +27,6 @@ public class FastQSeqStringParser extends SeqStringParser {
 	@Override
 	public int getSeq(String value, Sequence seq) {
 
-		if (value.equals(""))
-			throw new IllegalArgumentException("Found empty string " + value);
-
 		OptimizedStringTokenizer st = new OptimizedStringTokenizer(value, '\n');
 
 		// Read the sequence name
