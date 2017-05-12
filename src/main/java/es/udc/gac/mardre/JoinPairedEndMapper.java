@@ -125,14 +125,12 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	public void map(LongWritable key, TupleWritable value, Context context)
 			throws IOException, InterruptedException {
 
-		if (parser1.getSeq(value.get(0).toString(), seq1) != 0) {
-			if (parser2.getSeq(value.get(1).toString(), seq2) != 0) {
-				pairedSeq.setFirstSeq(seq1);
-				pairedSeq.setSecondSeq(seq2);
-				longKey.set(pairedSeq.getKey());
-				combiner.write(longKey, pairedSeq, context);
-				combiner.flush(context, false);
-			}
-		}
+		parser1.getSeq(value.get(0).toString(), seq1);
+		parser2.getSeq(value.get(1).toString(), seq2);
+		pairedSeq.setFirstSeq(seq1);
+		pairedSeq.setSecondSeq(seq2);
+		longKey.set(pairedSeq.getKey());
+		combiner.write(longKey, pairedSeq, context);
+		combiner.flush(context, false);
 	}
 }
