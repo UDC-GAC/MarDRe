@@ -133,23 +133,26 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 					i = 2;
 					//Trim spaces in sequence name
 					LineReader.trim(newLine, ' ', 1);
-					newLine.append(temp.getBytes(), 0, temp.getLength());
+					value.append(newLine.getBytes(), 0, newLine.getLength());
+					value.append(temp.getBytes(), 0, temp.getLength());
 				} else {
 					i = 1;
 					key.set(this.pos-secondRead);
 					//Trim spaces in sequence name
 					LineReader.trim(temp, ' ', 1);
 					value.append(temp.getBytes(), 0, temp.getLength());
-					continue;
 				}
+				continue;
 			}
 
-			if (found) {
-				value.append(newLine.getBytes(), 0, newLine.getLength());
-			} else if (i == linesToProcess) {
+			if (i == linesToProcess) {
 				//System.out.println("nextKeyValue: last line and no starting '@' has been found (discard previous data)");
 				i = 0;
+				continue;
 			}
+
+			if (found && i < 3)
+				value.append(newLine.getBytes(), 0, newLine.getLength());
 		}
 
 		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
