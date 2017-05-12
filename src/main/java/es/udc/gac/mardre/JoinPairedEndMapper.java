@@ -120,6 +120,9 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	public void map(LongWritable key, TupleWritable value, Context context)
 			throws IOException, InterruptedException {
 
+		if (value.size() != 2)
+			throw new IndexOutOfBoundsException("PairedSequence consists of "+value.size()+" sequence/s");
+
 		pairedSeq.setFirstSeq((Sequence) value.get(0));
 		pairedSeq.setSecondSeq((Sequence) value.get(1));
 		longKey.set(pairedSeq.getKey());
