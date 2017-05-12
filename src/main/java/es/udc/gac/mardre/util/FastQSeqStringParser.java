@@ -43,13 +43,6 @@ public class FastQSeqStringParser extends SeqStringParser {
 					+ ": only name available");
 		String bases = st.nextToken();
 
-		// Read the comment line
-		if (!st.hasMoreTokens())
-			throw new IllegalArgumentException(
-					"Wrong Sequence format for string " + value
-					+ ": no comment available");
-		st.nextToken();
-
 		// Read the qualities
 		if (!st.hasMoreTokens())
 			throw new IllegalArgumentException(
