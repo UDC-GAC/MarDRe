@@ -28,9 +28,7 @@ import org.apache.hadoop.mapreduce.lib.join.TupleWritable;
 
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.PairedSequence;
-import es.udc.gac.mardre.util.SeqStringParser;
 import es.udc.gac.mardre.util.Sequence;
-import es.udc.gac.mardre.util.SequenceParserFactory;
 import es.udc.gac.mardre.util.Timer;
 
 public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, LongWritable, PairedSequence> {
@@ -41,10 +39,7 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	private static final int T_MAP = 2;
 	private static final int T_CLEANUP = 3;
 	private static PairedSequence pairedSeq = new PairedSequence();
-	private static Sequence seq1 = new Sequence();
-	private static Sequence seq2 = new Sequence();
 	private static LongWritable longKey = new LongWritable();
-	private static SeqStringParser parser1, parser2;
 	private static long numInputSequences;
 
 	private static final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
@@ -106,8 +101,6 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
-		parser1 = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, Configuration.PREFIX_LENGTH);
-		parser2 = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, (short) 0);
 		numInputSequences = 0;
 
 		if (Configuration.IN_MAPPER_COMBINER == false) {
@@ -127,10 +120,8 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	public void map(LongWritable key, TupleWritable value, Context context)
 			throws IOException, InterruptedException {
 
-		parser1.getSeq(value.get(0).toString(), seq1);
-		parser2.getSeq(value.get(1).toString(), seq2);
-		pairedSeq.setFirstSeq(seq1);
-		pairedSeq.setSecondSeq(seq2);
+		pairedSeq.setFirstSeq((Sequence) value.get(0));
+		pairedSeq.setSecondSeq((Sequence) value.get(1));
 		longKey.set(pairedSeq.getKey());
 		combiner.write(longKey, pairedSeq, context);
 		numInputSequences++;

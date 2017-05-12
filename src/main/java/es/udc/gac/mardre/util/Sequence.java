@@ -308,7 +308,7 @@ public class Sequence implements Writable {
 		}
 	}
 
-	@Override
+/*	@Override
 	public String toString() {
 
 		stringWriter.getBuffer().setLength(0);
@@ -338,7 +338,7 @@ public class Sequence implements Writable {
 
 		return stringWriter.toString();
 	}
-
+*/
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeLong(_key);
