@@ -67,7 +67,7 @@ public class GroupSequencesReducer extends Reducer<LongWritable, Sequence, LongW
 		timer.stop(T_TOTAL);
 
 		// Report stats
-		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds (%d) reads\n", taskID, timer.readTotal(T_TOTAL), numInputSequences);
+		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds (%d reads)\n", taskID, timer.readTotal(T_TOTAL), numInputSequences);
 		System.out.format(java.util.Locale.ENGLISH,"\tReduce time: %.3f seconds\n", timer.readTotal(T_REDUCE));
 	}
 
