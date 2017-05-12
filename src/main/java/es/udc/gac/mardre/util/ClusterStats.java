@@ -20,23 +20,45 @@ package es.udc.gac.mardre.util;
 
 public final class ClusterStats {
 
-	private static long maxInputClusterSize = 0;
-	private static long maxOutputClusterSize = 0;
-	private static double maxInputClusterTime = 0;
-	private static double maxInputWriteTime = 0;
-	private static long maxInputClusterTimeSize = 0;
-	private static long maxOutputClusterTimeSize = 0;
-	private static double maxClusterTime = 0;
-	private static double maxClusterWriteTime = 0;
-	private static long maxInputWriteTimeSize = 0;
-	private static long maxOutputWriteTimeSize = 0;
-	private static double maxWriteClusterTime = 0;
-	private static double maxWriteTime = 0;
-	private static long numInputSequences = 0;
-	private static long numOutputSequences = 0;
-	private static long numClusters = 0;
+	private static long maxInputClusterSize;
+	private static long maxOutputClusterSize;
+	private static double maxInputClusterTime;
+	private static double maxInputWriteTime;
+	private static long maxInputClusterTimeSize;
+	private static long maxOutputClusterTimeSize;
+	private static double maxClusterTime;
+	private static double maxClusterWriteTime;
+	private static long maxInputWriteTimeSize;
+	private static long maxOutputWriteTimeSize;
+	private static double maxWriteClusterTime;
+	private static double maxWriteTime;
+	private static long numInputSequences;
+	private static long numOutputSequences;
+	private static long numClusters;
 
 	private ClusterStats() {}
+
+	public static void init() {
+		maxInputClusterSize = 0;
+		maxOutputClusterSize = 0;
+		maxInputClusterTime = 0;
+		maxInputWriteTime = 0;
+		maxInputClusterTimeSize = 0;
+		maxOutputClusterTimeSize = 0;
+		maxClusterTime = 0;
+		maxClusterWriteTime = 0;
+		maxInputWriteTimeSize = 0;
+		maxOutputWriteTimeSize = 0;
+		maxWriteClusterTime = 0;
+		maxWriteTime = 0;
+		numInputSequences = 0;
+		numOutputSequences = 0;
+		numClusters = 0;
+	}
+
+	public static void reset() {
+		init();
+	}
 
 	public static void update(long inputClusterSize, long outputClusterSize, double clusterTime, double writeTime) {
 		numInputSequences += inputClusterSize;

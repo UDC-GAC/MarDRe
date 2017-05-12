@@ -55,7 +55,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		Configuration.setParameters(context.getConfiguration());
 		int taskID = context.getTaskAttemptID().getTaskID().getId();
-
+		ClusterStats.init();
 		sequences = new ArrayList<PairedSequence>(Configuration.CLUSTER_LIST_INITIAL_CAPACITY);
 
 		setup(context);

@@ -276,7 +276,7 @@ public class RunMarDRe extends Configured implements Tool {
 		System.out.println("MarDRe: I/O buffer size = "+Configuration.IO_FILE_BUFFER_SIZE+" bytes");
 		System.out.println("MarDRe: in-Mapper combiner = "+Configuration.IN_MAPPER_COMBINER);
 		System.out.println("MarDRe: in-Mapper combiner cache = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE+" entries");
-		System.out.println("MarDRe: cluster initial capacity = "+Configuration.CLUSTER_LIST_INITIAL_CAPACITY_PARAM+" entries");
+		System.out.println("MarDRe: cluster initial capacity = "+Configuration.CLUSTER_LIST_INITIAL_CAPACITY+" entries");
 
 		if (options.isPaired()) {
 			System.out.println("MarDRe: using paired-end mode");
