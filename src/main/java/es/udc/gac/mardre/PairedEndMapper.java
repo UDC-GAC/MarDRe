@@ -37,6 +37,7 @@ public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWr
 	private static final int T_MAP = 2;
 	private static final int T_CLEANUP = 3;
 	private static LongWritable longKey = new LongWritable();
+	private static long numInputSequences;
 
 	private static final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
 			new CombiningFunction<LongWritable, PairedSequence>() {
@@ -89,7 +90,7 @@ public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWr
 		timer.stop(T_TOTAL);
 
 		// Report stats
-		System.out.format(java.util.Locale.ENGLISH,"Total time for mapper task %d: %.3f seconds\n", taskID, timer.readTotal(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"Total time for mapper task %d: %.3f seconds (%d) reads\n", taskID, timer.readTotal(T_TOTAL), numInputSequences);
 		System.out.format(java.util.Locale.ENGLISH,"\tSetup time: %.3f seconds\n", timer.readTotal(T_SETUP));
 		System.out.format(java.util.Locale.ENGLISH,"\tMap time: %.3f seconds\n", timer.readTotal(T_MAP));
 		System.out.format(java.util.Locale.ENGLISH,"\tCleanup time: %.3f seconds\n", timer.readTotal(T_CLEANUP));
@@ -97,6 +98,8 @@ public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWr
 
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
+		numInputSequences = 0;
+
 		if (Configuration.IN_MAPPER_COMBINER == false) {
 			// Disable the in-Mapper combiner
 			combiner.setCombiningFunction(null);
@@ -116,6 +119,7 @@ public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWr
 
 		longKey.set(value.getKey());
 		combiner.write(longKey, value, context);
+		numInputSequences++;
 		combiner.flush(context, false);
 	}
 }

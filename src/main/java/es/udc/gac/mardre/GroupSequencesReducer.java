@@ -37,6 +37,7 @@ public class GroupSequencesReducer extends Reducer<LongWritable, Sequence, LongW
 	private static final int T_REDUCE = 1;
 	private static PairedSequence pairedSeq = new PairedSequence();
 	private static LongWritable longKey = new LongWritable();
+	private static long numInputSequences = 0;
 
 	@Override
 	public void run(Reducer<LongWritable, Sequence, LongWritable, PairedSequence>.Context context) throws IOException, InterruptedException {
@@ -66,7 +67,7 @@ public class GroupSequencesReducer extends Reducer<LongWritable, Sequence, LongW
 		timer.stop(T_TOTAL);
 
 		// Report stats
-		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds\n", taskID, timer.readTotal(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds (%d) reads\n", taskID, timer.readTotal(T_TOTAL), numInputSequences);
 		System.out.format(java.util.Locale.ENGLISH,"\tReduce time: %.3f seconds\n", timer.readTotal(T_REDUCE));
 	}
 
@@ -92,5 +93,6 @@ public class GroupSequencesReducer extends Reducer<LongWritable, Sequence, LongW
 
 		longKey.set(pairedSeq.getKey());
 		context.write(longKey, pairedSeq);
+		numInputSequences++;
 	}
 }

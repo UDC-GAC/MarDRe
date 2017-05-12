@@ -45,6 +45,7 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	private static Sequence seq2 = new Sequence();
 	private static LongWritable longKey = new LongWritable();
 	private static SeqStringParser parser1, parser2;
+	private static long numInputSequences;
 
 	private static final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
 			new CombiningFunction<LongWritable, PairedSequence>() {
@@ -97,7 +98,7 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 		timer.stop(T_TOTAL);
 
 		// Report stats
-		System.out.format(java.util.Locale.ENGLISH,"Total time for mapper task %d: %.3f seconds\n", taskID, timer.readTotal(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"Total time for mapper task %d: %.3f seconds (%d) reads\n", taskID, timer.readTotal(T_TOTAL), numInputSequences);
 		System.out.format(java.util.Locale.ENGLISH,"\tSetup time: %.3f seconds\n", timer.readTotal(T_SETUP));
 		System.out.format(java.util.Locale.ENGLISH,"\tMap time: %.3f seconds\n", timer.readTotal(T_MAP));
 		System.out.format(java.util.Locale.ENGLISH,"\tCleanup time: %.3f seconds\n", timer.readTotal(T_CLEANUP));
@@ -107,6 +108,7 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	protected void setup(Context context) throws IOException, InterruptedException {
 		parser1 = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, Configuration.PREFIX_LENGTH);
 		parser2 = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, (short) 0);
+		numInputSequences = 0;
 
 		if (Configuration.IN_MAPPER_COMBINER == false) {
 			// Disable the in-Mapper combiner
@@ -131,6 +133,7 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 		pairedSeq.setSecondSeq(seq2);
 		longKey.set(pairedSeq.getKey());
 		combiner.write(longKey, pairedSeq, context);
+		numInputSequences++;
 		combiner.flush(context, false);
 	}
 }
