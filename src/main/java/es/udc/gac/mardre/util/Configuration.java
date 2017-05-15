@@ -30,7 +30,7 @@ import java.util.Map;
 
 public final class Configuration {
 
-	public static final String MARDRE_VERSION = "1.1";
+	public static final String MARDRE_VERSION = "1.2";
 	public static final String MARDRE_HOME;
 	public static final String TEMP_INPUT_PATH_1 = "/MarDRe/tmp/input1";
 	public static final String TEMP_INPUT_PATH_2 = "/MarDRe/tmp/input2";
