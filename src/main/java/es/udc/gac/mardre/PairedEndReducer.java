@@ -80,7 +80,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		double reduceTime = timer.readTotal(T_REDUCE);
 
 		// Report times
-		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds\n", taskID, timer.readTotal(T_TOTAL));
+		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds (%d reads)\n", taskID, timer.readTotal(T_TOTAL), ClusterStats.getNumInputSequences());
 		System.out.format(java.util.Locale.ENGLISH,"\tReduce time: %.3f seconds\n", reduceTime);
 		System.out.format(java.util.Locale.ENGLISH,"\tClustering time: %.3f seconds\n", timer.readTotal(T_CLUSTER));
 		System.out.format(java.util.Locale.ENGLISH,"\tWrite time: %.3f seconds\n", timer.readTotal(T_WRITE));

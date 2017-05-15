@@ -89,7 +89,7 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 	@Override
 	public void map(LongWritable key, Text value, Context context)
 			throws IOException, InterruptedException {
-		
+
 		String str = Text.decode(value.getBytes(), 0, value.getLength(), false);
 		parser.getSeq(str, seq);
 		seq.setIsFirstSeq(isFirstInputPath);

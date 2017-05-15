@@ -99,4 +99,8 @@ public final class ClusterStats {
 					maxOutputWriteTimeSize, maxInputWriteTimeSize, maxWriteClusterTime + maxWriteTime, maxWriteClusterTime, maxWriteTime);
 		}
 	}
+
+	public static long getNumInputSequences() {
+		return numInputSequences;
+	}
 }
