@@ -31,7 +31,6 @@ import java.util.Map;
 public final class Configuration {
 
 	public static final String MARDRE_VERSION = "1.2";
-	public static final String MARDRE_HOME;
 	public static final String TEMP_INPUT_PATH_1 = "/MarDRe/tmp/input1";
 	public static final String TEMP_INPUT_PATH_2 = "/MarDRe/tmp/input2";
 	public static final String TEMP_OUTPUT_PATH_1 = "/MarDRe/tmp/output1";
@@ -47,6 +46,7 @@ public final class Configuration {
 	public static final String FILE_FORMAT_PARAM = "MarDRe_fileFormat";
 	public static final String INPUT_PATH_1_PARAM = "MarDRe_inputPath1";
 
+	public static String MARDRE_HOME;
 	public static boolean MERGE; 
 	public static boolean DELETE_TEMP;
 	public static boolean PAIRED_JOIN;
@@ -61,10 +61,12 @@ public final class Configuration {
 	public static String INPUT_PATH1;
 
 	private static String MARDRE_CONFIGURATION_FILE = "mardre.conf";
-	private static String configFileName;
 	private static Properties properties = new Properties();
 
-	static {
+	private Configuration() {}
+
+	public static boolean loadConfiguration() throws FileNotFoundException {
+
 		Map<String,String> map = System.getenv();
 		MARDRE_HOME = map.get("MARDRE_HOME");
 
@@ -72,12 +74,8 @@ public final class Configuration {
 			throw new RuntimeException("'MARDRE_HOME' must be set");
 
 		String slash = System.getProperty("file.separator");
-		configFileName = MARDRE_HOME+slash+"etc"+slash+MARDRE_CONFIGURATION_FILE;
-	}
+		String configFileName = MARDRE_HOME+slash+"etc"+slash+MARDRE_CONFIGURATION_FILE;
 
-	private Configuration() {}
-
-	public static boolean loadConfiguration() throws FileNotFoundException {
 		try {
 			FileInputStream configFile = new FileInputStream(configFileName);
 			properties.load(configFile);
