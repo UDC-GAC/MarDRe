@@ -33,16 +33,15 @@ import java.util.Map;
 public final class Configuration {
 
 	public static final String MARDRE_VERSION = "1.2";
+	public static final String MARDRE_HOME;
+	private static final String MARDRE_CONFIG_FILE = "mardre.conf";
+	private static final Properties MARDRE_PROPERTIES;
 	public static final String TEMP_INPUT_PATH_1 = "/MarDRe/tmp/input1";
 	public static final String TEMP_INPUT_PATH_2 = "/MarDRe/tmp/input2";
 	public static final String TEMP_OUTPUT_PATH_1 = "/MarDRe/tmp/output1";
 	public static final String TEMP_OUTPUT_PATH_2 = "/MarDRe/tmp/output2";
 	public static final String OUTPUT_PATH_2 = Configuration.TEMP_OUTPUT_PATH_2+"/part";
 
-	// MarDRe configuration (mardre.conf)
-	public static String MARDRE_HOME;
-	private static String MARDRE_CONFIG_FILE = "mardre.conf";
-	private static Properties MARDRE_PROPERTIES;
 	public static boolean MERGE; 
 	public static boolean DELETE_TEMP;
 	public static boolean PAIRED_JOIN;
@@ -56,7 +55,7 @@ public final class Configuration {
 	public static FileFormat FILE_FORMAT;
 	public static String INPUT_PATH_1;
 
-	private static final String IO_FILE_BUFFER_SIZE_PARAM = "MarDRe_ioBufferSize";
+	private static final String IO_FILE_BUFFER_SIZE_PARAM = "MarDRe_ioFileBufferSize";
 	private static final String IN_MAPPER_COMBINER_PARAM = "MarDRe_inMapperCombiner";
 	private static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "MarDRe_inMapperCombinerCacheSize";
 	private static final String CLUSTER_LIST_INITIAL_CAPACITY_PARAM = "MarDRe_clusterListInitialCapacity";
@@ -71,6 +70,8 @@ public final class Configuration {
 
 		if(MARDRE_HOME == null)
 			throw new RuntimeException("'MARDRE_HOME' must be set");
+
+		MARDRE_PROPERTIES = new Properties();
 	}
 
 	private Configuration() {}
@@ -79,7 +80,6 @@ public final class Configuration {
 
 		String slash = System.getProperty("file.separator");
 		String configFileName = MARDRE_HOME+slash+"etc"+slash+MARDRE_CONFIG_FILE;
-		MARDRE_PROPERTIES = new Properties();
 
 		try {
 			FileInputStream configFile = new FileInputStream(configFileName);
