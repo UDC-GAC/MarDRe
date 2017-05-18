@@ -68,7 +68,7 @@ public class PairedEndMapper extends Mapper<LongWritable, PairedSequence, LongWr
 
 		timer.start(T_TOTAL);
 
-		Configuration.setParameters(context.getConfiguration());
+		Configuration.set(context.getConfiguration());
 		int taskID = context.getTaskAttemptID().getTaskID().getId();
 
 		timer.start(T_SETUP);

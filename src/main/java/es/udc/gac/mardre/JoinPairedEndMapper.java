@@ -71,7 +71,7 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 
 		timer.start(T_TOTAL);
 
-		Configuration.setParameters(context.getConfiguration());
+		Configuration.set(context.getConfiguration());
 		int taskID = context.getTaskAttemptID().getTaskID().getId();
 
 		timer.start(T_SETUP);

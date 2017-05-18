@@ -50,7 +50,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		timer.start(T_TOTAL);
 
-		Configuration.setParameters(context.getConfiguration());
+		Configuration.set(context.getConfiguration());
 		int taskID = context.getTaskAttemptID().getTaskID().getId();
 		ClusterStats.init();
 		sequences = new ArrayList<Sequence>(Configuration.CLUSTER_LIST_INITIAL_CAPACITY);		

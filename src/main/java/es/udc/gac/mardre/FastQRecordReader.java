@@ -88,8 +88,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 		this.end = start + split.getLength();
 		FSDataInputStream fileIn = fs.open(file);
 		fileIn.seek(start);
-		int bufferSize = Integer.parseInt(conf.get(Configuration.IO_BUFFER_SIZE_PARAM));
-		this.in = new LineReader(fileIn, bufferSize);
+		this.in = new LineReader(fileIn, Configuration.getIOFileBufferSize(conf));
 	}
 
 	@Override

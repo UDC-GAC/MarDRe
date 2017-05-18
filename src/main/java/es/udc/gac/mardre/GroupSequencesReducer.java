@@ -44,7 +44,7 @@ public class GroupSequencesReducer extends Reducer<LongWritable, Sequence, LongW
 
 		timer.start(T_TOTAL);
 
-		Configuration.setParameters(context.getConfiguration());
+		Configuration.set(context.getConfiguration());
 		int taskID = context.getTaskAttemptID().getTaskID().getId();
 
 		setup(context);

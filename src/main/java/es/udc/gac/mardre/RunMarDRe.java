@@ -145,7 +145,7 @@ public class RunMarDRe extends Configured implements Tool {
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		// Compress options
-		if (Configuration.COMPRESS_TEMP) {
+		if (Configuration.PAIRED_COMPRESS_TEMP) {
 			FileOutputFormat.setCompressOutput(job, true);
 			FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
 			SequenceFileOutputFormat.setOutputCompressionType(job, CompressionType.BLOCK);
@@ -185,7 +185,7 @@ public class RunMarDRe extends Configured implements Tool {
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		// Compress options
-		if (Configuration.COMPRESS_TEMP) {
+		if (Configuration.PAIRED_COMPRESS_TEMP) {
 			FileOutputFormat.setCompressOutput(job, true);
 			FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
 			SequenceFileOutputFormat.setOutputCompressionType(job, CompressionType.BLOCK);
@@ -222,10 +222,6 @@ public class RunMarDRe extends Configured implements Tool {
 
 		timer.start(T_INIT);
 
-		// Load MarDRe configuration
-		if (!Configuration.loadConfiguration())
-			return -1;
-
 		System.out.println("MarDRe: starting from MARDRE_HOME = "+Configuration.MARDRE_HOME);
 
 		// Get Hadoop configuration
@@ -254,26 +250,20 @@ public class RunMarDRe extends Configured implements Tool {
 			return -1;			
 		}
 
+		// Load MarDRe configuration
+		if (!Configuration.load(conf, options, inputPath1, format))
+			return -1;
+
 		outputPath1 = new Path(options.getWriteFileName1());
 		tmpOutputPath1 = new Path(Configuration.TEMP_OUTPUT_PATH_1);
 
 		if (fs.exists(tmpOutputPath1))
 			fs.delete(tmpOutputPath1, true);
 
-		// Set parameters to be used for mapper/reducer classes
-		conf.setInt(Configuration.PREFIXLENGTH_PARAM, options.getPrefixLength());
-		conf.setInt(Configuration.MISMATCH_PARAM, options.getMisMatch());
-		conf.setInt(Configuration.FILE_FORMAT_PARAM, format.ordinal());
-		conf.set(Configuration.INPUT_PATH_1_PARAM, inputPath1.toString());
-		conf.setInt(Configuration.IO_BUFFER_SIZE_PARAM, Configuration.IO_FILE_BUFFER_SIZE);
-		conf.setBoolean(Configuration.IN_MAPPER_COMBINER_PARAM, Configuration.IN_MAPPER_COMBINER);
-		conf.setInt(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM, Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
-		conf.setInt(Configuration.CLUSTER_LIST_INITIAL_CAPACITY_PARAM, Configuration.CLUSTER_LIST_INITIAL_CAPACITY);
-
 		// Print command line options and configuration parameters
 		System.out.println("MarDRe: prefix length = "+options.getPrefixLength());
 		System.out.println("MarDRe: allowed mismatches = "+options.getMisMatch());
-		System.out.println("MarDRe: I/O buffer size = "+Configuration.IO_FILE_BUFFER_SIZE+" bytes");
+		System.out.println("MarDRe: I/O file buffer size = "+Configuration.IO_FILE_BUFFER_SIZE+" bytes");
 		System.out.println("MarDRe: in-Mapper combiner = "+Configuration.IN_MAPPER_COMBINER);
 		System.out.println("MarDRe: in-Mapper combiner cache = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE+" entries");
 		System.out.println("MarDRe: cluster initial capacity = "+Configuration.CLUSTER_LIST_INITIAL_CAPACITY+" entries");
@@ -303,7 +293,7 @@ public class RunMarDRe extends Configured implements Tool {
 			if (fs.exists(tmpOutputPath2))
 				fs.delete(tmpOutputPath2, true);
 
-			if (Configuration.COMPRESS_TEMP)
+			if (Configuration.PAIRED_COMPRESS_TEMP)
 				System.out.println("MarDRe: using Snappy compression");
 
 			// Configure job to remove duplicate reads

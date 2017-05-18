@@ -73,7 +73,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 
 		timer.start(T_TOTAL);
 
-		Configuration.setParameters(context.getConfiguration());
+		Configuration.set(context.getConfiguration());
 		int taskID = context.getTaskAttemptID().getTaskID().getId();
 
 		timer.start(T_SETUP);

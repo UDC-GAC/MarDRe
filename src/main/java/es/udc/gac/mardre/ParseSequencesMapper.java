@@ -48,7 +48,7 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 
 		timer.start(T_TOTAL);
 
-		Configuration.setParameters(context.getConfiguration());
+		Configuration.set(context.getConfiguration());
 		int taskID = context.getTaskAttemptID().getTaskID().getId();
 
 		timer.start(T_SETUP);
@@ -79,7 +79,7 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 		numInputSequences = 0;
 		toggle = 0;
 
-		if (!inputSplitPath.equals(Configuration.INPUT_PATH1))
+		if (!inputSplitPath.equals(Configuration.INPUT_PATH_1))
 			isFirstInputPath = false;
 
 		short prefixLength = (isFirstInputPath)? Configuration.PREFIX_LENGTH : 0;		

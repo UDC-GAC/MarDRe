@@ -23,6 +23,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.apache.hadoop.fs.Path;
+
 import es.udc.gac.mardre.InMapperCombiner;
 import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
@@ -37,20 +39,14 @@ public final class Configuration {
 	public static final String TEMP_OUTPUT_PATH_2 = "/MarDRe/tmp/output2";
 	public static final String OUTPUT_PATH_2 = Configuration.TEMP_OUTPUT_PATH_2+"/part";
 
-	public static final String IO_BUFFER_SIZE_PARAM = "MarDRe_ioBufferSize";
-	public static final String IN_MAPPER_COMBINER_PARAM = "MarDRe_inMapperCombiner";
-	public static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "MarDRe_inMapperCombinerCacheSize";
-	public static final String CLUSTER_LIST_INITIAL_CAPACITY_PARAM = "MarDRe_clusterListInitialCapacity";
-	public static final String PREFIXLENGTH_PARAM = "MarDRe_prefixLength";
-	public static final String MISMATCH_PARAM = "MarDRe_misMatch";
-	public static final String FILE_FORMAT_PARAM = "MarDRe_fileFormat";
-	public static final String INPUT_PATH_1_PARAM = "MarDRe_inputPath1";
-
+	// MarDRe configuration (mardre.conf)
 	public static String MARDRE_HOME;
+	private static String MARDRE_CONFIG_FILE = "mardre.conf";
+	private static Properties MARDRE_PROPERTIES;
 	public static boolean MERGE; 
 	public static boolean DELETE_TEMP;
 	public static boolean PAIRED_JOIN;
-	public static boolean COMPRESS_TEMP;
+	public static boolean PAIRED_COMPRESS_TEMP;
 	public static int IO_FILE_BUFFER_SIZE;
 	public static boolean IN_MAPPER_COMBINER;
 	public static int IN_MAPPER_COMBINER_CACHE_SIZE;
@@ -58,40 +54,49 @@ public final class Configuration {
 	public static short PREFIX_LENGTH;
 	public static short MISMATCH;
 	public static FileFormat FILE_FORMAT;
-	public static String INPUT_PATH1;
+	public static String INPUT_PATH_1;
 
-	private static String MARDRE_CONFIGURATION_FILE = "mardre.conf";
-	private static Properties properties = new Properties();
+	private static final String IO_FILE_BUFFER_SIZE_PARAM = "MarDRe_ioBufferSize";
+	private static final String IN_MAPPER_COMBINER_PARAM = "MarDRe_inMapperCombiner";
+	private static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "MarDRe_inMapperCombinerCacheSize";
+	private static final String CLUSTER_LIST_INITIAL_CAPACITY_PARAM = "MarDRe_clusterListInitialCapacity";
+	private static final String PREFIX_LENGTH_PARAM = "MarDRe_prefixLength";
+	private static final String MISMATCH_PARAM = "MarDRe_misMatch";
+	private static final String FILE_FORMAT_PARAM = "MarDRe_fileFormat";
+	private static final String INPUT_PATH_1_PARAM = "MarDRe_inputPath1";
 
-	private Configuration() {}
-
-	public static boolean loadConfiguration() throws FileNotFoundException {
-
+	static {
 		Map<String,String> map = System.getenv();
 		MARDRE_HOME = map.get("MARDRE_HOME");
 
 		if(MARDRE_HOME == null)
 			throw new RuntimeException("'MARDRE_HOME' must be set");
+	}
+
+	private Configuration() {}
+
+	public static boolean load(org.apache.hadoop.conf.Configuration jobConf, Options options, Path inputPath1, FileFormat format) throws FileNotFoundException {
 
 		String slash = System.getProperty("file.separator");
-		String configFileName = MARDRE_HOME+slash+"etc"+slash+MARDRE_CONFIGURATION_FILE;
+		String configFileName = MARDRE_HOME+slash+"etc"+slash+MARDRE_CONFIG_FILE;
+		MARDRE_PROPERTIES = new Properties();
 
 		try {
 			FileInputStream configFile = new FileInputStream(configFileName);
-			properties.load(configFile);
+			MARDRE_PROPERTIES.load(configFile);
 			configFile.close();
 		} catch (IOException e) {
 			throw new FileNotFoundException("File: "+configFileName);
 		}
 
-		MERGE = Boolean.parseBoolean(properties.getProperty("mergeOutput", "true"));
-		DELETE_TEMP = Boolean.parseBoolean(properties.getProperty("deleteTemp", "true"));
-		PAIRED_JOIN = Boolean.parseBoolean(properties.getProperty("pairedJoin", "false"));
-		COMPRESS_TEMP = Boolean.parseBoolean(properties.getProperty("compressTemp", "false"));
-		IO_FILE_BUFFER_SIZE = Integer.parseInt(properties.getProperty("ioBufferSize", "65536"));
-		IN_MAPPER_COMBINER = Boolean.parseBoolean(properties.getProperty("inMapperCombiner", "false"));
-		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(properties.getProperty("inMapperCombinerCacheSize", InMapperCombiner.CACHE_SIZE.toString()));
-		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(properties.getProperty("clusterInitialCapacity", "65536"));
+		MERGE = Boolean.parseBoolean(MARDRE_PROPERTIES.getProperty("MERGE_OUTPUT", "true"));
+		DELETE_TEMP = Boolean.parseBoolean(MARDRE_PROPERTIES.getProperty("DELETE_TEMP", "true"));
+		PAIRED_JOIN = Boolean.parseBoolean(MARDRE_PROPERTIES.getProperty("PAIRED_JOIN", "false"));
+		PAIRED_COMPRESS_TEMP = Boolean.parseBoolean(MARDRE_PROPERTIES.getProperty("PAIRED_COMPRESS_TEMP", "false"));
+		IO_FILE_BUFFER_SIZE = Integer.parseInt(MARDRE_PROPERTIES.getProperty("IO_FILE_BUFFER_SIZE", "65536"));
+		IN_MAPPER_COMBINER = Boolean.parseBoolean(MARDRE_PROPERTIES.getProperty("IN_MAPPER_COMBINER", "false"));
+		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(MARDRE_PROPERTIES.getProperty("IN_MAPPER_COMBINER_CACHE_SIZE", InMapperCombiner.CACHE_SIZE.toString()));
+		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(MARDRE_PROPERTIES.getProperty("CLUSTER_LIST_INITIAL_CAPACITY", "65536"));
 
 		if (MERGE == false)
 			DELETE_TEMP = false;
@@ -111,17 +116,31 @@ public final class Configuration {
 			return false;
 		}
 
+		jobConf.setInt(IO_FILE_BUFFER_SIZE_PARAM, IO_FILE_BUFFER_SIZE);
+		jobConf.setBoolean(IN_MAPPER_COMBINER_PARAM, IN_MAPPER_COMBINER);
+		jobConf.setInt(IN_MAPPER_COMBINER_CACHE_SIZE_PARAM, IN_MAPPER_COMBINER_CACHE_SIZE);
+		jobConf.setInt(CLUSTER_LIST_INITIAL_CAPACITY_PARAM, CLUSTER_LIST_INITIAL_CAPACITY);
+		jobConf.setInt(PREFIX_LENGTH_PARAM, options.getPrefixLength());
+		jobConf.setInt(MISMATCH_PARAM, options.getMisMatch());
+		jobConf.setInt(FILE_FORMAT_PARAM, format.ordinal());
+		jobConf.set(INPUT_PATH_1_PARAM, inputPath1.toString());
+
 		return true;
 	}
 
-	public static void setParameters(org.apache.hadoop.conf.Configuration jobConf) {
-		PREFIX_LENGTH = Short.parseShort(jobConf.get(Configuration.PREFIXLENGTH_PARAM));
-		MISMATCH = Short.parseShort(jobConf.get(Configuration.MISMATCH_PARAM));
-		FILE_FORMAT = FileFormat.values()[Integer.parseInt(jobConf.get(Configuration.FILE_FORMAT_PARAM))];
-		INPUT_PATH1 = jobConf.get(Configuration.INPUT_PATH_1_PARAM);
+	public static void set(org.apache.hadoop.conf.Configuration jobConf) {
+		IO_FILE_BUFFER_SIZE = Integer.parseInt(jobConf.get(Configuration.IO_FILE_BUFFER_SIZE_PARAM));
 		IN_MAPPER_COMBINER = Boolean.parseBoolean(jobConf.get(Configuration.IN_MAPPER_COMBINER_PARAM));
 		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(jobConf.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
 		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(jobConf.get(Configuration.CLUSTER_LIST_INITIAL_CAPACITY_PARAM));
+		PREFIX_LENGTH = Short.parseShort(jobConf.get(Configuration.PREFIX_LENGTH_PARAM));
+		MISMATCH = Short.parseShort(jobConf.get(Configuration.MISMATCH_PARAM));
+		FILE_FORMAT = FileFormat.values()[Integer.parseInt(jobConf.get(Configuration.FILE_FORMAT_PARAM))];
+		INPUT_PATH_1 = jobConf.get(Configuration.INPUT_PATH_1_PARAM);
+	}
+
+	public static int getIOFileBufferSize(org.apache.hadoop.conf.Configuration jobConf) {
+		return Integer.parseInt(jobConf.get(Configuration.IO_FILE_BUFFER_SIZE_PARAM));
 	}
 
 	public static final int fastABS(int value) {
