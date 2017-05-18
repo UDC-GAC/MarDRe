@@ -40,7 +40,7 @@ public final class Configuration {
 	public static final String TEMP_INPUT_PATH_2 = "/MarDRe/tmp/input2";
 	public static final String TEMP_OUTPUT_PATH_1 = "/MarDRe/tmp/output1";
 	public static final String TEMP_OUTPUT_PATH_2 = "/MarDRe/tmp/output2";
-	public static final String OUTPUT_PATH_2 = Configuration.TEMP_OUTPUT_PATH_2+"/part";
+	public static final String OUTPUT_PATH_2 = TEMP_OUTPUT_PATH_2+"/part";
 
 	public static boolean MERGE; 
 	public static boolean DELETE_TEMP;
@@ -129,18 +129,18 @@ public final class Configuration {
 	}
 
 	public static void set(org.apache.hadoop.conf.Configuration jobConf) {
-		IO_FILE_BUFFER_SIZE = Integer.parseInt(jobConf.get(Configuration.IO_FILE_BUFFER_SIZE_PARAM));
-		IN_MAPPER_COMBINER = Boolean.parseBoolean(jobConf.get(Configuration.IN_MAPPER_COMBINER_PARAM));
-		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(jobConf.get(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
-		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(jobConf.get(Configuration.CLUSTER_LIST_INITIAL_CAPACITY_PARAM));
-		PREFIX_LENGTH = Short.parseShort(jobConf.get(Configuration.PREFIX_LENGTH_PARAM));
-		MISMATCH = Short.parseShort(jobConf.get(Configuration.MISMATCH_PARAM));
-		FILE_FORMAT = FileFormat.values()[Integer.parseInt(jobConf.get(Configuration.FILE_FORMAT_PARAM))];
-		INPUT_PATH_1 = jobConf.get(Configuration.INPUT_PATH_1_PARAM);
+		IO_FILE_BUFFER_SIZE = Integer.parseInt(jobConf.get(IO_FILE_BUFFER_SIZE_PARAM));
+		IN_MAPPER_COMBINER = Boolean.parseBoolean(jobConf.get(IN_MAPPER_COMBINER_PARAM));
+		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(jobConf.get(IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
+		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(jobConf.get(CLUSTER_LIST_INITIAL_CAPACITY_PARAM));
+		PREFIX_LENGTH = Short.parseShort(jobConf.get(PREFIX_LENGTH_PARAM));
+		MISMATCH = Short.parseShort(jobConf.get(MISMATCH_PARAM));
+		FILE_FORMAT = FileFormat.values()[Integer.parseInt(jobConf.get(FILE_FORMAT_PARAM))];
+		INPUT_PATH_1 = jobConf.get(INPUT_PATH_1_PARAM);
 	}
 
 	public static int getIOFileBufferSize(org.apache.hadoop.conf.Configuration jobConf) {
-		return Integer.parseInt(jobConf.get(Configuration.IO_FILE_BUFFER_SIZE_PARAM));
+		return Integer.parseInt(jobConf.get(IO_FILE_BUFFER_SIZE_PARAM));
 	}
 
 	public static final int fastABS(int value) {
