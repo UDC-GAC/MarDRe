@@ -220,13 +220,13 @@ public class RunMarDRe extends Configured implements Tool {
 
 		timer.start(T_TOTAL);
 
-		System.out.println("MarDRe: starting from MARDRE_HOME = "+Configuration.MARDRE_HOME);
-
 		timer.start(T_INIT);
 
 		// Load MarDRe configuration
 		if (!Configuration.loadConfiguration())
 			return -1;
+
+		System.out.println("MarDRe: starting from MARDRE_HOME = "+Configuration.MARDRE_HOME);
 
 		// Get Hadoop configuration
 		org.apache.hadoop.conf.Configuration conf = this.getConf();
