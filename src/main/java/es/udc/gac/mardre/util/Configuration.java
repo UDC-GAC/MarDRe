@@ -89,14 +89,14 @@ public final class Configuration {
 			throw new FileNotFoundException("File: "+configFileName);
 		}
 
-		MERGE = Boolean.parseBoolean(MARDRE_PROPERTIES.getProperty("MERGE_OUTPUT", "true"));
-		DELETE_TEMP = Boolean.parseBoolean(MARDRE_PROPERTIES.getProperty("DELETE_TEMP", "true"));
-		PAIRED_JOIN = Boolean.parseBoolean(MARDRE_PROPERTIES.getProperty("PAIRED_JOIN", "false"));
-		PAIRED_COMPRESS_TEMP = Boolean.parseBoolean(MARDRE_PROPERTIES.getProperty("PAIRED_COMPRESS_TEMP", "false"));
-		IO_FILE_BUFFER_SIZE = Integer.parseInt(MARDRE_PROPERTIES.getProperty("IO_FILE_BUFFER_SIZE", "65536"));
-		IN_MAPPER_COMBINER = Boolean.parseBoolean(MARDRE_PROPERTIES.getProperty("IN_MAPPER_COMBINER", "false"));
-		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(MARDRE_PROPERTIES.getProperty("IN_MAPPER_COMBINER_CACHE_SIZE", InMapperCombiner.CACHE_SIZE.toString()));
-		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(MARDRE_PROPERTIES.getProperty("CLUSTER_LIST_INITIAL_CAPACITY", "65536"));
+		MERGE = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "MERGE_OUTPUT", "true"));
+		DELETE_TEMP = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "DELETE_TEMP", "true"));
+		PAIRED_JOIN = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "PAIRED_JOIN", "false"));
+		PAIRED_COMPRESS_TEMP = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "PAIRED_COMPRESS_TEMP", "false"));
+		IO_FILE_BUFFER_SIZE = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "IO_FILE_BUFFER_SIZE", "65536"));
+		IN_MAPPER_COMBINER = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "IN_MAPPER_COMBINER", "false"));
+		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "IN_MAPPER_COMBINER_CACHE_SIZE", InMapperCombiner.CACHE_SIZE.toString()));
+		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "CLUSTER_LIST_INITIAL_CAPACITY", "65536"));
 
 		if (MERGE == false)
 			DELETE_TEMP = false;
@@ -147,5 +147,14 @@ public final class Configuration {
 		// Very fast ABS value computation for integers
 		int mask = value >> 31;
 		return (value + mask) ^ mask;
+	}
+
+	private static String getProperty(Properties properties, String key, String defaultValue) {
+		String value = properties.getProperty(key, defaultValue);
+
+		if (value.isEmpty())
+			return defaultValue;
+
+		return value;
 	}
 }
