@@ -225,7 +225,6 @@ public class RunMarDRe extends Configured implements Tool {
 			Arrays.sort(contents);
 			for (int i = 0; i < contents.length; i++) {
 				if (contents[i].isFile()) {
-					System.out.println("MarDRe: "+contents[i].getPath().getName());
 					InputStream in = srcFS.open(contents[i].getPath());
 					try {
 						IOUtils.copyBytes(in, out, conf, false);
@@ -421,12 +420,17 @@ public class RunMarDRe extends Configured implements Tool {
 			return -1;
 		}
 
+		Path success = new Path(tmpOutputPath1+"/_SUCCESS");
+
+		if (fs.exists(success))
+			fs.delete(success, true);
+
 		if (Configuration.MERGE) {
 			if (fs.exists(outputPath1))
 				fs.delete(outputPath1, true);
 
 			// Merge output files
-			System.out.println("HSRA: merging output files...");
+			System.out.print("MarDRe: merging output files...");
 
 			timer.start(T_PRINT_SEQ);
 			RunMarDRe.merge(fs, tmpOutputPath1, fs, outputPath1, Configuration.DELETE_TEMP, conf);
@@ -438,12 +442,12 @@ public class RunMarDRe extends Configured implements Tool {
 				RunMarDRe.merge(fs, tmpOutputPath2, fs, outputPath2, Configuration.DELETE_TEMP, conf);
 			}
 			timer.stop(T_PRINT_SEQ);
+			System.out.println("done");
 		} else {
 			outputPath1 = tmpOutputPath1;
 			outputPath2 = tmpOutputPath2;
 		}
 
-		System.out.println("MarDRe: job completed successfully!");
 		System.out.println("MarDRe: output path = "+fs.getUri()+outputPath1);
 
 		// Cleanup
