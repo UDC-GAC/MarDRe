@@ -35,7 +35,7 @@ Quick User's Guide
   4.1) On Linux/Mac OS you can set them in your profile or your shell 
        configuration files (e.g., .bashrc). Follow the instructions below:
 
-      $ export MARDRE_HOME=/path/to/mardre/
+      $ export MARDRE_HOME=/path/to/mardre
       $ export PATH=$MARDRE_HOME/bin:$PATH
 
 - Execution:
