@@ -19,16 +19,22 @@
 package es.udc.gac.mardre;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Arrays;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FileUtil;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
+import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.SnappyCodec;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.MRJobConfig;
 import org.apache.hadoop.mapreduce.TaskCounter;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
@@ -145,7 +151,7 @@ public class RunMarDRe extends Configured implements Tool {
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		// Compress options
-		if (Configuration.PAIRED_COMPRESS_TEMP) {
+		if (Configuration.COMPRESS_INTERMEDIATE_OUTPUT) {
 			FileOutputFormat.setCompressOutput(job, true);
 			FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
 			SequenceFileOutputFormat.setOutputCompressionType(job, CompressionType.BLOCK);
@@ -185,7 +191,7 @@ public class RunMarDRe extends Configured implements Tool {
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		// Compress options
-		if (Configuration.PAIRED_COMPRESS_TEMP) {
+		if (Configuration.COMPRESS_INTERMEDIATE_OUTPUT) {
 			FileOutputFormat.setCompressOutput(job, true);
 			FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
 			SequenceFileOutputFormat.setOutputCompressionType(job, CompressionType.BLOCK);
@@ -205,6 +211,39 @@ public class RunMarDRe extends Configured implements Tool {
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(PairedSequence.class);
 		return job;
+	}
+
+	private static boolean merge(FileSystem srcFS, Path srcDir, FileSystem dstFS, Path dstFile, boolean deleteSource, org.apache.hadoop.conf.Configuration conf) throws IOException {
+
+		if (!srcFS.getFileStatus(srcDir).isDirectory())
+			return false;
+
+		OutputStream out = dstFS.create(dstFile);
+
+		try {
+			FileStatus contents[] = srcFS.listStatus(srcDir);
+			Arrays.sort(contents);
+			for (int i = 0; i < contents.length; i++) {
+				if (contents[i].isFile()) {
+					System.out.println("MarDRe: "+contents[i].getPath().getName());
+					InputStream in = srcFS.open(contents[i].getPath());
+					try {
+						IOUtils.copyBytes(in, out, conf, false);
+					} finally {
+						in.close();
+					} 
+				}
+			}
+		} finally {
+			out.close();
+		}
+
+
+		if (deleteSource) {
+			return srcFS.delete(srcDir, true);
+		} else {
+			return true;
+		}
 	}
 
 	@Override
@@ -268,8 +307,25 @@ public class RunMarDRe extends Configured implements Tool {
 		System.out.println("MarDRe: in-Mapper combiner cache = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE+" entries");
 		System.out.println("MarDRe: cluster initial capacity = "+Configuration.CLUSTER_LIST_INITIAL_CAPACITY+" entries");
 
+		if (Configuration.COMPRESS_MAP_OUTPUT || Configuration.COMPRESS_INTERMEDIATE_OUTPUT) {
+			try {
+				SnappyCodec.checkNativeCodeLoaded();
+			} catch (Exception e) {
+				System.out.println("MarDRe-Warning: "+e.getMessage());
+				Configuration.COMPRESS_MAP_OUTPUT = false;
+			}
+			conf.setBoolean(MRJobConfig.MAP_OUTPUT_COMPRESS, Configuration.COMPRESS_MAP_OUTPUT);
+			conf.setClass(MRJobConfig.MAP_OUTPUT_COMPRESS_CODEC, SnappyCodec.class, CompressionCodec.class);
+		}
+
+		if (Configuration.COMPRESS_MAP_OUTPUT)
+			System.out.println("MarDRe: using map output Snappy compression");
+
 		if (options.isPaired()) {
-			System.out.println("MarDRe: using paired-end mode");
+			System.out.println("MarDRe: running in paired-end mode");
+
+			if (Configuration.COMPRESS_INTERMEDIATE_OUTPUT)
+				System.out.println("MarDRe: using intermediate output Snappy compression");
 
 			// Paired-end mode reads (and writes) a second file
 			inputPath2 = fs.resolvePath(new Path(options.getReadFileName2()));
@@ -292,9 +348,6 @@ public class RunMarDRe extends Configured implements Tool {
 				fs.delete(tmpInputPath2, true);
 			if (fs.exists(tmpOutputPath2))
 				fs.delete(tmpOutputPath2, true);
-
-			if (Configuration.PAIRED_COMPRESS_TEMP)
-				System.out.println("MarDRe: using Snappy compression");
 
 			// Configure job to remove duplicate reads
 			jobRemoveDuplicate = RunMarDRe.configurePairedEndJob(conf);
@@ -345,7 +398,7 @@ public class RunMarDRe extends Configured implements Tool {
 			}
 		} else {
 			// Single-end mode reads (and writes) one file
-			System.out.println("MarDRe: using single-end mode");
+			System.out.println("MarDRe: running in single-end mode");
 			System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1Length+" bytes)");
 
 			// Configure job
@@ -373,18 +426,18 @@ public class RunMarDRe extends Configured implements Tool {
 				fs.delete(outputPath1, true);
 
 			// Merge output files
-			System.out.print("MarDRe: merging output files...");
+			System.out.println("HSRA: merging output files...");
+
 			timer.start(T_PRINT_SEQ);
-			FileUtil.copyMerge(fs, tmpOutputPath1, fs, outputPath1, Configuration.DELETE_TEMP, conf, null);
+			RunMarDRe.merge(fs, tmpOutputPath1, fs, outputPath1, Configuration.DELETE_TEMP, conf);
 
 			if (options.isPaired()) {
 				if (fs.exists(outputPath2))
 					fs.delete(outputPath2, true);
 
-				FileUtil.copyMerge(fs, tmpOutputPath2, fs, outputPath2, Configuration.DELETE_TEMP, conf, null);
+				RunMarDRe.merge(fs, tmpOutputPath2, fs, outputPath2, Configuration.DELETE_TEMP, conf);
 			}
 			timer.stop(T_PRINT_SEQ);
-			System.out.println("done");
 		} else {
 			outputPath1 = tmpOutputPath1;
 			outputPath2 = tmpOutputPath2;

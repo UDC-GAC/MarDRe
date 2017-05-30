@@ -45,7 +45,8 @@ public final class Configuration {
 	public static boolean MERGE; 
 	public static boolean DELETE_TEMP;
 	public static boolean PAIRED_JOIN;
-	public static boolean PAIRED_COMPRESS_TEMP;
+	public static boolean COMPRESS_MAP_OUTPUT;
+	public static boolean COMPRESS_INTERMEDIATE_OUTPUT;
 	public static int IO_FILE_BUFFER_SIZE;
 	public static boolean IN_MAPPER_COMBINER;
 	public static int IN_MAPPER_COMBINER_CACHE_SIZE;
@@ -92,7 +93,8 @@ public final class Configuration {
 		MERGE = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "MERGE_OUTPUT", "true"));
 		DELETE_TEMP = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "DELETE_TEMP", "true"));
 		PAIRED_JOIN = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "PAIRED_JOIN", "false"));
-		PAIRED_COMPRESS_TEMP = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "PAIRED_COMPRESS_TEMP", "false"));
+		COMPRESS_MAP_OUTPUT = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "COMPRESS_MAP_OUTPUT", "false"));
+		COMPRESS_INTERMEDIATE_OUTPUT = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "COMPRESS_INTERMEDIATE_OUTPUT", "false"));
 		IO_FILE_BUFFER_SIZE = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "IO_FILE_BUFFER_SIZE", "65536"));
 		IN_MAPPER_COMBINER = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "IN_MAPPER_COMBINER", "false"));
 		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "IN_MAPPER_COMBINER_CACHE_SIZE", InMapperCombiner.CACHE_SIZE.toString()));
