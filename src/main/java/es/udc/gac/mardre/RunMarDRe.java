@@ -280,19 +280,17 @@ public class RunMarDRe extends Configured implements Tool {
 		if (!options.parse(args))
 			return -1;
 
-		// Get input files
+		// Get input files and check if they are compressed
 		FileSystem fs = FileSystem.get(conf);
 		inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
 		inputPath1Length = fs.getFileStatus(inputPath1).getLen();
+		RunMarDRe.isInputCompressed(conf, inputPath1);
 
 		if (options.isPaired()) {
 			inputPath2 = fs.resolvePath(new Path(options.getReadFileName2()));
 			inputPath2Length = fs.getFileStatus(inputPath1).getLen();
+			RunMarDRe.isInputCompressed(conf, inputPath2);		
 		}
-
-		// Check if input files are compressed
-		RunMarDRe.isInputCompressed(conf, inputPath1);
-		RunMarDRe.isInputCompressed(conf, inputPath2);
 
 		// Determine the file format
 		FileFormat format = options.getInputFileFormat();
