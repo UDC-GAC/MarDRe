@@ -44,7 +44,7 @@ public class SequenceParserFactory {
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
 	}
 
-	public static FileFormat detectFileFormat(FileSystem fs, Path file, short prefixLength) throws IOException {
+	public static FileFormat autoDetectFileFormat(FileSystem fs, Path file, short prefixLength) throws IOException {
 
 		BufferedReader reader = null;
 		FileFormat format = FileFormat.FILE_FORMAT_UNKNOWN;
@@ -64,15 +64,13 @@ public class SequenceParserFactory {
 		}
 
 		if (str == null) {
-			System.out.println("MarDRe: Unrecognized file format");
+			throw new IOException("Unrecognized file format");
 		} else if (str.charAt(0) == '@') {
-			System.out.println("MarDRe: FASTQ format identified");
 			format = FileFormat.FILE_FORMAT_FASTQ;
 		} else if (str.charAt(0) == '>') {
-			System.out.println("MarDRe: FASTA format identified");
 			format = FileFormat.FILE_FORMAT_FASTA;        	
 		} else {
-			System.out.println("MarDRe: Unrecognized file format");
+			throw new IOException("Unrecognized file format");
 		}
 
 		// Read second line

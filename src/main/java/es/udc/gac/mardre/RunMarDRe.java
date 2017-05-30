@@ -32,6 +32,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.SnappyCodec;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.MRJobConfig;
@@ -245,6 +246,15 @@ public class RunMarDRe extends Configured implements Tool {
 		}
 	}
 
+	private static void isInputCompressed(org.apache.hadoop.conf.Configuration conf, Path inputPath) {
+		CompressionCodec codec = new CompressionCodecFactory(conf).getCodec(inputPath);
+
+		if (codec == null)
+			return;
+
+		throw new UnsupportedOperationException("Input file ("+inputPath+") is compressed using "+codec.getClass().getSimpleName());
+	}
+
 	@Override
 	public int run(String[] args) throws Exception {
 
@@ -270,28 +280,45 @@ public class RunMarDRe extends Configured implements Tool {
 		if (!options.parse(args))
 			return -1;
 
-		// FOA, detect the file format
+		// Get input files
 		FileSystem fs = FileSystem.get(conf);
 		inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
 		inputPath1Length = fs.getFileStatus(inputPath1).getLen();
-		System.out.println("MarDRe: detecting input file format from "+inputPath1);
-		FileFormat format = SequenceParserFactory.detectFileFormat(fs, inputPath1, options.getPrefixLength());
+
+		if (options.isPaired()) {
+			inputPath2 = fs.resolvePath(new Path(options.getReadFileName2()));
+			inputPath2Length = fs.getFileStatus(inputPath1).getLen();
+		}
+
+		// Check if input files are compressed
+		RunMarDRe.isInputCompressed(conf, inputPath1);
+		RunMarDRe.isInputCompressed(conf, inputPath2);
+
+		// Determine the file format
+		FileFormat format = options.getInputFileFormat();
+
+		if (format == FileFormat.FILE_FORMAT_UNKNOWN) {
+			// Try to autodetect the file format
+			System.out.println("MarDRe: detecting input file format from "+inputPath1);
+			format = SequenceParserFactory.autoDetectFileFormat(fs, inputPath1, options.getPrefixLength());
+		}
 
 		// Set input format class
 		Class<? extends TextInputFormat> inputFormatClass = null;
 
 		if (format == FileFormat.FILE_FORMAT_FASTQ) {
+			System.out.println("MarDRe: FASTQ format");
 			inputFormatClass = FastQInputFormat.class;
 		} else if (format == FileFormat.FILE_FORMAT_FASTA) {
+			System.out.println("MarDRe: FASTA format");
 			inputFormatClass = FastAInputFormat.class;
-		} else {
-			return -1;			
 		}
 
 		// Load MarDRe configuration
 		if (!Configuration.load(conf, options, inputPath1, format))
 			return -1;
 
+		// Get output files
 		outputPath1 = new Path(options.getWriteFileName1());
 		tmpOutputPath1 = new Path(Configuration.TEMP_OUTPUT_PATH_1);
 
@@ -326,9 +353,7 @@ public class RunMarDRe extends Configured implements Tool {
 			if (Configuration.COMPRESS_INTERMEDIATE_OUTPUT)
 				System.out.println("MarDRe: using intermediate output Snappy compression");
 
-			// Paired-end mode reads (and writes) a second file
-			inputPath2 = fs.resolvePath(new Path(options.getReadFileName2()));
-			inputPath2Length = fs.getFileStatus(inputPath2).getLen();
+			// Paired-end mode writes a second output file
 			outputPath2 = new Path(options.getWriteFileName2());
 			tmpOutputPath2 = new Path(Configuration.TEMP_OUTPUT_PATH_2);
 			tmpInputPath1 = new Path(Configuration.TEMP_INPUT_PATH_1);
@@ -396,7 +421,7 @@ public class RunMarDRe extends Configured implements Tool {
 				timer.stop(T_PREPARE_PSEQ);
 			}
 		} else {
-			// Single-end mode reads (and writes) one file
+			// Single-end mode reads and writes a single file
 			System.out.println("MarDRe: running in single-end mode");
 			System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1Length+" bytes)");
 

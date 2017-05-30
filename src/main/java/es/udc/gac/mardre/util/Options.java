@@ -19,6 +19,7 @@
 package es.udc.gac.mardre.util;
 
 import es.udc.gac.mardre.RunMarDRe;
+import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class Options {
 
@@ -26,6 +27,7 @@ public class Options {
 	private String _readFileName2;
 	private String _writeFileName1;
 	private String _writeFileName2;
+	private FileFormat _inputFormat;
 	private boolean _paired;
 	private short _misMatch;
 	private short _prefixLength;
@@ -35,6 +37,7 @@ public class Options {
 		_readFileName2 = null;
 		_writeFileName1 = null;
 		_writeFileName2 = null;
+		_inputFormat = FileFormat.FILE_FORMAT_UNKNOWN;
 		_paired = false;
 		_misMatch = 0;
 		_prefixLength = 20;
@@ -54,6 +57,10 @@ public class Options {
 
 	public String getWriteFileName2() {
 		return _writeFileName2;
+	}
+
+	public FileFormat getInputFileFormat() {
+		return _inputFormat;
 	}
 
 	public boolean isPaired() {
@@ -81,7 +88,11 @@ public class Options {
 		System.out.println(
 				"    -o <string> outputFile1 (output file in FASTQ/FASTA format, default = inputFile1.NonDup)");
 		System.out.println(
-				"    -r <string> outputFile2 (output file in FASTQ/FASTA format for paired-end scenarios, default = inputFile2.NonDup)");		
+				"    -r <string> outputFile2 (output file in FASTQ/FASTA format for paired-end scenarios, default = inputFile2.NonDup)");
+		System.out.println(
+				"    -q (Input sequence files in FASTQ format, default: autodetect)");
+		System.out.println(
+				"    -f (Input sequence files in FASTA format, default: autodetect)");
 		System.out.println("Computation:");
 		System.out.print(
 				"    -m <short> (number of allowed mismatches, default ");
@@ -146,6 +157,12 @@ public class Options {
 					System.err.println("No value specified for parameter -r");
 					return false;
 				}
+			} else if (args[argInd].equals("-q")) {
+				argInd++;
+				_inputFormat = FileFormat.FILE_FORMAT_FASTQ;
+			} else if (args[argInd].equals("-f")) {
+				argInd++;
+				_inputFormat = FileFormat.FILE_FORMAT_FASTA;
 			} else if (args[argInd].equals("-m")) {
 				// Number of mismatches
 				argInd++;
