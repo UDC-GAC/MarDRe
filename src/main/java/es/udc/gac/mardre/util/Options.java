@@ -90,9 +90,9 @@ public class Options {
 		System.out.println(
 				"    -r <string> outputFile2 (output file in FASTQ/FASTA format for paired-end scenarios, default = inputFile2.NonDup)");
 		System.out.println(
-				"    -q (Input sequence files in FASTQ format, default: autodetect)");
+				"    -q (Input sequence files are in FASTQ format, default: autodetect)");
 		System.out.println(
-				"    -f (Input sequence files in FASTA format, default: autodetect)");
+				"    -f (Input sequence files are in FASTA format, default: autodetect)");
 		System.out.println("Computation:");
 		System.out.print(
 				"    -m <short> (number of allowed mismatches, default ");

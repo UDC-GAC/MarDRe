@@ -305,10 +305,10 @@ public class RunMarDRe extends Configured implements Tool {
 		Class<? extends TextInputFormat> inputFormatClass = null;
 
 		if (format == FileFormat.FILE_FORMAT_FASTQ) {
-			System.out.println("MarDRe: FASTQ format");
+			System.out.println("MarDRe: FASTQ format identified");
 			inputFormatClass = FastQInputFormat.class;
 		} else if (format == FileFormat.FILE_FORMAT_FASTA) {
-			System.out.println("MarDRe: FASTA format");
+			System.out.println("MarDRe: FASTA format identified");
 			inputFormatClass = FastAInputFormat.class;
 		}
 
