@@ -35,7 +35,7 @@ import es.udc.gac.mardre.util.LineReader;
 
 public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 
-	private static final int linesToProcess = 4;
+	private static final int NUMBER_OF_LINES_PER_FASTQ_READ = 4;
 
 	private LineReader in;
 	private LongWritable key;
@@ -103,7 +103,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 		if (this.pos >= this.end)
 			return false;
 
-		while(i < linesToProcess) {
+		while(i < NUMBER_OF_LINES_PER_FASTQ_READ) {
 			firstRead = in.readLine(newLine);
 			this.pos += firstRead;
 			i++;
@@ -111,7 +111,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 			if (firstRead == 0) //EOF
 				return false;
 
-			if (found && i == linesToProcess) {
+			if (found && i == NUMBER_OF_LINES_PER_FASTQ_READ) {
 				//System.out.println("nextKeyValue: last line and starting '@' has been previously found");
 				value.append(newLine.getBytes(), 0, newLine.getLength());
 				break;
@@ -144,7 +144,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 				continue;
 			}
 
-			if (i == linesToProcess) {
+			if (i == NUMBER_OF_LINES_PER_FASTQ_READ) {
 				//System.out.println("nextKeyValue: last line and no starting '@' has been found (discard previous data)");
 				i = 0;
 				continue;
