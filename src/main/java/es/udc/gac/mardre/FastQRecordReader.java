@@ -76,19 +76,19 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 	@Override
 	public void initialize(InputSplit genericSplit, TaskAttemptContext context) throws IOException {
 		FileSplit split = (FileSplit) genericSplit;
-		final Path file = split.getPath();
+		Path file = split.getPath();
 		org.apache.hadoop.conf.Configuration conf = context.getConfiguration();
 		FileSystem fs = file.getFileSystem(conf);
-		this.key = new LongWritable();
-		this.value = new Text();
-		this.newLine = new Text();
-		this.temp = new Text();
-		this.start = split.getStart();
-		this.pos = this.start;
-		this.end = start + split.getLength();
+		key = new LongWritable();
+		value = new Text();
+		newLine = new Text();
+		temp = new Text();
+		start = split.getStart();
+		pos = start;
+		end = start + split.getLength();
 		FSDataInputStream fileIn = fs.open(file);
 		fileIn.seek(start);
-		this.in = new LineReader(fileIn, Configuration.getIOFileBufferSize(conf));
+		in = new LineReader(fileIn, Configuration.getIOFileBufferSize(conf));
 	}
 
 	@Override
@@ -100,12 +100,12 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 
 		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
 
-		if (this.pos >= this.end)
+		if (pos >= end)
 			return false;
 
 		while(i < NUMBER_OF_LINES_PER_FASTQ_READ) {
 			firstRead = in.readLine(newLine);
-			this.pos += firstRead;
+			pos += firstRead;
 			i++;
 
 			if (firstRead == 0) //EOF
@@ -120,10 +120,10 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 			if (newLine.charAt(0) == '@') {
 				//System.out.println("nextKeyValue: starting '@' has been found at line "+i);
 				found = true;
-				key.set(this.pos-firstRead);
+				key.set(pos-firstRead);
 
 				secondRead = in.readLine(temp);
-				this.pos += secondRead;
+				pos += secondRead;
 
 				if (secondRead == 0) //EOF
 					return false;
@@ -136,7 +136,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 					value.append(temp.getBytes(), 0, temp.getLength());
 				} else {
 					i = 1;
-					key.set(this.pos-secondRead);
+					key.set(pos - secondRead);
 					//Trim spaces in sequence name
 					LineReader.trim(temp, ' ', 1);
 					value.append(temp.getBytes(), 0, temp.getLength());

@@ -73,18 +73,18 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 	@Override
 	public void initialize(InputSplit genericSplit, TaskAttemptContext context) throws IOException {
 		FileSplit split = (FileSplit) genericSplit;
-		final Path file = split.getPath();
+		Path file = split.getPath();
 		org.apache.hadoop.conf.Configuration conf = context.getConfiguration();
 		FileSystem fs = file.getFileSystem(conf);
-		this.key = new LongWritable();
-		this.value = new Text();
-		this.newLine = new Text();
-		this.start = split.getStart();
-		this.pos = this.start;
-		this.end = start + split.getLength();
+		key = new LongWritable();
+		value = new Text();
+		newLine = new Text();
+		start = split.getStart();
+		pos = start;
+		end = start + split.getLength();
 		FSDataInputStream fileIn = fs.open(file);
 		fileIn.seek(start);
-		this.in = new LineReader(fileIn, Configuration.getIOFileBufferSize(conf));
+		in = new LineReader(fileIn, Configuration.getIOFileBufferSize(conf));
 	}
 
 	@Override
@@ -95,12 +95,12 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 
 		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
 
-		if (this.pos >= this.end)
+		if (pos >= end)
 			return false;
 
 		while(true) {
 			read = in.readLine(newLine);
-			this.pos += read;
+			pos += read;
 
 			//System.out.println("nextKeyValue: read "+read+", start "+start+", pos "+pos+", end "+end);
 
@@ -115,11 +115,11 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 				//System.out.println("nextKeyValue: starting '>' has been found");
 
 				if (found) {
-					in.seek(in.getPos()-read);
-					this.pos -= read;
+					in.seek(in.getPos() - read);
+					pos -= read;
 					break;
 				} else {
-					key.set(this.pos-read);
+					key.set(pos - read);
 					//Trim spaces in sequence name
 					LineReader.trim(newLine, ' ', 1);
 					found = true;
