@@ -41,7 +41,7 @@ public class FastARecordReader extends SequenceRecordReader {
 
 		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end+"(getFilePos "+getFilePosition());
 
-		if (pos >= end)
+		if (getFilePosition() >= end)
 			return false;
 
 		while(true) {

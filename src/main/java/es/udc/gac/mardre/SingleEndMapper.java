@@ -121,7 +121,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 
 	@Override
 	public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-
+System.out.println(value);
 		String str = Text.decode(value.getBytes(), 0, value.getLength(), false);
 		parser.getSeq(str, seq);
 		longKey.set(seq.getKey());
