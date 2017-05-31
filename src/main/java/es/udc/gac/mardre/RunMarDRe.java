@@ -34,6 +34,7 @@ import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.SnappyCodec;
+import org.apache.hadoop.io.compress.SplittableCompressionCodec;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.MRJobConfig;
 import org.apache.hadoop.mapreduce.TaskCounter;
@@ -246,13 +247,17 @@ public class RunMarDRe extends Configured implements Tool {
 		}
 	}
 
-	private static void isInputCompressed(org.apache.hadoop.conf.Configuration conf, Path inputPath) {
+	private static boolean isInputCompressed(org.apache.hadoop.conf.Configuration conf, Path inputPath) {
 		CompressionCodec codec = new CompressionCodecFactory(conf).getCodec(inputPath);
 
 		if (codec == null)
-			return;
+			return false;
 
-		throw new UnsupportedOperationException("Input file ("+inputPath+") is compressed using "+codec.getClass().getSimpleName());
+		if (codec instanceof SplittableCompressionCodec)
+			return true;
+
+		throw new UnsupportedOperationException("Input file ("+inputPath+") is compressed using a "
+				+ "non-splittable codec ("+codec.getClass().getSimpleName()+")");
 	}
 
 	@Override
@@ -264,6 +269,8 @@ public class RunMarDRe extends Configured implements Tool {
 		Path outputPath1 = null, outputPath2 = null;
 		Path tmpOutputPath1 = null, tmpOutputPath2 = null;
 		long inputPath1Length = 0, inputPath2Length = 0;
+		int inputPath1LengthMB = 0, inputPath2LengthMB = 0;
+		boolean isInputPath1Compressed;
 		boolean status = true;
 
 		timer.start(T_TOTAL);
@@ -284,11 +291,13 @@ public class RunMarDRe extends Configured implements Tool {
 		FileSystem fs = FileSystem.get(conf);
 		inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
 		inputPath1Length = fs.getFileStatus(inputPath1).getLen();
-		RunMarDRe.isInputCompressed(conf, inputPath1);
+		inputPath1LengthMB = (int) inputPath1Length / (1024 * 1024);
+		isInputPath1Compressed = RunMarDRe.isInputCompressed(conf, inputPath1);
 
 		if (options.isPaired()) {
 			inputPath2 = fs.resolvePath(new Path(options.getReadFileName2()));
 			inputPath2Length = fs.getFileStatus(inputPath1).getLen();
+			inputPath2LengthMB = (int) inputPath2Length / (1024 * 1024);
 			RunMarDRe.isInputCompressed(conf, inputPath2);		
 		}
 
@@ -298,6 +307,10 @@ public class RunMarDRe extends Configured implements Tool {
 		if (format == FileFormat.FILE_FORMAT_UNKNOWN) {
 			// Try to autodetect the file format
 			System.out.println("MarDRe: detecting input file format from "+inputPath1);
+
+			if (isInputPath1Compressed)
+				throw new IOException("Input file "+inputPath1.getName()+" is compressed. You must specify its format using -q (FASTQ) or -f (FASTA) command-line options.");
+
 			format = SequenceParserFactory.autoDetectFileFormat(fs, inputPath1, options.getPrefixLength());
 		}
 
@@ -356,8 +369,16 @@ public class RunMarDRe extends Configured implements Tool {
 			tmpOutputPath2 = new Path(Configuration.TEMP_OUTPUT_PATH_2);
 			tmpInputPath1 = new Path(Configuration.TEMP_INPUT_PATH_1);
 			tmpInputPath2 = new Path(Configuration.TEMP_INPUT_PATH_2);
-			System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1Length+" bytes)");
-			System.out.println("MarDRe: input path = "+inputPath2+" ("+inputPath2Length+" bytes)");
+
+			if (inputPath1LengthMB > 0)
+				System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1LengthMB+" MiBytes)");
+			else
+				System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1Length+" bytes)");
+
+			if (inputPath2LengthMB > 0)
+				System.out.println("MarDRe: input path = "+inputPath2+" ("+inputPath2LengthMB+" MiBytes)");
+			else
+				System.out.println("MarDRe: input path = "+inputPath2+" ("+inputPath2Length+" bytes)");
 
 			if (inputPath1Length != inputPath2Length) {
 				System.err.println("MarDRe: input files must be the same size in paired-end mode");
@@ -421,7 +442,11 @@ public class RunMarDRe extends Configured implements Tool {
 		} else {
 			// Single-end mode reads and writes a single file
 			System.out.println("MarDRe: running in single-end mode");
-			System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1Length+" bytes)");
+
+			if (inputPath1LengthMB > 0)
+				System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1LengthMB+" MiBytes)");
+			else
+				System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1Length+" bytes)");
 
 			// Configure job
 			jobRemoveDuplicate = RunMarDRe.configureSingleEndJob(conf, inputFormatClass);

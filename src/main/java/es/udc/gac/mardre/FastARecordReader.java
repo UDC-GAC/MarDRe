@@ -20,71 +20,17 @@ package es.udc.gac.mardre;
 
 import java.io.IOException;
 
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.RecordReader;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
-import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.LineReader;
 
-public class FastARecordReader extends RecordReader<LongWritable, Text> {
+public class FastARecordReader extends SequenceRecordReader {
 
-	private LineReader in;
-	private LongWritable key;
-	private Text value;
 	private Text newLine;
-	private long start = 0;
-	private long end = 0;
-	private long pos = 0;
 
-	@Override
-	public synchronized void close() throws IOException {
-		if (in != null) {
-			in.close();
-		}
-	}
-
-	@Override
-	public LongWritable getCurrentKey() {
-		return key;
-	}
-
-	@Override
-	public Text getCurrentValue() {
-		return value;
-	}
-
-	@Override
-	public float getProgress() throws IOException, InterruptedException {
-		if (start == end) {
-			return 0.0f;
-		}
-		else {
-			return Math.min(1.0f, (pos - start) / (float)(end - start));
-		}
-	}
-
-	@Override
-	public void initialize(InputSplit genericSplit, TaskAttemptContext context) throws IOException {
-		FileSplit split = (FileSplit) genericSplit;
-		Path file = split.getPath();
-		org.apache.hadoop.conf.Configuration conf = context.getConfiguration();
-		FileSystem fs = file.getFileSystem(conf);
-		key = new LongWritable();
-		value = new Text();
+	public FastARecordReader() {
+		super();
 		newLine = new Text();
-		start = split.getStart();
-		pos = start;
-		end = start + split.getLength();
-		FSDataInputStream fileIn = fs.open(file);
-		fileIn.seek(start);
-		in = new LineReader(fileIn, Configuration.getIOFileBufferSize(conf));
 	}
 
 	@Override
@@ -93,7 +39,7 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 		boolean found = false;
 		value.clear();
 
-		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
+		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end+"(getFilePos "+getFilePosition());
 
 		if (pos >= end)
 			return false;
@@ -130,7 +76,7 @@ public class FastARecordReader extends RecordReader<LongWritable, Text> {
 				value.append(newLine.getBytes(), 0, newLine.getLength());
 		}
 
-		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
+		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end+"(getFilePos "+getFilePosition());
 
 		return true;
 	}

@@ -29,6 +29,6 @@ public class FastQInputFormat extends TextInputFormat {
 
 	@Override
 	public RecordReader<LongWritable, Text> createRecordReader(InputSplit inputSplit, TaskAttemptContext context) {
-		return new FastQRecordReader();
+		return new FastQRecordReader(true);
 	}
 }

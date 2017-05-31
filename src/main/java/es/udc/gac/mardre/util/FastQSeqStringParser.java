@@ -52,7 +52,7 @@ public class FastQSeqStringParser extends SeqStringParser {
 
 		// For base-space reads
 		if (strQuals.length() != bases.length())
-			throw new IllegalArgumentException("The number of bases is not equal to the number of quality scores");
+			throw new IllegalArgumentException("The number of bases ("+bases.length()+") is not equal to the number of quality scores ("+strQuals.length()+")");
 
 		seq.setKey(bases, this.getPrefixLength());
 		seq.setSuffix(bases, this.getPrefixLength());

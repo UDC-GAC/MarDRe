@@ -20,75 +20,23 @@ package es.udc.gac.mardre;
 
 import java.io.IOException;
 
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.RecordReader;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
-import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.LineReader;
 
-public class FastQRecordReader extends RecordReader<LongWritable, Text> {
+public class FastQRecordReader extends SequenceRecordReader {
 
 	private static final int NUMBER_OF_LINES_PER_FASTQ_READ = 4;
 
-	private LineReader in;
-	private LongWritable key;
-	private Text value;
 	private Text newLine;
 	private Text temp;
-	private long start = 0;
-	private long end = 0;
-	private long pos = 0;
+	private boolean skipCommentLine;
 
-	@Override
-	public synchronized void close() throws IOException {
-		if (in != null) {
-			in.close();
-		}
-	}
-
-	@Override
-	public LongWritable getCurrentKey() {
-		return key;
-	}
-
-	@Override
-	public Text getCurrentValue() {
-		return value;
-	}
-
-	@Override
-	public float getProgress() throws IOException, InterruptedException {
-		if (start == end) {
-			return 0.0f;
-		}
-		else {
-			return Math.min(1.0f, (pos - start) / (float)(end - start));
-		}
-	}
-
-	@Override
-	public void initialize(InputSplit genericSplit, TaskAttemptContext context) throws IOException {
-		FileSplit split = (FileSplit) genericSplit;
-		Path file = split.getPath();
-		org.apache.hadoop.conf.Configuration conf = context.getConfiguration();
-		FileSystem fs = file.getFileSystem(conf);
-		key = new LongWritable();
-		value = new Text();
+	public FastQRecordReader(boolean skipCommentLine) {
+		super();
 		newLine = new Text();
 		temp = new Text();
-		start = split.getStart();
-		pos = start;
-		end = start + split.getLength();
-		FSDataInputStream fileIn = fs.open(file);
-		fileIn.seek(start);
-		in = new LineReader(fileIn, Configuration.getIOFileBufferSize(conf));
+		this.skipCommentLine = skipCommentLine;
 	}
 
 	@Override
@@ -98,9 +46,9 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 		boolean found = false;
 		value.clear();
 
-		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
+		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end+" (getFilePos "+getFilePosition()+")");
 
-		if (pos >= end)
+		if (getFilePosition() >= end)
 			return false;
 
 		while(i < NUMBER_OF_LINES_PER_FASTQ_READ) {
@@ -120,7 +68,7 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 			if (newLine.charAt(0) == '@') {
 				//System.out.println("nextKeyValue: starting '@' has been found at line "+i);
 				found = true;
-				key.set(pos-firstRead);
+				key.set(pos - firstRead);
 
 				secondRead = in.readLine(temp);
 				pos += secondRead;
@@ -132,29 +80,29 @@ public class FastQRecordReader extends RecordReader<LongWritable, Text> {
 					i = 2;
 					//Trim spaces in sequence name
 					LineReader.trim(newLine, ' ', 1);
-					value.append(newLine.getBytes(), 0, newLine.getLength());
-					value.append(temp.getBytes(), 0, temp.getLength());
+					newLine.append(temp.getBytes(), 0, temp.getLength());
 				} else {
 					i = 1;
 					key.set(pos - secondRead);
 					//Trim spaces in sequence name
 					LineReader.trim(temp, ' ', 1);
 					value.append(temp.getBytes(), 0, temp.getLength());
+					continue;
 				}
-				continue;
 			}
 
-			if (i == NUMBER_OF_LINES_PER_FASTQ_READ) {
+			if (found) {
+				if (skipCommentLine && i > 2)
+					continue;
+
+				value.append(newLine.getBytes(), 0, newLine.getLength());
+			} else if (i == NUMBER_OF_LINES_PER_FASTQ_READ) {
 				//System.out.println("nextKeyValue: last line and no starting '@' has been found (discard previous data)");
 				i = 0;
-				continue;
 			}
-
-			if (found && i < 3)
-				value.append(newLine.getBytes(), 0, newLine.getLength());
 		}
 
-		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end);
+		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end+" (getFilePos "+getFilePosition()+")");
 
 		return true;
 	}
