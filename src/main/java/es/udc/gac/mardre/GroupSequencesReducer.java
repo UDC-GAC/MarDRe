@@ -79,12 +79,13 @@ public class GroupSequencesReducer extends Reducer<LongWritable, Sequence, LongW
 
 		for (Sequence seq : values) {
 			Sequence newSeq = new Sequence(seq);
-			i++;
 
 			if (seq.isFirstSeq()) {
 				pairedSeq.setFirstSeq(newSeq);
+				i++;
 			} else {
 				pairedSeq.setSecondSeq(newSeq);
+				i++;
 			}
 		}
 

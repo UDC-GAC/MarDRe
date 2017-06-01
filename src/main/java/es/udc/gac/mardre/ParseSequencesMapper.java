@@ -41,7 +41,6 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 	private static SeqStringParser parser;
 	private static boolean isFirstInputPath = true;
 	private static long numInputSequences;
-	private static int toggle;
 
 	@Override
 	public void run(Context context) throws IOException, InterruptedException {
@@ -77,7 +76,6 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 	protected void setup(Context context) throws IOException, InterruptedException {
 		String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
 		numInputSequences = 0;
-		toggle = 0;
 
 		if (!inputSplitPath.equals(Configuration.INPUT_PATH_1))
 			isFirstInputPath = false;
@@ -93,9 +91,7 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 		String str = Text.decode(value.getBytes(), 0, value.getLength(), false);
 		parser.getSeq(str, seq);
 		seq.setIsFirstSeq(isFirstInputPath);
-		key.set(key.get()+toggle);
 		context.write(key, seq);
-		toggle ^= 1;
 		numInputSequences++;
 	}
 }

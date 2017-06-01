@@ -26,25 +26,24 @@ import org.apache.hadoop.io.Text;
 
 public class LineReader implements Closeable {
 
+	private static final byte LF = '\n'; // Line delimiter
+
 	private int bufferSize;
-	private InputStream in;
+	private InputStream inputStream;
 	private byte[] buffer;
-	// the number of bytes of real data in the buffer
-	private int bufferLength = 0;
-	// the current position in the buffer
-	private int bufferPos = 0;
+	private int bufferLength; // the number of bytes of real data in the buffer
+	private int bufferPos; 	// the current position in the buffer
 
-	// Line delimiter
-	private static final byte LF = '\n';
-
-	public LineReader(InputStream in, int bufferSize) {
-		this.in = in;
-		this.bufferSize = bufferSize;
+	public LineReader(InputStream inputStream, org.apache.hadoop.conf.Configuration conf) {
+		this.inputStream = inputStream;
+		this.bufferSize = Configuration.getIOFileBufferSize(conf);
 		this.buffer = new byte[this.bufferSize];
+		this.bufferPos = 0;
+		this.bufferLength = 0;
 	}
 
 	public void close() throws IOException {
-		in.close();
+		inputStream.close();
 	}
 
 	/**
@@ -62,20 +61,18 @@ public class LineReader implements Closeable {
 	}
 
 	/**
-	 * Return the current offset from the start of the file
-	 *
-	 * @throws IOException
+	 * Return the current offset from the start of the buffer.
 	 */
-	public long getPos() throws IOException {
+	public long getPos() {
 		return bufferPos;
 	}
 
 	/**
 	 * Read a line from the InputStream terminated by LF into the given Text.
 	 *
-	 * @param str the object to store the given line (including the newline) 
+	 * @param str the object to store the given line (including LF) 
 	 *
-	 * @return the number of bytes read including the newline
+	 * @return the number of bytes read including LF
 	 *
 	 * @throws IOException if the underlying stream throws
 	 */
@@ -98,11 +95,13 @@ public class LineReader implements Closeable {
 			startPos = bufferPos; //starting from where we left off the last time
 			if (bufferPos >= bufferLength) {
 				startPos = bufferPos = 0;
-				bufferLength = in.read(buffer);
+				bufferLength = inputStream.read(buffer);
+
 				if (bufferLength <= 0) {
 					break; // EOF
 				}
 			}
+
 			for (; bufferPos < bufferLength; ++bufferPos) { //search for newline
 				if (buffer[bufferPos] == LF) {
 					newLine = true;
@@ -110,8 +109,10 @@ public class LineReader implements Closeable {
 					break;
 				}
 			}
+
 			readLength = bufferPos - startPos;
 			bytesConsumed += readLength;
+
 			if (readLength == 1 && newLine && txtLength == 0) {
 				// Only one byte was read and it is the line delimiter (LF)
 				newLine = false;
@@ -121,7 +122,7 @@ public class LineReader implements Closeable {
 			}
 		} while (!newLine);
 
-		return (int)bytesConsumed;
+		return (int) bytesConsumed;
 	}
 
 	/**

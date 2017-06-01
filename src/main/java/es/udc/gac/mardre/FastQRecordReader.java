@@ -31,12 +31,14 @@ public class FastQRecordReader extends SequenceRecordReader {
 	private Text newLine;
 	private Text temp;
 	private boolean skipCommentLine;
+	private long numReads;
 
 	public FastQRecordReader(boolean skipCommentLine) {
 		super();
 		newLine = new Text();
 		temp = new Text();
 		this.skipCommentLine = skipCommentLine;
+		this.numReads = start;
 	}
 
 	@Override
@@ -46,21 +48,22 @@ public class FastQRecordReader extends SequenceRecordReader {
 		boolean found = false;
 		value.clear();
 
-		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end+" (getFilePos "+getFilePosition()+")");
+		//System.out.println("nextKeyValue: start "+start+", end "+end+", splitPos "+getSplitPosition());
 
-		if (getFilePosition() >= end)
+		if (getSplitPosition() >= end)
 			return false;
 
-		while(i < NUMBER_OF_LINES_PER_FASTQ_READ) {
-			firstRead = in.readLine(newLine);
-			pos += firstRead;
+		while(true) {
+			firstRead = readLine(newLine);
 			i++;
 
-			if (firstRead == 0) //EOF
+			if (firstRead == 0) //EOS
 				return false;
 
 			if (found && i == NUMBER_OF_LINES_PER_FASTQ_READ) {
 				//System.out.println("nextKeyValue: last line and starting '@' has been previously found");
+				numReads++;
+				key.set(start+numReads);
 				value.append(newLine.getBytes(), 0, newLine.getLength());
 				break;
 			}
@@ -68,12 +71,10 @@ public class FastQRecordReader extends SequenceRecordReader {
 			if (newLine.charAt(0) == '@') {
 				//System.out.println("nextKeyValue: starting '@' has been found at line "+i);
 				found = true;
-				key.set(pos - firstRead);
 
-				secondRead = in.readLine(temp);
-				pos += secondRead;
+				secondRead = readLine(temp);
 
-				if (secondRead == 0) //EOF
+				if (secondRead == 0) //EOS
 					return false;
 
 				if (temp.charAt(0) != '@') {
@@ -83,7 +84,6 @@ public class FastQRecordReader extends SequenceRecordReader {
 					newLine.append(temp.getBytes(), 0, temp.getLength());
 				} else {
 					i = 1;
-					key.set(pos - secondRead);
 					//Trim spaces in sequence name
 					LineReader.trim(temp, ' ', 1);
 					value.append(temp.getBytes(), 0, temp.getLength());
@@ -102,7 +102,7 @@ public class FastQRecordReader extends SequenceRecordReader {
 			}
 		}
 
-		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end+" (getFilePos "+getFilePosition()+")");
+		//System.out.println("nextKeyValue: start "+start+", end "+end+", splitPos "+getSplitPosition());
 
 		return true;
 	}

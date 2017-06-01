@@ -43,9 +43,9 @@ Quick User's Guide
 The following command removes the duplicates of identical reads (no mismatches)
 of a single-end dataset using a prefix length of 15 and 8 reducers:
 
-  $ mardrerun -Dmapreduce.job.reduces=8 -i dataset.fastq -l 15
+  $ mardrerun -i dataset.fastq -l 15 -nr 8
 
 The following command shows a similar example but for paired-end computing,
 allowing two mismatches and using the default prefix length (20) and 8 reducers:
 
-  $ mardrerun -Dmapreduce.job.reduces=8 -i dataset1.fastq -p dataset2.fastq -m 2
+  $ mardrerun -i dataset1.fastq -p dataset2.fastq -m 2 -nr 8

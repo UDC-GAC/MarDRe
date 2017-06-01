@@ -27,10 +27,12 @@ import es.udc.gac.mardre.util.LineReader;
 public class FastARecordReader extends SequenceRecordReader {
 
 	private Text newLine;
+	private long numReads;
 
 	public FastARecordReader() {
 		super();
 		newLine = new Text();
+		this.numReads = start;
 	}
 
 	@Override
@@ -39,19 +41,18 @@ public class FastARecordReader extends SequenceRecordReader {
 		boolean found = false;
 		value.clear();
 
-		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end+"(getFilePos "+getFilePosition());
+		//System.out.println("nextKeyValue: start "+start+", end "+end+", splitPos "+getSplitPosition());
 
-		if (getFilePosition() >= end)
+		if (getSplitPosition() >= end)
 			return false;
 
 		while(true) {
-			read = in.readLine(newLine);
-			pos += read;
+			read = readLine(newLine);
 
-			//System.out.println("nextKeyValue: read "+read+", start "+start+", pos "+pos+", end "+end);
+			//System.out.println("nextKeyValue: read "+read+", start "+start+", end "+end+", splitPos "+getSplitPosition());
 
 			if (read == 0) {
-				// EOF
+				// EOS
 				if (found)
 					break;
 				return false;
@@ -61,11 +62,12 @@ public class FastARecordReader extends SequenceRecordReader {
 				//System.out.println("nextKeyValue: starting '>' has been found");
 
 				if (found) {
-					in.seek(in.getPos() - read);
+					seek(getLineReaderPosition() - read);
 					pos -= read;
 					break;
 				} else {
-					key.set(pos - read);
+					numReads++;
+					key.set(start+numReads);
 					//Trim spaces in sequence name
 					LineReader.trim(newLine, ' ', 1);
 					found = true;
@@ -76,7 +78,7 @@ public class FastARecordReader extends SequenceRecordReader {
 				value.append(newLine.getBytes(), 0, newLine.getLength());
 		}
 
-		//System.out.println("nextKeyValue: start "+start+", pos "+pos+", end "+end+"(getFilePos "+getFilePosition());
+		//System.out.println("nextKeyValue: start "+start+", end "+end+", splitPos "+getSplitPosition());
 
 		return true;
 	}

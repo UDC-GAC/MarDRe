@@ -36,17 +36,16 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
-import es.udc.gac.mardre.util.CompressedLineReader;
-import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.LineReader;
 
 public abstract class SequenceRecordReader extends RecordReader<LongWritable, Text> {
 
-	private FSDataInputStream fileIn;
-	private Seekable filePosition;
+	private FSDataInputStream splitInputStream;
+	private SplitCompressionInputStream splitCompressedInputStream;
+	private Seekable filePos;
 	private boolean isCompressedInput;
 	private Decompressor decompressor;
-	protected LineReader in;
+	private LineReader lineReader;
 	protected LongWritable key;
 	protected Text value;
 	protected long start;
@@ -77,7 +76,7 @@ public abstract class SequenceRecordReader extends RecordReader<LongWritable, Te
 			return 0.0f;
 		}
 		else {
-			return Math.min(1.0f, (getFilePosition() - start) / (float)(end - start));
+			return Math.min(1.0f, (getSplitPosition() - start) / (float)(end - start));
 		}
 	}
 
@@ -92,7 +91,7 @@ public abstract class SequenceRecordReader extends RecordReader<LongWritable, Te
 
 		// open the file
 		System.out.println("Open input split "+split.toString());
-		fileIn = file.getFileSystem(conf).open(file);
+		splitInputStream = file.getFileSystem(conf).open(file);
 
 		// Check if input file is compressed
 		CompressionCodec codec = new CompressionCodecFactory(conf).getCodec(file);
@@ -101,39 +100,42 @@ public abstract class SequenceRecordReader extends RecordReader<LongWritable, Te
 			System.out.println("Input split is not part of a compressed file");
 			isCompressedInput = false;
 
-			// Create line reader and seek to the start of the split
-			in = new LineReader(fileIn, Configuration.getIOFileBufferSize(conf));
-			fileIn.seek(start);
-			filePosition = fileIn;
+			// Seek to the start of the split
+			splitInputStream.seek(start);
+			// Create line reader and adjust positions
+			lineReader = new LineReader(splitInputStream, conf);
+			filePos = splitInputStream;
 		} else {
-			System.out.println("Input split is part of a compressed file using the codec: "+codec.getClass().getSimpleName());
+			System.out.println("Input split is part of a compressed file using: "+codec.getClass().getSimpleName());
 			isCompressedInput = true;
 
 			if (codec instanceof SplittableCompressionCodec) {
 				decompressor = CodecPool.getDecompressor(codec);
 
-				// Get compression input stream
-				SplitCompressionInputStream cIn = ((SplittableCompressionCodec) codec)
-						.createInputStream(fileIn, decompressor, start, end, SplittableCompressionCodec.READ_MODE.BYBLOCK);
+				// Get compressed input stream
+				splitCompressedInputStream = ((SplittableCompressionCodec) codec)
+						.createInputStream(splitInputStream, decompressor, start, end, SplittableCompressionCodec.READ_MODE.BYBLOCK);
 
-				// Create compressed line reader and adjust positions
-				in = new CompressedLineReader(cIn, Configuration.getIOFileBufferSize(conf));
-				start = cIn.getAdjustedStart();
-				end = cIn.getAdjustedEnd();
-				filePosition = cIn;
+				// Create line reader and adjust positions
+				lineReader = new LineReader(splitCompressedInputStream, conf);
+				start = splitCompressedInputStream.getAdjustedStart();
+				end = splitCompressedInputStream.getAdjustedEnd();
+				filePos = splitCompressedInputStream;
 			} else {
 				throw new UnsupportedOperationException("Input split ("+file.toString()+") is part of a compressed file using a non-splittable codec: "+codec.getClass().getSimpleName());
 			}
 		}
 
 		pos = start;
+
+		System.out.println("SequenceRecordReader initialized: start "+start+", end "+end+", splitPos "+getSplitPosition());
 	}
 
 	@Override
 	public synchronized void close() throws IOException {
 		try {
-			if (in != null) {
-				in.close();
+			if (lineReader != null) {
+				lineReader.close();
 			}
 		} finally {
 			if (decompressor != null) {
@@ -143,14 +145,25 @@ public abstract class SequenceRecordReader extends RecordReader<LongWritable, Te
 		}
 	}
 
-	protected long getFilePosition() throws IOException {
-		long ret;
+	protected int readLine(Text str) throws IOException {
+		int bytesRead = lineReader.readLine(str);
+		pos += bytesRead;
+		return bytesRead;
+	}
 
-		if (isCompressedInput && filePosition != null) {
-			ret = filePosition.getPos();
+	protected void seek(long pos) throws IOException {
+		lineReader.seek(pos);
+	}
+
+	protected long getLineReaderPosition() throws IOException {
+		return lineReader.getPos();
+	}
+
+	protected long getSplitPosition() throws IOException {
+		if (!isCompressedInput) {
+			return pos;
 		} else {
-			ret = pos;
+			return filePos.getPos();
 		}
-		return ret;
 	}
 }

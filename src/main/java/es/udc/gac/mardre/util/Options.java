@@ -31,6 +31,7 @@ public class Options {
 	private boolean _paired;
 	private short _misMatch;
 	private short _prefixLength;
+	private int _nreducers;
 
 	public Options() {
 		_readFileName1 = null;
@@ -41,6 +42,7 @@ public class Options {
 		_paired = false;
 		_misMatch = 0;
 		_prefixLength = 20;
+		_nreducers = 1;
 	}
 
 	public String getReadFileName1() {
@@ -75,6 +77,10 @@ public class Options {
 		return _prefixLength;
 	}
 
+	public int getNumberOfReducers() {
+		return _nreducers;
+	}
+
 	private void printUsage(String name) {
 		System.out.println();
 		System.out.println(
@@ -95,11 +101,14 @@ public class Options {
 				"    -f (Input sequence files are in FASTA format, default: autodetect)");
 		System.out.println("Computation:");
 		System.out.print(
-				"    -m <short> (number of allowed mismatches, default ");
+				"    -nr <integer> (number of reducers, default ");
+		System.out.print(_nreducers);
+		System.out.print(
+				"    -m <integer> (number of allowed mismatches, default ");
 		System.out.print(_misMatch);
 		System.out.println(")");
 		System.out.print(
-				"    -l <short> (prefix length used for clustering, default ");
+				"    -l <integer> (prefix length used for clustering, default ");
 		System.out.print(_prefixLength);
 		System.out.println(")");
 		System.out.println("Others:");
@@ -163,14 +172,34 @@ public class Options {
 			} else if (args[argInd].equals("-f")) {
 				argInd++;
 				_inputFormat = FileFormat.FILE_FORMAT_FASTA;
+			} else if (args[argInd].equals("-nr")) {
+				// Number of reducers
+				argInd++;
+				if (argInd < args.length) {
+					_nreducers = Short.parseShort(args[argInd]);
+
+					if (_nreducers < 1) {
+						System.out.println("WARNING: The number of reducers "
+								+ "(-m "+_nreducers+") can not be less than 1. Using 1 instead");
+						_nreducers = 1;
+					}
+
+					argInd++;
+				} else {
+					System.err.println("No value specified for parameter -nr");
+					return false;
+				}
 			} else if (args[argInd].equals("-m")) {
 				// Number of mismatches
 				argInd++;
 				if (argInd < args.length) {
 					_misMatch = Short.parseShort(args[argInd]);
 
-					if (_misMatch < 0)
+					if (_misMatch < 0) {
+						System.out.println("WARNING: The number of allowed mismatches "
+								+ "(-m "+_misMatch+") can not be less than 0. Using 0 instead");
 						_misMatch = 0;
+					}
 
 					argInd++;
 				} else {
@@ -182,10 +211,12 @@ public class Options {
 				argInd++;
 				if (argInd < args.length) {
 					_prefixLength = Short.parseShort(args[argInd]);
-					if (_prefixLength < 1)
-						_prefixLength = 1;
 
-					if (_prefixLength > 27) {
+					if (_prefixLength < 1) {
+						System.out.println("WARNING: The length of the prefix "
+								+ "(-l "+_prefixLength+") can not be less than 1. Using 20 instead");
+						_prefixLength = 20;
+					} else if (_prefixLength > 27) {
 						System.out.println("WARNING: The length of the prefix "
 								+ "(-l "+_prefixLength+") can not be greater than 27. Using 27 instead");
 						_prefixLength = 27;
