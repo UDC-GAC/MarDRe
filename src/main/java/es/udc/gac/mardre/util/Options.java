@@ -101,16 +101,14 @@ public class Options {
 				"    -f (Input sequence files are in FASTA format, default: autodetect)");
 		System.out.println("Computation:");
 		System.out.print(
-				"    -nr <integer> (number of reducers, default ");
-		System.out.print(_nreducers);
-		System.out.print(
 				"    -m <integer> (number of allowed mismatches, default ");
-		System.out.print(_misMatch);
-		System.out.println(")");
+		System.out.println(_misMatch+")");
 		System.out.print(
 				"    -l <integer> (prefix length used for clustering, default ");
-		System.out.print(_prefixLength);
-		System.out.println(")");
+		System.out.println(_prefixLength+")");
+		System.out.print(
+				"    -nr <integer> (number of reducers, default ");
+		System.out.println(_nreducers+")");
 		System.out.println("Others:");
 		System.out.println(
 				"    -h (print out the usage of the program)");
