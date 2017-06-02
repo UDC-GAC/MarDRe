@@ -28,6 +28,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CodecPool;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.io.compress.CompressionInputStream;
 import org.apache.hadoop.io.compress.Decompressor;
 import org.apache.hadoop.io.compress.SplitCompressionInputStream;
 import org.apache.hadoop.io.compress.SplittableCompressionCodec;
@@ -38,10 +39,15 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 import es.udc.gac.mardre.util.LineReader;
 
+/**
+ * 
+ * This class is adapted from the Hadoop's LineRecordReader implementation
+ *
+ */
 public abstract class SequenceRecordReader extends RecordReader<LongWritable, Text> {
 
-	private FSDataInputStream splitInputStream;
-	private SplitCompressionInputStream splitCompressedInputStream;
+	private FSDataInputStream fileInputStream;
+	private CompressionInputStream compressionFileInputStream;
 	private Seekable filePos;
 	private boolean isCompressedInput;
 	private Decompressor decompressor;
@@ -90,40 +96,70 @@ public abstract class SequenceRecordReader extends RecordReader<LongWritable, Te
 		end = start + split.getLength();
 
 		// open the file
-		System.out.println("Open input split "+split.toString());
-		splitInputStream = file.getFileSystem(conf).open(file);
+		System.out.println("SequenceRecordReader: Open input split "+split.toString());
+		fileInputStream = file.getFileSystem(conf).open(file);
 
 		// Check if input file is compressed
 		CompressionCodec codec = new CompressionCodecFactory(conf).getCodec(file);
 
-		if (codec == null) {
-			System.out.println("Input split is not part of a compressed file");
+		if (codec != null) {
+			System.out.println("SequenceRecordReader: Input split is compressed using "+codec.getClass().getSimpleName());
+			isCompressedInput = true;
+			decompressor = CodecPool.getDecompressor(codec);
+
+			if (codec instanceof SplittableCompressionCodec) {
+				System.out.println("Splittable codec");
+
+				// Get split compression input stream
+				compressionFileInputStream = ((SplittableCompressionCodec) codec)
+						.createInputStream(fileInputStream, decompressor, start, end, SplittableCompressionCodec.READ_MODE.BYBLOCK);
+
+				// Create line reader and adjust positions
+				lineReader = new LineReader(compressionFileInputStream, conf);
+				start = ((SplitCompressionInputStream) compressionFileInputStream).getAdjustedStart();
+				end = ((SplitCompressionInputStream) compressionFileInputStream).getAdjustedEnd();
+				filePos = compressionFileInputStream;
+			} else {
+				System.out.println("SequenceRecordReader: Not splittable codec");
+
+				if (start != 0) {
+					/*
+					 * We have a split that is only part of a file stored using
+					 * a non-splittable codec
+					 */
+					throw new IOException("Cannot seek in " +
+							codec.getClass().getSimpleName() + " compressed stream");
+				}
+
+				// Get compression input stream
+				compressionFileInputStream = codec.createInputStream(fileInputStream, decompressor);
+
+				// Create line reader and adjust positions
+				lineReader = new LineReader(compressionFileInputStream, conf);
+				filePos = fileInputStream;
+			}
+
+		} else {
+			System.out.println("SequenceRecordReader: Input split is not compressed");
 			isCompressedInput = false;
 
 			// Seek to the start of the split
-			splitInputStream.seek(start);
+			fileInputStream.seek(start);
+
 			// Create line reader and adjust positions
-			lineReader = new LineReader(splitInputStream, conf);
-			filePos = splitInputStream;
-		} else {
-			System.out.println("Input split is part of a compressed file using: "+codec.getClass().getSimpleName());
-			isCompressedInput = true;
+			lineReader = new LineReader(fileInputStream, conf);
+			filePos = fileInputStream;
+		}
 
-			if (codec instanceof SplittableCompressionCodec) {
-				decompressor = CodecPool.getDecompressor(codec);
-
-				// Get compressed input stream
-				splitCompressedInputStream = ((SplittableCompressionCodec) codec)
-						.createInputStream(splitInputStream, decompressor, start, end, SplittableCompressionCodec.READ_MODE.BYBLOCK);
-
-				// Create line reader and adjust positions
-				lineReader = new LineReader(splitCompressedInputStream, conf);
-				start = splitCompressedInputStream.getAdjustedStart();
-				end = splitCompressedInputStream.getAdjustedEnd();
-				filePos = splitCompressedInputStream;
-			} else {
-				throw new UnsupportedOperationException("Input split ("+file.toString()+") is part of a compressed file using a non-splittable codec: "+codec.getClass().getSimpleName());
-			}
+		/**
+		 * If this is not the first split, we always throw away the first line
+		 * because we always (except the last split) read one extra record in
+		 * nextKeyValue() method (see also isSplitFinished() method)
+		 */
+		if (start != 0) {
+			start += readLine(value);
+			System.out.println("SequenceRecordReader: skipped '"+value+"'");
+			value.clear();
 		}
 
 		pos = start;
@@ -157,6 +193,17 @@ public abstract class SequenceRecordReader extends RecordReader<LongWritable, Te
 
 	protected long getLineReaderPosition() throws IOException {
 		return lineReader.getPos();
+	}
+
+	protected boolean isSplitFinished() throws IOException {
+		/*
+		 *  We always read one extra record, which lies outside the 
+		 *  upper split limit
+		 */
+		if (getSplitPosition() > end)
+			return true;
+
+		return false;
 	}
 
 	protected long getSplitPosition() throws IOException {

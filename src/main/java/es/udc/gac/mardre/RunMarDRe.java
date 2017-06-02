@@ -34,7 +34,6 @@ import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.SnappyCodec;
-import org.apache.hadoop.io.compress.SplittableCompressionCodec;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.MRJobConfig;
 import org.apache.hadoop.mapreduce.TaskCounter;
@@ -256,17 +255,13 @@ public class RunMarDRe extends Configured implements Tool {
 		}
 	}
 
-	private static boolean isInputCompressed(org.apache.hadoop.conf.Configuration conf, Path inputPath) {
+	private static boolean isInputPathCompressed(org.apache.hadoop.conf.Configuration conf, Path inputPath) {
 		CompressionCodec codec = new CompressionCodecFactory(conf).getCodec(inputPath);
 
 		if (codec == null)
 			return false;
 
-		if (codec instanceof SplittableCompressionCodec)
-			return true;
-
-		throw new UnsupportedOperationException("Input file ("+inputPath+") is compressed using a "
-				+ "non-splittable codec ("+codec.getClass().getSimpleName()+")");
+		return true;
 	}
 
 	@Override
@@ -278,7 +273,7 @@ public class RunMarDRe extends Configured implements Tool {
 		Path outputPath1 = null, outputPath2 = null;
 		Path tmpOutputPath1 = null, tmpOutputPath2 = null;
 		long inputPath1Length = 0, inputPath2Length = 0;
-		int inputPath1LengthMB = 0, inputPath2LengthMB = 0;
+		long inputPath1LengthMB = 0, inputPath2LengthMB = 0;
 		boolean isInputPath1Compressed = false, isInputPath2Compressed = false;
 		boolean status = true;
 
@@ -300,14 +295,14 @@ public class RunMarDRe extends Configured implements Tool {
 		FileSystem fs = FileSystem.get(conf);
 		inputPath1 = fs.resolvePath(new Path(options.getReadFileName1()));
 		inputPath1Length = fs.getFileStatus(inputPath1).getLen();
-		inputPath1LengthMB = (int) inputPath1Length / (1024 * 1024);
-		isInputPath1Compressed = RunMarDRe.isInputCompressed(conf, inputPath1);
+		inputPath1LengthMB = inputPath1Length / (1024 * 1024);
+		isInputPath1Compressed = RunMarDRe.isInputPathCompressed(conf, inputPath1);
 
 		if (options.isPaired()) {
 			inputPath2 = fs.resolvePath(new Path(options.getReadFileName2()));
 			inputPath2Length = fs.getFileStatus(inputPath2).getLen();
-			inputPath2LengthMB = (int) inputPath2Length / (1024 * 1024);
-			isInputPath2Compressed = RunMarDRe.isInputCompressed(conf, inputPath2);		
+			inputPath2LengthMB = inputPath2Length / (1024 * 1024);
+			isInputPath2Compressed = RunMarDRe.isInputPathCompressed(conf, inputPath2);		
 		}
 
 		// Determine the file format

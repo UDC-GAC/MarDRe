@@ -24,9 +24,18 @@ import java.io.InputStream;
 
 import org.apache.hadoop.io.Text;
 
+/**
+ * 
+ * This class is adapted from the Hadoop's LineReader implementation
+ *
+ */
 public class LineReader implements Closeable {
 
-	private static final byte LF = '\n'; // Line delimiter
+	/**
+	 *  This implementation only consider Line Feed (LF, '\n', 0x0A) as the
+	 *  the newline character. So, it only works on Unix-like systems.
+	 */
+	private static final byte LF = '\n';
 
 	private int bufferSize;
 	private InputStream inputStream;
@@ -72,9 +81,9 @@ public class LineReader implements Closeable {
 	 *
 	 * @param str the object to store the given line (including LF) 
 	 *
-	 * @return the number of bytes read including LF
+	 * @return the number of bytes read (including LF)
 	 *
-	 * @throws IOException if the underlying stream throws
+	 * @throws IOException
 	 */
 	public int readLine(Text str) throws IOException {
 		/* We're reading data from in, but the head of the stream may be
@@ -84,12 +93,11 @@ public class LineReader implements Closeable {
 		 * 2. An unambiguously terminated line is in buffer, so we just
 		 *    copy to str.
 		 */
-		str.clear();
-		int txtLength = 0; //tracks str.getLength(), as an optimization
 		boolean newLine = false;
 		long bytesConsumed = 0;
 		int readLength = 0;
 		int startPos = 0;
+		str.clear();
 
 		do {
 			startPos = bufferPos; //starting from where we left off the last time
@@ -112,14 +120,7 @@ public class LineReader implements Closeable {
 
 			readLength = bufferPos - startPos;
 			bytesConsumed += readLength;
-
-			if (readLength == 1 && newLine && txtLength == 0) {
-				// Only one byte was read and it is the line delimiter (LF)
-				newLine = false;
-			} else {
-				str.append(buffer, startPos, readLength);
-				txtLength += readLength;
-			}
+			str.append(buffer, startPos, readLength);
 		} while (!newLine);
 
 		return (int) bytesConsumed;

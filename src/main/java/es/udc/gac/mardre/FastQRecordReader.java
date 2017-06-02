@@ -50,14 +50,14 @@ public class FastQRecordReader extends SequenceRecordReader {
 
 		//System.out.println("nextKeyValue: start "+start+", end "+end+", splitPos "+getSplitPosition());
 
-		if (getSplitPosition() >= end)
+		if (isSplitFinished())
 			return false;
 
-		while(true) {
+		while (true) {
 			firstRead = readLine(newLine);
 			i++;
 
-			if (firstRead == 0) //EOS
+			if (firstRead == 0) //EOF
 				return false;
 
 			if (found && i == NUMBER_OF_LINES_PER_FASTQ_READ) {
@@ -74,7 +74,7 @@ public class FastQRecordReader extends SequenceRecordReader {
 
 				secondRead = readLine(temp);
 
-				if (secondRead == 0) //EOS
+				if (secondRead == 0) //EOF
 					return false;
 
 				if (temp.charAt(0) != '@') {

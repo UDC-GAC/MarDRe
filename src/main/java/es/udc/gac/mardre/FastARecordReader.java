@@ -43,16 +43,16 @@ public class FastARecordReader extends SequenceRecordReader {
 
 		//System.out.println("nextKeyValue: start "+start+", end "+end+", splitPos "+getSplitPosition());
 
-		if (getSplitPosition() >= end)
+		if (isSplitFinished())
 			return false;
 
-		while(true) {
+		while (true) {
 			read = readLine(newLine);
 
 			//System.out.println("nextKeyValue: read "+read+", start "+start+", end "+end+", splitPos "+getSplitPosition());
 
 			if (read == 0) {
-				// EOS
+				// EOF
 				if (found)
 					break;
 				return false;
