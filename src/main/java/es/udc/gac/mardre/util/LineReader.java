@@ -32,7 +32,7 @@ import org.apache.hadoop.io.Text;
 public class LineReader implements Closeable {
 
 	/**
-	 *  This implementation only consider Line Feed (LF, '\n', 0x0A) as the
+	 *  Current implementation only consider Line Feed (LF, '\n', 0x0A) as the
 	 *  the newline character. So, it only works on Unix-like systems.
 	 */
 	private static final byte LF = '\n';

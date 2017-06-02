@@ -70,7 +70,7 @@ public class RunMarDRe extends Configured implements Tool {
 		System.exit(ToolRunner.run(new org.apache.hadoop.conf.Configuration(), new RunMarDRe(), args));
 	}
 
-	private static Job configureSingleEndJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass, int nreducers) throws IOException {
+	private static Job configureSingleEndJob(org.apache.hadoop.conf.Configuration conf, Class<? extends TextInputFormat> inputFormatClass, int nreducers, CompressionCodec codec) throws IOException {
 
 		Job job = Job.getInstance(conf, "MarDRe_SingleEnd");
 		job.setJarByClass(RunMarDRe.class);
@@ -89,6 +89,14 @@ public class RunMarDRe extends Configured implements Tool {
 		job.setInputFormatClass(inputFormatClass);
 		job.setOutputFormatClass(TextOutputFormat.class);
 
+		// Compress output
+		if (codec != null) {
+			FileOutputFormat.setCompressOutput(job, true);
+			FileOutputFormat.setOutputCompressorClass(job, codec.getClass());
+		} else {
+			FileOutputFormat.setCompressOutput(job, false);
+		}
+
 		// Mapper and Reducer classes
 		job.setMapperClass(SingleEndMapper.class);
 		job.setReducerClass(SingleEndReducer.class);
@@ -103,7 +111,7 @@ public class RunMarDRe extends Configured implements Tool {
 		return job;
 	}
 
-	private static Job configurePairedEndJob(org.apache.hadoop.conf.Configuration conf, int nreducers) throws IOException {
+	private static Job configurePairedEndJob(org.apache.hadoop.conf.Configuration conf, int nreducers, CompressionCodec codec) throws IOException {
 
 		Job job = Job.getInstance(conf, "MarDRe_PairedEnd");
 		job.setJarByClass(RunMarDRe.class);
@@ -118,7 +126,15 @@ public class RunMarDRe extends Configured implements Tool {
 		// Explicitly turn off speculative execution
 		job.setSpeculativeExecution(false);
 
-		// Output format classes
+		// Compress output
+		if (codec != null) {
+			FileOutputFormat.setCompressOutput(job, true);
+			FileOutputFormat.setOutputCompressorClass(job, codec.getClass());
+		} else {
+			FileOutputFormat.setCompressOutput(job, false);
+		}
+
+		// Output format class
 		job.setOutputFormatClass(TextOutputFormat.class);
 
 		// Mapper and Input format classes
@@ -160,7 +176,7 @@ public class RunMarDRe extends Configured implements Tool {
 		job.setInputFormatClass(inputFormatClass);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-		// Compress options
+		// Compress output
 		if (Configuration.COMPRESS_INTERMEDIATE_OUTPUT) {
 			FileOutputFormat.setCompressOutput(job, true);
 			FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
@@ -200,7 +216,7 @@ public class RunMarDRe extends Configured implements Tool {
 		job.setInputFormatClass(inputFormatClass);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-		// Compress options
+		// Compress output
 		if (Configuration.COMPRESS_INTERMEDIATE_OUTPUT) {
 			FileOutputFormat.setCompressOutput(job, true);
 			FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
@@ -272,6 +288,7 @@ public class RunMarDRe extends Configured implements Tool {
 		Path tmpInputPath1 = null, tmpInputPath2 = null;
 		Path outputPath1 = null, outputPath2 = null;
 		Path tmpOutputPath1 = null, tmpOutputPath2 = null;
+		CompressionCodec codec = null;
 		long inputPath1Length = 0, inputPath2Length = 0;
 		long inputPath1LengthMB = 0, inputPath2LengthMB = 0;
 		boolean isInputPath1Compressed = false, isInputPath2Compressed = false;
@@ -297,6 +314,10 @@ public class RunMarDRe extends Configured implements Tool {
 		inputPath1Length = fs.getFileStatus(inputPath1).getLen();
 		inputPath1LengthMB = inputPath1Length / (1024 * 1024);
 		isInputPath1Compressed = RunMarDRe.isInputPathCompressed(conf, inputPath1);
+
+		if (isInputPath1Compressed)
+			// If codec != null => Output must be compressed
+			codec = new CompressionCodecFactory(conf).getCodec(inputPath1);
 
 		if (options.isPaired()) {
 			inputPath2 = fs.resolvePath(new Path(options.getReadFileName2()));
@@ -401,7 +422,7 @@ public class RunMarDRe extends Configured implements Tool {
 				fs.delete(tmpOutputPath2, true);
 
 			// Configure job to remove duplicate reads
-			jobRemoveDuplicate = RunMarDRe.configurePairedEndJob(conf, options.getNumberOfReducers());
+			jobRemoveDuplicate = RunMarDRe.configurePairedEndJob(conf, options.getNumberOfReducers(), codec);
 			FileOutputFormat.setOutputPath(jobRemoveDuplicate, tmpOutputPath1);
 			// Add additional output for the second file
 			MultipleOutputs.addNamedOutput(jobRemoveDuplicate, "output2", TextOutputFormat.class, NullWritable.class, Sequence.class);
@@ -457,7 +478,7 @@ public class RunMarDRe extends Configured implements Tool {
 				System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1Length+" bytes)");
 
 			// Configure job
-			jobRemoveDuplicate = RunMarDRe.configureSingleEndJob(conf, inputFormatClass, options.getNumberOfReducers());
+			jobRemoveDuplicate = RunMarDRe.configureSingleEndJob(conf, inputFormatClass, options.getNumberOfReducers(), codec);
 			FileInputFormat.addInputPath(jobRemoveDuplicate, inputPath1);
 			FileOutputFormat.setOutputPath(jobRemoveDuplicate, tmpOutputPath1);
 			timer.stop(T_INIT);

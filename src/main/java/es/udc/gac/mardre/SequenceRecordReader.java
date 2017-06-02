@@ -103,12 +103,11 @@ public abstract class SequenceRecordReader extends RecordReader<LongWritable, Te
 		CompressionCodec codec = new CompressionCodecFactory(conf).getCodec(file);
 
 		if (codec != null) {
-			System.out.println("SequenceRecordReader: Input split is compressed using "+codec.getClass().getSimpleName());
 			isCompressedInput = true;
 			decompressor = CodecPool.getDecompressor(codec);
 
 			if (codec instanceof SplittableCompressionCodec) {
-				System.out.println("Splittable codec");
+				System.out.println("SequenceRecordReader: Input split is compressed using a splittable codec ("+codec.getClass().getSimpleName()+")");
 
 				// Get split compression input stream
 				compressionFileInputStream = ((SplittableCompressionCodec) codec)
@@ -120,7 +119,7 @@ public abstract class SequenceRecordReader extends RecordReader<LongWritable, Te
 				end = ((SplitCompressionInputStream) compressionFileInputStream).getAdjustedEnd();
 				filePos = compressionFileInputStream;
 			} else {
-				System.out.println("SequenceRecordReader: Not splittable codec");
+				System.out.println("SequenceRecordReader: Input split is compressed using a non-splittable codec ("+codec.getClass().getSimpleName()+")");
 
 				if (start != 0) {
 					/*
