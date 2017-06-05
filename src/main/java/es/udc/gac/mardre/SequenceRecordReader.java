@@ -151,9 +151,9 @@ public abstract class SequenceRecordReader extends RecordReader<LongWritable, Te
 		}
 
 		/**
-		 * If this is not the first split, we always throw away the first line
-		 * because we always (except the last split) read one extra record in
-		 * nextKeyValue() method (see also isSplitFinished() method)
+		 * If this is not the first split, we throw away the first line
+		 * because we always (except the last split) read one extra record
+		 * in nextKeyValue() method (see also isSplitFinished() method)
 		 */
 		if (start != 0) {
 			start += readLine(value);
