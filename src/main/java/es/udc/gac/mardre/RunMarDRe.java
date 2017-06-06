@@ -364,6 +364,7 @@ public class RunMarDRe extends Configured implements Tool {
 		// Print command line options and configuration parameters
 		System.out.println("MarDRe: prefix length = "+options.getPrefixLength());
 		System.out.println("MarDRe: allowed mismatches = "+options.getMisMatch());
+		System.out.println("MarDRe: number of bases to compare = "+options.getNumberOfBasesCompared());
 		System.out.println("MarDRe: number of reducers = "+options.getNumberOfReducers());
 		System.out.println("MarDRe: I/O file buffer size = "+Configuration.IO_FILE_BUFFER_SIZE+" bytes");
 		System.out.println("MarDRe: in-Mapper combiner = "+Configuration.IN_MAPPER_COMBINER);
@@ -374,7 +375,7 @@ public class RunMarDRe extends Configured implements Tool {
 			try {
 				SnappyCodec.checkNativeCodeLoaded();
 			} catch (Exception e) {
-				System.out.println("MarDRe-Warning: "+e.getMessage());
+				System.out.println("MarDRe-WARNING: "+e.getMessage());
 				Configuration.COMPRESS_MAP_OUTPUT = false;
 			}
 			conf.setBoolean(MRJobConfig.MAP_OUTPUT_COMPRESS, Configuration.COMPRESS_MAP_OUTPUT);

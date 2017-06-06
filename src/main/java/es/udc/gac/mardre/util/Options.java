@@ -31,6 +31,7 @@ public class Options {
 	private boolean _paired;
 	private short _misMatch;
 	private short _prefixLength;
+	private short _numBasesCompared;
 	private int _nreducers;
 
 	public Options() {
@@ -42,6 +43,7 @@ public class Options {
 		_paired = false;
 		_misMatch = 0;
 		_prefixLength = 20;
+		_numBasesCompared = -1;
 		_nreducers = 1;
 	}
 
@@ -77,6 +79,10 @@ public class Options {
 		return _prefixLength;
 	}
 
+	public short getNumberOfBasesCompared() {
+		return _numBasesCompared;
+	}
+
 	public int getNumberOfReducers() {
 		return _nreducers;
 	}
@@ -106,6 +112,8 @@ public class Options {
 		System.out.print(
 				"    -l <integer> (prefix length used for clustering, default ");
 		System.out.println(_prefixLength+")");
+		System.out.println(
+				"    -c <integer> (number of bases to compare for each sequence starting from the beginning, default is equal to the sequence length)");
 		System.out.print(
 				"    -nr <integer> (number of reducers, default ");
 		System.out.println(_nreducers+")");
@@ -177,8 +185,8 @@ public class Options {
 					_nreducers = Short.parseShort(args[argInd]);
 
 					if (_nreducers < 1) {
-						System.out.println("WARNING: The number of reducers "
-								+ "(-m "+_nreducers+") can not be less than 1. Using 1 instead");
+						System.out.println("MarDRe-WARNING: The number of reducers "
+								+ "(-m "+_nreducers+") can not be less than 1. Using -nr 1 instead");
 						_nreducers = 1;
 					}
 
@@ -194,8 +202,8 @@ public class Options {
 					_misMatch = Short.parseShort(args[argInd]);
 
 					if (_misMatch < 0) {
-						System.out.println("WARNING: The number of allowed mismatches "
-								+ "(-m "+_misMatch+") can not be less than 0. Using 0 instead");
+						System.out.println("MarDRe-WARNING: The number of allowed mismatches "
+								+ "(-m "+_misMatch+") can not be less than 0. Using -m 0 instead");
 						_misMatch = 0;
 					}
 
@@ -211,12 +219,12 @@ public class Options {
 					_prefixLength = Short.parseShort(args[argInd]);
 
 					if (_prefixLength < 1) {
-						System.out.println("WARNING: The length of the prefix "
-								+ "(-l "+_prefixLength+") can not be less than 1. Using 20 instead");
+						System.out.println("MarDRe-WARNING: The length of the prefix "
+								+ "(-l "+_prefixLength+") can not be less than 1. Using -l 20 instead");
 						_prefixLength = 20;
 					} else if (_prefixLength > 27) {
-						System.out.println("WARNING: The length of the prefix "
-								+ "(-l "+_prefixLength+") can not be greater than 27. Using 27 instead");
+						System.out.println("MarDRe-WARNING: The length of the prefix "
+								+ "(-l "+_prefixLength+") can not be greater than 27. Using -l 27 instead");
 						_prefixLength = 27;
 					}
 
@@ -225,6 +233,23 @@ public class Options {
 					System.err.println("No value specified for parameter -l");
 					return false;
 				}
+			} else if (args[argInd].equals("-c")) {
+				// Number of bases to compare
+				argInd++;
+				if (argInd < args.length) {
+					_numBasesCompared = Short.parseShort(args[argInd]);
+
+					if (_numBasesCompared < 1) {
+						System.out.println("MarDRe-WARNING: The number of bases to compare "
+								+ "(-c "+_numBasesCompared+") can not be less than 1. Using -c 1 instead");
+						_numBasesCompared = 1;
+					}
+
+					argInd++;
+				} else {
+					System.err.println("No value specified for parameter -c");
+					return false;
+				} 
 			} else if (args[argInd].equals("-h")) {
 				// Check the help
 				printUsage(RunMarDRe.class.getName());
@@ -243,6 +268,11 @@ public class Options {
 		if (!withInputFile) {
 			System.err.println("No input file specified with -i");
 			return false;
+		}
+
+		if((_numBasesCompared > 0) && (_numBasesCompared < _prefixLength)){
+			System.out.println("MarDRe-WARNING: The number of bases to compare (-c "+_numBasesCompared+") must be at least as high as the prefix length (-l "+_prefixLength+"). Using -c "+_prefixLength+" instead");
+			_numBasesCompared = _prefixLength;
 		}
 
 		if (!withOutputFile)

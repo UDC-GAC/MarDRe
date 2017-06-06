@@ -20,8 +20,8 @@ package es.udc.gac.mardre.util;
 
 public class FastQSeqStringParser extends SeqStringParser {
 
-	public FastQSeqStringParser(short prefixLength) {
-		super(prefixLength);
+	public FastQSeqStringParser(short prefixLength, short numBasesCompared, boolean isSecondPairedRead) {
+		super(prefixLength, numBasesCompared, isSecondPairedRead);
 	}
 
 	@Override
@@ -55,7 +55,7 @@ public class FastQSeqStringParser extends SeqStringParser {
 			throw new IllegalArgumentException("The number of bases ("+bases.length()+") is not equal to the number of quality scores ("+strQuals.length()+")");
 
 		seq.setKey(bases, this.getPrefixLength());
-		seq.setSuffix(bases, this.getPrefixLength());
+		seq.setSuffix(bases, this.getPrefixLength(), this.getNumBasesCompared(), this.isSecondPairedRead());
 		seq.setQuals(strQuals);
 
 		return bases.length();

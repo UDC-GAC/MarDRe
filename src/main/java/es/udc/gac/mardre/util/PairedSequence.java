@@ -39,9 +39,7 @@ public class PairedSequence implements Writable {
 	}
 
 	public PairedSequence(PairedSequence seq) {
-		this.firstSeq = seq.firstSeq;
-		this.secondSeq = seq.secondSeq;
-		dist = seq.dist;
+		set(seq);
 	}
 
 	public void set(PairedSequence seq) {

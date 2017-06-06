@@ -80,8 +80,8 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 		if (!inputSplitPath.equals(Configuration.INPUT_PATH_1))
 			isFirstInputPath = false;
 
-		short prefixLength = (isFirstInputPath)? Configuration.PREFIX_LENGTH : 0;		
-		parser = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, prefixLength);
+		short prefixLength = (isFirstInputPath)? Configuration.PREFIX_LENGTH : 0;
+		parser = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, prefixLength, Configuration.NUMBER_BASES_COMPARED, !isFirstInputPath);
 	}
 
 	@Override

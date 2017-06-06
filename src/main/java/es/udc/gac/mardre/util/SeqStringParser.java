@@ -20,14 +20,26 @@ package es.udc.gac.mardre.util;
 
 public abstract class SeqStringParser {
 
-	private final short _prefixLength;
+	private final short prefixLength;
+	private final short numBasesCompared;
+	private final boolean isSecondPairedRead; 
 
-	public SeqStringParser(short prefixLength) {
-		this._prefixLength = prefixLength;
+	public SeqStringParser(short prefixLength, short numBasesCompared, boolean isSecondPairedRead) {
+		this.prefixLength = prefixLength;
+		this.numBasesCompared = numBasesCompared;
+		this.isSecondPairedRead = isSecondPairedRead;
 	}
 
 	public short getPrefixLength() {
-		return _prefixLength;
+		return prefixLength;
+	}
+
+	public short getNumBasesCompared() {
+		return numBasesCompared;
+	}
+
+	public boolean isSecondPairedRead() {
+		return isSecondPairedRead;
 	}
 
 	public abstract int getSeq(String s, Sequence seq);

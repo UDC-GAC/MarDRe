@@ -53,6 +53,7 @@ public final class Configuration {
 	public static int CLUSTER_LIST_INITIAL_CAPACITY;
 	public static short PREFIX_LENGTH;
 	public static short MISMATCH;
+	public static short NUMBER_BASES_COMPARED;
 	public static FileFormat FILE_FORMAT;
 	public static String INPUT_PATH_1;
 
@@ -62,6 +63,7 @@ public final class Configuration {
 	private static final String CLUSTER_LIST_INITIAL_CAPACITY_PARAM = "MarDRe_clusterListInitialCapacity";
 	private static final String PREFIX_LENGTH_PARAM = "MarDRe_prefixLength";
 	private static final String MISMATCH_PARAM = "MarDRe_misMatch";
+	private static final String NUMBER_BASES_COMPARED_PARAM = "MarDRe_numBasesCompared";
 	private static final String FILE_FORMAT_PARAM = "MarDRe_fileFormat";
 	private static final String INPUT_PATH_1_PARAM = "MarDRe_inputPath1";
 
@@ -124,6 +126,7 @@ public final class Configuration {
 		jobConf.setInt(CLUSTER_LIST_INITIAL_CAPACITY_PARAM, CLUSTER_LIST_INITIAL_CAPACITY);
 		jobConf.setInt(PREFIX_LENGTH_PARAM, options.getPrefixLength());
 		jobConf.setInt(MISMATCH_PARAM, options.getMisMatch());
+		jobConf.setInt(NUMBER_BASES_COMPARED_PARAM, options.getNumberOfBasesCompared());
 		jobConf.setInt(FILE_FORMAT_PARAM, format.ordinal());
 		jobConf.set(INPUT_PATH_1_PARAM, inputPath1.toString());
 
@@ -137,6 +140,7 @@ public final class Configuration {
 		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(jobConf.get(CLUSTER_LIST_INITIAL_CAPACITY_PARAM));
 		PREFIX_LENGTH = Short.parseShort(jobConf.get(PREFIX_LENGTH_PARAM));
 		MISMATCH = Short.parseShort(jobConf.get(MISMATCH_PARAM));
+		NUMBER_BASES_COMPARED = Short.parseShort(jobConf.get(NUMBER_BASES_COMPARED_PARAM));
 		FILE_FORMAT = FileFormat.values()[Integer.parseInt(jobConf.get(FILE_FORMAT_PARAM))];
 		INPUT_PATH_1 = jobConf.get(INPUT_PATH_1_PARAM);
 	}

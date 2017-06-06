@@ -20,8 +20,8 @@ package es.udc.gac.mardre.util;
 
 public class FastASeqStringParser extends SeqStringParser {
 
-	public FastASeqStringParser(short prefixLength) {
-		super(prefixLength);
+	public FastASeqStringParser(short prefixLength, short numBasesCompared, boolean isSecondPairedRead) {
+		super(prefixLength, numBasesCompared, isSecondPairedRead);
 	}
 
 	@Override
@@ -47,7 +47,7 @@ public class FastASeqStringParser extends SeqStringParser {
 			bases += st.nextToken();
 
 		seq.setKey(bases, this.getPrefixLength());
-		seq.setSuffix(bases, this.getPrefixLength());
+		seq.setSuffix(bases, this.getPrefixLength(), this.getNumBasesCompared(), this.isSecondPairedRead());
 
 		return bases.length();
 	}
