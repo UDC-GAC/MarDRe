@@ -3,6 +3,28 @@ MarDRe Changelog
 This file briefly describes the main changes for each version of
 the MarDRe software package.
 
+MarDRe v1.2 - 2017/07/XX
+------------------------
+A point release for the MarDRe 1.x line
+
+	- Support for input/output datasets compressed with Gzip (.gz extension)
+	and BZip2 (.bz2 extension) codecs. Read user's guide for more information
+	
+	- The user can decide to compare only a certain number of bases for each
+	read using a new command-line option (-c)
+	
+	- The number of reducers can now be specified using a new command-line 
+	option (-nr)
+		
+	- New configuration parameter to enable Snappy compression of the map
+	output phase
+	
+	- New command-line options (-q and -f) to specify the input file format
+	for compressed datasets
+
+	- Fix bug in paired-end mode when processing FASTA datasets
+
+
 MarDRe v1.1 - 2017/05/15
 ------------------------
 A point release for the MarDRe 1.x line
