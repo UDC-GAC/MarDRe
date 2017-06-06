@@ -113,7 +113,7 @@ public class Options {
 				"    -l <integer> (prefix length used for clustering, default ");
 		System.out.println(_prefixLength+")");
 		System.out.println(
-				"    -c <integer> (number of bases to compare for each sequence starting from the beginning, default is equal to the sequence length)");
+				"    -c <integer> (number of bases to compare for each read starting from the beginning, default is equal to the sequence length)");
 		System.out.print(
 				"    -nr <integer> (number of reducers, default ");
 		System.out.println(_nreducers+")");
