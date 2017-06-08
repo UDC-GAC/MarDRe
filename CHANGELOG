@@ -10,6 +10,9 @@ A point release for the MarDRe 1.x line
 	- Support for input/output datasets compressed with Gzip (.gz extension)
 	and BZip2 (.bz2 extension) codecs. Read user's guide for more information
 	
+	- New command-line options (-q and -f) to specify the input file format
+	for compressed datasets
+
 	- The user can decide to compare only a certain number of bases for each
 	read using a new command-line option (-c)
 	
@@ -19,9 +22,6 @@ A point release for the MarDRe 1.x line
 	- New configuration parameter to enable Snappy compression of the map
 	output phase
 	
-	- New command-line options (-q and -f) to specify the input file format
-	for compressed datasets
-
 	- Fix bug in paired-end mode when processing FASTA datasets
 
 
