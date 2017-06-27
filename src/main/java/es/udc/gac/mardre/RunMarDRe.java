@@ -40,6 +40,7 @@ import org.apache.hadoop.mapreduce.TaskCounter;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.LazyOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.mapreduce.lib.join.CompositeInputFormat;
 import org.apache.hadoop.util.Tool;
@@ -59,9 +60,9 @@ public class RunMarDRe extends Configured implements Tool {
 	private static final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
 	private static final int T_INIT = 1;
-	private static final int T_PREPARE_PSEQ = 2;
+	private static final int T_PARSE_READS = 2;
 	private static final int T_REMOVE_DUP = 3;
-	private static final int T_PRINT_SEQ = 4;
+	private static final int T_MERGE = 4;
 
 	public static void main(String[] args) throws Exception {
 		System.exit(ToolRunner.run(new org.apache.hadoop.conf.Configuration(), new RunMarDRe(), args));
@@ -171,7 +172,7 @@ public class RunMarDRe extends Configured implements Tool {
 
 		// I/O Format classes
 		job.setInputFormatClass(inputFormatClass);
-		job.setOutputFormatClass(SequenceFileOutputFormat.class);
+		LazyOutputFormat.setOutputFormatClass(job, SequenceFileOutputFormat.class);
 
 		// Compress output
 		if (Configuration.COMPRESS_INTERMEDIATE_OUTPUT) {
@@ -183,7 +184,7 @@ public class RunMarDRe extends Configured implements Tool {
 		}
 
 		// Mapper class
-		job.setMapperClass(ParseSequencesMapper.class);
+		job.setMapperClass(ParseJoinSequencesMapper.class);
 
 		// Mapper output K/V classes
 		job.setMapOutputKeyClass(LongWritable.class);
@@ -426,33 +427,31 @@ public class RunMarDRe extends Configured implements Tool {
 			MultipleOutputs.addNamedOutput(jobRemoveDuplicate, "output2", TextOutputFormat.class, NullWritable.class, Sequence.class);
 
 			if (Configuration.PAIRED_JOIN) {
-				// Paired-end mode using a map-side Hadooop join needs two map-only jobs to partition both input files
-				Job jobPairedSequences1 = RunMarDRe.configureHadoopJoinSequencesJob(conf, inputFormatClass);
-				Job jobPairedSequences2 = RunMarDRe.configureHadoopJoinSequencesJob(conf, inputFormatClass);
-				SequenceInputFormat.addInputPath(jobPairedSequences1, inputPath1);
-				SequenceInputFormat.addInputPath(jobPairedSequences2, inputPath2);
-				SequenceFileOutputFormat.setOutputPath(jobPairedSequences1, tmpInputPath1);
-				SequenceFileOutputFormat.setOutputPath(jobPairedSequences2, tmpInputPath2);
+				// Paired-end mode using a map-side Hadooop join needs one map-only job to partition both input files
+				Job jobPairedSequences = RunMarDRe.configureHadoopJoinSequencesJob(conf, inputFormatClass);
+				SequenceInputFormat.addInputPath(jobPairedSequences, inputPath1);
+				SequenceInputFormat.addInputPath(jobPairedSequences, inputPath2);
+				SequenceFileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
+				// Add additional output for the second temporal path
+				MultipleOutputs.addNamedOutput(jobPairedSequences, "tempOutput", SequenceFileOutputFormat.class, LongWritable.class, Sequence.class);
+
 				// Map-side inner join of both partitioned files
 				String joinExpression = CompositeInputFormat.compose("inner", SequenceFileInputFormat.class, tmpInputPath1, tmpInputPath2);
 				jobRemoveDuplicate.getConfiguration().set(CompositeInputFormat.JOIN_EXPR, joinExpression);
 				timer.stop(T_INIT);
 
-				// Run first job
+				// Run partition job
 				System.out.println("MarDRe: using map-side join. Partitioning input paths...");
-				timer.start(T_PREPARE_PSEQ);
-				if (jobPairedSequences1.waitForCompletion(true)) {
-					// Run second job
-					if (jobPairedSequences2.waitForCompletion(true)) {
-						timer.stop(T_PREPARE_PSEQ);
-					} else {
-						status = false;
-					}
-				} else {
-					status = false;
+				timer.start(T_PARSE_READS);
+				status = jobPairedSequences.waitForCompletion(true);
+				timer.stop(T_PARSE_READS);
+
+				if (!status) {
+					System.out.println("HSRA: job failed!");
+					return -1;
 				}
 			} else {
-				// Paired-end mode using a manual join only needs one job processing both input files
+				// Paired-end mode using a manual join only needs one map-reduce job processing both input files
 				Job jobPairedSequences = RunMarDRe.configureJoinSequencesJob(conf, inputFormatClass, options.getNumberOfReducers());
 				SequenceInputFormat.addInputPath(jobPairedSequences, inputPath1);
 				SequenceInputFormat.addInputPath(jobPairedSequences, inputPath2);
@@ -462,10 +461,20 @@ public class RunMarDRe extends Configured implements Tool {
 
 				// Run job
 				System.out.println("MarDRe: pairing sequences...");
-				timer.start(T_PREPARE_PSEQ);
+				timer.start(T_PARSE_READS);
 				status = jobPairedSequences.waitForCompletion(true);
-				timer.stop(T_PREPARE_PSEQ);
+				timer.stop(T_PARSE_READS);
+
+				if (!status) {
+					System.out.println("HSRA: job failed!");
+					return -1;
+				}
 			}
+
+			Path success = new Path(tmpInputPath1+"/_SUCCESS");
+
+			if (fs.exists(success))
+				fs.delete(success, true);
 		} else {
 			// Single-end mode reads and writes a single file
 			System.out.println("MarDRe: running in single-end mode");
@@ -482,13 +491,11 @@ public class RunMarDRe extends Configured implements Tool {
 			timer.stop(T_INIT);
 		}
 
-		if (status) {
-			// Run main job 
-			System.out.println("MarDRe: removing duplicate reads...");
-			timer.start(T_REMOVE_DUP);
-			status = jobRemoveDuplicate.waitForCompletion(true);
-			timer.stop(T_REMOVE_DUP);
-		}
+		// Run main job 
+		System.out.println("MarDRe: removing duplicate reads...");
+		timer.start(T_REMOVE_DUP);
+		status = jobRemoveDuplicate.waitForCompletion(true);
+		timer.stop(T_REMOVE_DUP);
 
 		if (!status) {
 			System.out.println("MarDRe: job failed!");
@@ -507,7 +514,7 @@ public class RunMarDRe extends Configured implements Tool {
 			// Merge output files
 			System.out.print("MarDRe: merging output files...");
 
-			timer.start(T_PRINT_SEQ);
+			timer.start(T_MERGE);
 			RunMarDRe.merge(fs, tmpOutputPath1, fs, outputPath1, Configuration.DELETE_TEMP, conf);
 
 			if (options.isPaired()) {
@@ -516,7 +523,7 @@ public class RunMarDRe extends Configured implements Tool {
 
 				RunMarDRe.merge(fs, tmpOutputPath2, fs, outputPath2, Configuration.DELETE_TEMP, conf);
 			}
-			timer.stop(T_PRINT_SEQ);
+			timer.stop(T_MERGE);
 			System.out.println("done");
 		} else {
 			outputPath1 = tmpOutputPath1;
@@ -548,10 +555,10 @@ public class RunMarDRe extends Configured implements Tool {
 		System.out.format(java.util.Locale.ENGLISH,"MarDRe: execution time was %.3f seconds\n", timer.readTotal(T_TOTAL));
 		System.out.format(java.util.Locale.ENGLISH,"\tInitialization took %.3f seconds\n", timer.readTotal(T_INIT));
 		if (options.isPaired())
-			System.out.format(java.util.Locale.ENGLISH,"\tSequences were paired in %.3f seconds\n", timer.readTotal(T_PREPARE_PSEQ));
+			System.out.format(java.util.Locale.ENGLISH,"\tSequences were paired in %.3f seconds\n", timer.readTotal(T_PARSE_READS));
 		System.out.format(java.util.Locale.ENGLISH,"\tDuplicate reads were removed in %.3f seconds\n", timer.readTotal(T_REMOVE_DUP));
 		if (Configuration.MERGE)
-			System.out.format(java.util.Locale.ENGLISH,"\tOutput files were merged in %.3f seconds\n", timer.readTotal(T_PRINT_SEQ));
+			System.out.format(java.util.Locale.ENGLISH,"\tOutput files were merged in %.3f seconds\n", timer.readTotal(T_MERGE));
 
 		return 0;
 	}

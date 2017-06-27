@@ -155,11 +155,11 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		// Write non-duplicate sequences including the first one
 		context.write(nullKey, firstSeq.getFirstSeq());
-		mos.write("output2", nullKey, firstSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
+		mos.write("output2", nullKey, firstSeq.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2_PREFIX);
 		for (j=0; j<outputClusterSize; j++) {
 			iterSeq = sequences.get(j);
 			context.write(nullKey, iterSeq.getFirstSeq());
-			mos.write("output2", nullKey, iterSeq.getSecondSeq(), Configuration.OUTPUT_PATH_2);
+			mos.write("output2", nullKey, iterSeq.getSecondSeq(), Configuration.TEMP_OUTPUT_PATH_2_PREFIX);
 		}
 
 		outputClusterSize++;

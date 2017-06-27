@@ -7,6 +7,8 @@ MarDRe v1.2 - 2017/07/XX
 ------------------------
 A point release for the MarDRe 1.x line
 
+	- Optimized paired-end mode using a map-side join (enabled by default)
+
 	- Support for input/output datasets compressed with Gzip (.gz extension)
 	and BZip2 (.bz2 extension) codecs. Read user's guide for more information
 	

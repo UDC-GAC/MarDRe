@@ -40,7 +40,8 @@ public final class Configuration {
 	public static final String TEMP_INPUT_PATH_2 = "/MarDRe/tmp/input2";
 	public static final String TEMP_OUTPUT_PATH_1 = "/MarDRe/tmp/output1";
 	public static final String TEMP_OUTPUT_PATH_2 = "/MarDRe/tmp/output2";
-	public static final String OUTPUT_PATH_2 = TEMP_OUTPUT_PATH_2+"/part";
+	public static final String TEMP_INPUT_PATH_2_PREFIX = TEMP_INPUT_PATH_2+"/part";
+	public static final String TEMP_OUTPUT_PATH_2_PREFIX = TEMP_OUTPUT_PATH_2+"/part";
 
 	public static boolean MERGE; 
 	public static boolean DELETE_TEMP;
