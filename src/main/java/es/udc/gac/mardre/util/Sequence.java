@@ -21,12 +21,11 @@ package es.udc.gac.mardre.util;
 import java.io.BufferedWriter;
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringWriter;
 
 import org.apache.hadoop.io.Writable;
-
-import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class Sequence implements Writable {
 
@@ -439,7 +438,7 @@ public class Sequence implements Writable {
 			out.writeByte(0);
 		}
 
-		if (Configuration.FILE_FORMAT == FileFormat.FILE_FORMAT_FASTQ)
+		if (_quals != null)
 			out.writeUTF(_quals);
 	}
 
@@ -470,8 +469,11 @@ public class Sequence implements Writable {
 				_compressSuffixRemainder[i] = in.readLong();			
 		}
 
-		if (Configuration.FILE_FORMAT == FileFormat.FILE_FORMAT_FASTQ)
+		try {
 			_quals = in.readUTF();
+		} catch (EOFException ex) {
+			_quals = null;
+		} 
 	}
 
 	private static final void setCompressSuffixLength(int length, int prefixLength, int numBasesCompared, boolean isSecondPairedRead) {
