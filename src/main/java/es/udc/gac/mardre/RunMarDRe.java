@@ -447,7 +447,7 @@ public class RunMarDRe extends Configured implements Tool {
 				timer.stop(T_PARSE_READS);
 
 				if (!status) {
-					System.out.println("HSRA: job failed!");
+					System.out.println("MarDRe: job failed!");
 					return -1;
 				}
 			} else {
@@ -466,7 +466,7 @@ public class RunMarDRe extends Configured implements Tool {
 				timer.stop(T_PARSE_READS);
 
 				if (!status) {
-					System.out.println("HSRA: job failed!");
+					System.out.println("MarDRe: job failed!");
 					return -1;
 				}
 			}
