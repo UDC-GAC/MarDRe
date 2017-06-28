@@ -23,12 +23,27 @@ import java.io.IOException;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.io.compress.SplittableCompressionCodec;
 import org.apache.hadoop.mapreduce.JobContext;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
-public abstract class SequenceInputFormat extends TextInputFormat {
+public abstract class SequenceTextInputFormat extends FileInputFormat<LongWritable, Text> {
 
 	private static final double SPLIT_SLOP = 1.1; // 10% slop
+
+	@Override
+	protected boolean isSplitable(JobContext context, Path file) {
+		final CompressionCodec codec =
+				new CompressionCodecFactory(context.getConfiguration()).getCodec(file);
+		if (null == codec) {
+			return true;
+		}
+		return codec instanceof SplittableCompressionCodec;
+	}
 
 	public int getNumberOfSplits(JobContext job, Path inputPath, long splitSize) throws IOException {
 

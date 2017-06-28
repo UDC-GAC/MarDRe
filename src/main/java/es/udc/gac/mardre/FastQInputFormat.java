@@ -24,7 +24,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-public class FastQInputFormat extends SequenceInputFormat {
+public class FastQInputFormat extends SequenceTextInputFormat {
 
 	@Override
 	public RecordReader<LongWritable, Text> createRecordReader(InputSplit inputSplit, TaskAttemptContext context) {
