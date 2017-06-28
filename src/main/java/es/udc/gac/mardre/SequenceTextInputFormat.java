@@ -49,7 +49,7 @@ public abstract class SequenceTextInputFormat extends FileInputFormat<LongWritab
 
 		int nsplits = 0;
 		FileSystem fs = FileSystem.get(job.getConfiguration());
-		FileStatus contents[] = fs.listStatus(inputPath);
+		FileStatus[] contents = fs.listStatus(inputPath);
 
 		for (int i = 0; i < contents.length; i++) {
 			FileStatus file = contents[i];
