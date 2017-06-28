@@ -55,7 +55,7 @@ public final class Configuration {
 	public static short PREFIX_LENGTH;
 	public static short MISMATCH;
 	public static short NUMBER_BASES_COMPARED;
-	public static FileFormat FILE_FORMAT;
+	public static FileFormat FILE_FORMAT = FileFormat.FILE_FORMAT_FASTQ;
 	public static String INPUT_PATH_1;
 
 	private static final String IO_FILE_BUFFER_SIZE_PARAM = "MarDRe_ioFileBufferSize";

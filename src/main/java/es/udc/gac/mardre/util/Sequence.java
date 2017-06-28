@@ -27,6 +27,8 @@ import java.io.StringWriter;
 
 import org.apache.hadoop.io.Writable;
 
+import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
+
 public class Sequence implements Writable {
 
 	private static final StringWriter stringWriter = new StringWriter();
@@ -469,11 +471,13 @@ public class Sequence implements Writable {
 				_compressSuffixRemainder[i] = in.readLong();			
 		}
 
-		try {
-			_quals = in.readUTF();
-		} catch (EOFException ex) {
-			_quals = null;
-		} 
+		if (Configuration.FILE_FORMAT == FileFormat.FILE_FORMAT_FASTQ) {
+			try {
+				_quals = in.readUTF();
+			} catch (EOFException eof) {
+				_quals = null;
+			}
+		}
 	}
 
 	private static final void setCompressSuffixLength(int length, int prefixLength, int numBasesCompared, boolean isSecondPairedRead) {
