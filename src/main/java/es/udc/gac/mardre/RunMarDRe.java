@@ -125,7 +125,7 @@ public class RunMarDRe extends Configured implements Tool {
 		job.setSpeculativeExecution(false);
 
 		// Mapper and Input format classes
-		if (Configuration.PAIRED_JOIN) {
+		if (Configuration.PAIRED_END_MAP_JOIN) {
 			job.setInputFormatClass(CompositeInputFormat.class);
 			job.setMapperClass(JoinPairedEndMapper.class);
 		} else {
@@ -426,8 +426,8 @@ public class RunMarDRe extends Configured implements Tool {
 			// Add additional output for the second file
 			MultipleOutputs.addNamedOutput(jobRemoveDuplicate, "output2", TextOutputFormat.class, NullWritable.class, Sequence.class);
 
-			if (Configuration.PAIRED_JOIN) {
-				// Paired-end mode using a map-side Hadooop join needs one map-only job to partition both input files
+			if (Configuration.PAIRED_END_MAP_JOIN) {
+				// Paired-end mode using a map-side join needs one map-only job to partition both input files
 				Job jobPairedSequences = RunMarDRe.configureHadoopJoinSequencesJob(conf, inputFormatClass);
 				SequenceTextInputFormat.setInputPaths(jobPairedSequences, inputPath1, inputPath2);
 				SequenceFileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
@@ -450,7 +450,7 @@ public class RunMarDRe extends Configured implements Tool {
 					return -1;
 				}
 			} else {
-				// Paired-end mode using a manual join only needs one map-reduce job processing both input files
+				// Paired-end mode using a reduce-side join needs one map-reduce job processing both input files
 				Job jobPairedSequences = RunMarDRe.configureJoinSequencesJob(conf, inputFormatClass, options.getNumberOfReducers());
 				SequenceTextInputFormat.setInputPaths(jobPairedSequences, inputPath1, inputPath2);
 				SequenceFileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
