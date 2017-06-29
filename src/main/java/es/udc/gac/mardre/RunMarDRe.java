@@ -427,7 +427,7 @@ public class RunMarDRe extends Configured implements Tool {
 			MultipleOutputs.addNamedOutput(jobRemoveDuplicate, "output2", TextOutputFormat.class, NullWritable.class, Sequence.class);
 
 			if (Configuration.PAIRED_END_MAP_JOIN) {
-				// Paired-end mode using a map-side join executes a previous  map-only job to partition both input files
+				// Paired-end mode using a map-side join executes a previous map-only job to partition both input files
 				Job jobPairedSequences = RunMarDRe.configureMapJoinSequencesJob(conf, inputFormatClass);
 				SequenceTextInputFormat.setInputPaths(jobPairedSequences, inputPath1, inputPath2);
 				SequenceFileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
