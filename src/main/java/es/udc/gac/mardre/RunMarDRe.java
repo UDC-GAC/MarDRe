@@ -157,8 +157,8 @@ public class RunMarDRe extends Configured implements Tool {
 		return job;
 	}
 
-	private static Job configureHadoopJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends SequenceTextInputFormat> inputFormatClass) throws IOException {
-		Job job = Job.getInstance(conf, "MarDRe_HadoopJoinSequences");
+	private static Job configureMapJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends SequenceTextInputFormat> inputFormatClass) throws IOException {
+		Job job = Job.getInstance(conf, "MarDRe_MapJoinSequences");
 		job.setJarByClass(RunMarDRe.class);
 
 		// This is a map-only job
@@ -196,8 +196,8 @@ public class RunMarDRe extends Configured implements Tool {
 		return job;
 	}
 
-	private static Job configureJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends SequenceTextInputFormat> inputFormatClass, int nreducers) throws IOException {
-		Job job = Job.getInstance(conf, "MarDRe_JoinSequences");
+	private static Job configureReduceJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends SequenceTextInputFormat> inputFormatClass, int nreducers) throws IOException {
+		Job job = Job.getInstance(conf, "MarDRe_ReduceJoinSequences");
 		job.setJarByClass(RunMarDRe.class);
 
 		// Number of reducers
@@ -427,8 +427,8 @@ public class RunMarDRe extends Configured implements Tool {
 			MultipleOutputs.addNamedOutput(jobRemoveDuplicate, "output2", TextOutputFormat.class, NullWritable.class, Sequence.class);
 
 			if (Configuration.PAIRED_END_MAP_JOIN) {
-				// Paired-end mode using a map-side join needs one map-only job to partition both input files
-				Job jobPairedSequences = RunMarDRe.configureHadoopJoinSequencesJob(conf, inputFormatClass);
+				// Paired-end mode using a map-side join executes a previous  map-only job to partition both input files
+				Job jobPairedSequences = RunMarDRe.configureMapJoinSequencesJob(conf, inputFormatClass);
 				SequenceTextInputFormat.setInputPaths(jobPairedSequences, inputPath1, inputPath2);
 				SequenceFileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
 				// Add additional output for the second temporal path
@@ -450,15 +450,15 @@ public class RunMarDRe extends Configured implements Tool {
 					return -1;
 				}
 			} else {
-				// Paired-end mode using a reduce-side join needs one map-reduce job processing both input files
-				Job jobPairedSequences = RunMarDRe.configureJoinSequencesJob(conf, inputFormatClass, options.getNumberOfReducers());
+				// Paired-end mode using a reduce-side join executes a previous map-reduce job processing both input files
+				Job jobPairedSequences = RunMarDRe.configureReduceJoinSequencesJob(conf, inputFormatClass, options.getNumberOfReducers());
 				SequenceTextInputFormat.setInputPaths(jobPairedSequences, inputPath1, inputPath2);
 				SequenceFileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
 				SequenceFileInputFormat.addInputPath(jobRemoveDuplicate, tmpInputPath1);
 				timer.stop(T_INIT);
 
-				// Run job
-				System.out.println("MarDRe: pairing sequences...");
+				// Run reduce-side join job
+				System.out.println("MarDRe: using reduce-side join. Joining paired sequences...");
 				timer.start(T_PARSE_READS);
 				status = jobPairedSequences.waitForCompletion(true);
 				timer.stop(T_PARSE_READS);
