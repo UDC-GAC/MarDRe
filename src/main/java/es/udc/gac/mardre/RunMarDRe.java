@@ -369,6 +369,7 @@ public class RunMarDRe extends Configured implements Tool {
 		System.out.println("MarDRe: in-Mapper combiner cache = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE+" entries");
 		System.out.println("MarDRe: cluster initial capacity = "+Configuration.CLUSTER_LIST_INITIAL_CAPACITY+" entries");
 
+		// Check compression options
 		if (Configuration.COMPRESS_MAP_OUTPUT || Configuration.COMPRESS_INTERMEDIATE_OUTPUT) {
 			try {
 				SnappyCodec.checkNativeCodeLoaded();
@@ -382,6 +383,11 @@ public class RunMarDRe extends Configured implements Tool {
 
 		if (Configuration.COMPRESS_MAP_OUTPUT)
 			System.out.println("MarDRe: using map output Snappy compression");
+
+		// Configure some MapReduce/HDFS properties
+		conf.setInt(MRJobConfig.TASK_TIMEOUT, 0);
+		conf.setFloat(MRJobConfig.MAP_SORT_SPILL_PERCENT, 0.9f);
+		conf.setInt("dfs.replication", 1);
 
 		if (options.isPaired()) {
 			System.out.println("MarDRe: running in paired-end mode");
