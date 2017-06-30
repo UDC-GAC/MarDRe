@@ -33,9 +33,8 @@ import java.util.Map;
 public final class Configuration {
 
 	public static final String MARDRE_VERSION = "1.2";
-	public static final String MARDRE_HOME;
-	private static final String MARDRE_CONFIG_FILE = "mardre.conf";
-	private static final Properties MARDRE_PROPERTIES;
+	public static final String MARDRE_WEBPAGE = "http://mardre.des.udc.es";
+
 	public static final String OUTPUT_PATH = "/MarDRe/output";
 	public static final String TEMP_INPUT_PATH_1 = "/MarDRe/tmp/input1";
 	public static final String TEMP_INPUT_PATH_2 = "/MarDRe/tmp/input2";
@@ -44,6 +43,10 @@ public final class Configuration {
 	public static final String TEMP_INPUT_PATH_2_PREFIX = TEMP_INPUT_PATH_2+"/part";
 	public static final String TEMP_OUTPUT_PATH_2_PREFIX = TEMP_OUTPUT_PATH_2+"/part";
 
+	// MarDRe configuration (madre.conf)
+	public static final String MARDRE_HOME;
+	private static final String MARDRE_CONFIG_FILE = "mardre.conf";
+	private static final Properties MARDRE_PROPERTIES;
 	public static boolean MERGE;
 	public static boolean DELETE_TEMP;
 	public static boolean PAIRED_END_MAP_JOIN;
