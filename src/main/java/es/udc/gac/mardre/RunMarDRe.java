@@ -237,16 +237,13 @@ public class RunMarDRe extends Configured implements Tool {
 		return job;
 	}
 
-	private static void merge(FileSystem srcFS, Path srcDir, FileSystem dstFS, Path dstFile, short replication, 
-			boolean deleteSource, org.apache.hadoop.conf.Configuration conf) throws IOException {
+	private static void merge(FileSystem srcFS, Path srcDir, FileSystem dstFS, Path dstFile, int bufferSize, short replication,
+                        long blockSize, boolean deleteSource, org.apache.hadoop.conf.Configuration conf) throws IOException {
 
 		if (!srcFS.getFileStatus(srcDir).isDirectory())
 			throw new IOException("Input path is not a directory");
 
-		if (dstFS.exists(dstFile))
-			dstFS.delete(dstFile, true);
-
-		FSDataOutputStream out = dstFS.create(dstFile, replication);
+		FSDataOutputStream out = dstFS.create(dstFile, true, bufferSize, replication, blockSize);
 		FSDataInputStream in = null;
 
 		try {
@@ -391,6 +388,9 @@ public class RunMarDRe extends Configured implements Tool {
 		conf.setFloat(MRJobConfig.MAP_SORT_SPILL_PERCENT, 0.9f);
 		// Force one block replica for intermediate output files
 		conf.setInt("dfs.replication", 1);
+		// The size of the buffer to be used for input read operations
+		conf.setInt("io.file.buffer.size", Configuration.IO_FILE_BUFFER_SIZE);
+		 long blockSize = Long.parseLong(conf.get("dfs.blocksize"));
 
 		if (options.isPaired()) {
 			System.out.println("MarDRe: running in paired-end mode");
@@ -518,9 +518,9 @@ public class RunMarDRe extends Configured implements Tool {
 			// Merge output files
 			System.out.print("MarDRe: merging output files...");
 			timer.start(T_MERGE);
-			RunMarDRe.merge(fs, tmpOutputPath1, fs, outputPath1, Configuration.HDFS_BLOCK_REPLICATION, Configuration.DELETE_TEMP, conf);
+			RunMarDRe.merge(fs, tmpOutputPath1, fs, outputPath1, Configuration.IO_FILE_BUFFER_SIZE, Configuration.HDFS_BLOCK_REPLICATION, blockSize, Configuration.DELETE_TEMP, conf);
 			if (options.isPaired())
-				RunMarDRe.merge(fs, tmpOutputPath2, fs, outputPath2, Configuration.HDFS_BLOCK_REPLICATION, Configuration.DELETE_TEMP, conf);
+				RunMarDRe.merge(fs, tmpOutputPath2, fs, outputPath2, Configuration.IO_FILE_BUFFER_SIZE, Configuration.HDFS_BLOCK_REPLICATION, blockSize, Configuration.DELETE_TEMP, conf);
 			timer.stop(T_MERGE);
 			System.out.println("done");
 		} else {
