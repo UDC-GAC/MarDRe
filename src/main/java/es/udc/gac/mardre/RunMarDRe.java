@@ -237,11 +237,11 @@ public class RunMarDRe extends Configured implements Tool {
 		return job;
 	}
 
-	private static boolean merge(FileSystem srcFS, Path srcDir, FileSystem dstFS, Path dstFile, short replication, 
+	private static void merge(FileSystem srcFS, Path srcDir, FileSystem dstFS, Path dstFile, short replication, 
 			boolean deleteSource, org.apache.hadoop.conf.Configuration conf) throws IOException {
 
 		if (!srcFS.getFileStatus(srcDir).isDirectory())
-			return false;
+			throw new IOException("Input path is not a directory");
 
 		if (dstFS.exists(dstFile))
 			dstFS.delete(dstFile, true);
@@ -266,12 +266,8 @@ public class RunMarDRe extends Configured implements Tool {
 			out.close();
 		}
 
-
-		if (deleteSource) {
-			return srcFS.delete(srcDir, true);
-		} else {
-			return true;
-		}
+		if (deleteSource)
+			srcFS.delete(srcDir, true);
 	}
 
 	private static boolean isInputPathCompressed(org.apache.hadoop.conf.Configuration conf, Path inputPath) {
