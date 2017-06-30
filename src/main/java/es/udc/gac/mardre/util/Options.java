@@ -267,6 +267,7 @@ public class Options {
 
 		if (!withInputFile) {
 			System.err.println("No input file specified with -i");
+			printUsage(RunMarDRe.class.getName());
 			return false;
 		}
 
