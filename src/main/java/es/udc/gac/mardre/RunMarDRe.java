@@ -19,12 +19,12 @@
 package es.udc.gac.mardre;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Arrays;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.IOUtils;
@@ -237,19 +237,24 @@ public class RunMarDRe extends Configured implements Tool {
 		return job;
 	}
 
-	private static boolean merge(FileSystem srcFS, Path srcDir, FileSystem dstFS, Path dstFile, boolean deleteSource, org.apache.hadoop.conf.Configuration conf) throws IOException {
+	private static boolean merge(FileSystem srcFS, Path srcDir, FileSystem dstFS, Path dstFile, short replication, 
+			boolean deleteSource, org.apache.hadoop.conf.Configuration conf) throws IOException {
 
 		if (!srcFS.getFileStatus(srcDir).isDirectory())
 			return false;
 
-		OutputStream out = dstFS.create(dstFile);
+		if (dstFS.exists(dstFile))
+			dstFS.delete(dstFile, true);
+
+		FSDataOutputStream out = dstFS.create(dstFile, replication);
+		FSDataInputStream in = null;
 
 		try {
 			FileStatus contents[] = srcFS.listStatus(srcDir);
 			Arrays.sort(contents);
 			for (int i = 0; i < contents.length; i++) {
 				if (contents[i].isFile()) {
-					InputStream in = srcFS.open(contents[i].getPath());
+					in = srcFS.open(contents[i].getPath());
 					try {
 						IOUtils.copyBytes(in, out, conf, false);
 					} finally {
@@ -352,8 +357,8 @@ public class RunMarDRe extends Configured implements Tool {
 		if (!Configuration.load(conf, options, inputPath1, format))
 			return -1;
 
-		// Get output files
-		outputPath1 = new Path(options.getWriteFileName1());
+		// Get output paths
+		outputPath1 = new Path(Configuration.OUTPUT_PATH + "/" + (new Path(options.getWriteFileName1()).getName()));
 		tmpOutputPath1 = new Path(Configuration.TEMP_OUTPUT_PATH_1);
 
 		if (fs.exists(tmpOutputPath1))
@@ -368,6 +373,7 @@ public class RunMarDRe extends Configured implements Tool {
 		System.out.println("MarDRe: in-Mapper combiner = "+Configuration.IN_MAPPER_COMBINER);
 		System.out.println("MarDRe: in-Mapper combiner cache = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE+" entries");
 		System.out.println("MarDRe: cluster initial capacity = "+Configuration.CLUSTER_LIST_INITIAL_CAPACITY+" entries");
+		System.out.println("MarDRe: HDFS block replication = "+Configuration.HDFS_BLOCK_REPLICATION);
 
 		// Check compression options
 		if (Configuration.COMPRESS_MAP_OUTPUT || Configuration.COMPRESS_INTERMEDIATE_OUTPUT) {
@@ -387,6 +393,7 @@ public class RunMarDRe extends Configured implements Tool {
 		// Configure some MapReduce/HDFS properties
 		conf.setInt(MRJobConfig.TASK_TIMEOUT, 0);
 		conf.setFloat(MRJobConfig.MAP_SORT_SPILL_PERCENT, 0.9f);
+		// Force one block replica for intermediate output files
 		conf.setInt("dfs.replication", 1);
 
 		if (options.isPaired()) {
@@ -396,7 +403,7 @@ public class RunMarDRe extends Configured implements Tool {
 				System.out.println("MarDRe: using intermediate output Snappy compression");
 
 			// Paired-end mode writes a second output file
-			outputPath2 = new Path(options.getWriteFileName2());
+			outputPath2 = new Path(Configuration.OUTPUT_PATH + "/" + (new Path(options.getWriteFileName2()).getName()));
 			tmpOutputPath2 = new Path(Configuration.TEMP_OUTPUT_PATH_2);
 			tmpInputPath1 = new Path(Configuration.TEMP_INPUT_PATH_1);
 			tmpInputPath2 = new Path(Configuration.TEMP_INPUT_PATH_2);
@@ -512,21 +519,12 @@ public class RunMarDRe extends Configured implements Tool {
 			fs.delete(success, true);
 
 		if (Configuration.MERGE) {
-			if (fs.exists(outputPath1))
-				fs.delete(outputPath1, true);
-
 			// Merge output files
 			System.out.print("MarDRe: merging output files...");
-
 			timer.start(T_MERGE);
-			RunMarDRe.merge(fs, tmpOutputPath1, fs, outputPath1, Configuration.DELETE_TEMP, conf);
-
-			if (options.isPaired()) {
-				if (fs.exists(outputPath2))
-					fs.delete(outputPath2, true);
-
-				RunMarDRe.merge(fs, tmpOutputPath2, fs, outputPath2, Configuration.DELETE_TEMP, conf);
-			}
+			RunMarDRe.merge(fs, tmpOutputPath1, fs, outputPath1, Configuration.HDFS_BLOCK_REPLICATION, Configuration.DELETE_TEMP, conf);
+			if (options.isPaired())
+				RunMarDRe.merge(fs, tmpOutputPath2, fs, outputPath2, Configuration.HDFS_BLOCK_REPLICATION, Configuration.DELETE_TEMP, conf);
 			timer.stop(T_MERGE);
 			System.out.println("done");
 		} else {

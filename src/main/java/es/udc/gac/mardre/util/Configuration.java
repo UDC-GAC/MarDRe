@@ -36,6 +36,7 @@ public final class Configuration {
 	public static final String MARDRE_HOME;
 	private static final String MARDRE_CONFIG_FILE = "mardre.conf";
 	private static final Properties MARDRE_PROPERTIES;
+	public static final String OUTPUT_PATH = "/MarDRe/output";
 	public static final String TEMP_INPUT_PATH_1 = "/MarDRe/tmp/input1";
 	public static final String TEMP_INPUT_PATH_2 = "/MarDRe/tmp/input2";
 	public static final String TEMP_OUTPUT_PATH_1 = "/MarDRe/tmp/output1";
@@ -43,7 +44,7 @@ public final class Configuration {
 	public static final String TEMP_INPUT_PATH_2_PREFIX = TEMP_INPUT_PATH_2+"/part";
 	public static final String TEMP_OUTPUT_PATH_2_PREFIX = TEMP_OUTPUT_PATH_2+"/part";
 
-	public static boolean MERGE; 
+	public static boolean MERGE;
 	public static boolean DELETE_TEMP;
 	public static boolean PAIRED_END_MAP_JOIN;
 	public static boolean COMPRESS_MAP_OUTPUT;
@@ -52,6 +53,7 @@ public final class Configuration {
 	public static boolean IN_MAPPER_COMBINER;
 	public static int IN_MAPPER_COMBINER_CACHE_SIZE;
 	public static int CLUSTER_LIST_INITIAL_CAPACITY;
+	public static short HDFS_BLOCK_REPLICATION;
 	public static short PREFIX_LENGTH;
 	public static short MISMATCH;
 	public static short NUMBER_BASES_COMPARED;
@@ -102,22 +104,28 @@ public final class Configuration {
 		IN_MAPPER_COMBINER = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "IN_MAPPER_COMBINER", "false"));
 		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "IN_MAPPER_COMBINER_CACHE_SIZE", InMapperCombiner.CACHE_SIZE.toString()));
 		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "CLUSTER_LIST_INITIAL_CAPACITY", "65536"));
+		HDFS_BLOCK_REPLICATION = Short.parseShort(Configuration.getProperty(MARDRE_PROPERTIES, "HDFS_BLOCK_REPLICATION", "1"));
 
 		if (MERGE == false)
 			DELETE_TEMP = false;
 
 		if (IO_FILE_BUFFER_SIZE <= 0) {
-			System.err.println("ioBufferSize="+IO_FILE_BUFFER_SIZE+" value is not valid");
+			System.err.println("IO_FILE_BUFFER_SIZE="+IO_FILE_BUFFER_SIZE+" value is not valid");
 			return false;
 		}
 
 		if (IN_MAPPER_COMBINER_CACHE_SIZE <= 0) {
-			System.err.println("inMapperCombinerCacheSize="+IN_MAPPER_COMBINER_CACHE_SIZE+" value is not valid");
+			System.err.println("IN_MAPPER_COMBINER_CACHE_SIZE="+IN_MAPPER_COMBINER_CACHE_SIZE+" value is not valid");
 			return false;
 		}
 
 		if (CLUSTER_LIST_INITIAL_CAPACITY < 0) {
-			System.err.println("clusterInitialCapacity="+CLUSTER_LIST_INITIAL_CAPACITY+" value is not valid");
+			System.err.println("CLUSTER_LIST_INITIAL_CAPACITY="+CLUSTER_LIST_INITIAL_CAPACITY+" value is not valid");
+			return false;
+		}
+
+		if (HDFS_BLOCK_REPLICATION <= 0) {
+			System.err.println("HDFS_BLOCK_REPLICATION="+HDFS_BLOCK_REPLICATION+" value is not valid");
 			return false;
 		}
 

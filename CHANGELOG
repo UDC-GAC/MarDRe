@@ -24,6 +24,9 @@ A point release for the MarDRe 1.x line
 	- New configuration parameter to enable Snappy compression of the map
 	output phase
 	
+	- New configuration parameter to specify HDFS block replication factor 
+	for output sequence files
+	
 	- Fix bug in paired-end mode when processing FASTA datasets
 
 
