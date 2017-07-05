@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import es.udc.gac.mardre.InMapperCombiner;
@@ -34,14 +35,6 @@ public final class Configuration {
 
 	public static final String MARDRE_VERSION = "1.2";
 	public static final String MARDRE_WEBPAGE = "http://mardre.des.udc.es";
-
-	public static final String OUTPUT_PATH = "/MarDRe/output";
-	public static final String TEMP_INPUT_PATH_1 = "/MarDRe/tmp/input1";
-	public static final String TEMP_INPUT_PATH_2 = "/MarDRe/tmp/input2";
-	public static final String TEMP_OUTPUT_PATH_1 = "/MarDRe/tmp/output1";
-	public static final String TEMP_OUTPUT_PATH_2 = "/MarDRe/tmp/output2";
-	public static final String TEMP_INPUT_PATH_2_PREFIX = TEMP_INPUT_PATH_2+"/part";
-	public static final String TEMP_OUTPUT_PATH_2_PREFIX = TEMP_OUTPUT_PATH_2+"/part";
 
 	// MarDRe configuration (madre.conf)
 	public static final String MARDRE_HOME;
@@ -57,11 +50,20 @@ public final class Configuration {
 	public static int IN_MAPPER_COMBINER_CACHE_SIZE;
 	public static int CLUSTER_LIST_INITIAL_CAPACITY;
 	public static short HDFS_BLOCK_REPLICATION;
+	public static String HDFS_BASE_PATH;
 	public static short PREFIX_LENGTH;
 	public static short MISMATCH;
 	public static short NUMBER_BASES_COMPARED;
 	public static FileFormat FILE_FORMAT = FileFormat.FILE_FORMAT_FASTQ;
 	public static String INPUT_PATH_1;
+
+	public static String OUTPUT_PATH;
+	public static String TEMP_INPUT_PATH_1;
+	public static String TEMP_INPUT_PATH_2;
+	public static String TEMP_OUTPUT_PATH_1;
+	public static String TEMP_OUTPUT_PATH_2;
+	public static String TEMP_INPUT_PATH_2_PREFIX;
+	public static String TEMP_OUTPUT_PATH_2_PREFIX;
 
 	private static final String IO_FILE_BUFFER_SIZE_PARAM = "MarDRe_ioFileBufferSize";
 	private static final String IN_MAPPER_COMBINER_PARAM = "MarDRe_inMapperCombiner";
@@ -85,7 +87,7 @@ public final class Configuration {
 
 	private Configuration() {}
 
-	public static boolean load(org.apache.hadoop.conf.Configuration jobConf, Options options, Path inputPath1, FileFormat format) throws FileNotFoundException {
+	public static boolean load(FileSystem fs, org.apache.hadoop.conf.Configuration jobConf, Options options, Path inputPath1, FileFormat format) throws IOException {
 
 		String slash = System.getProperty("file.separator");
 		String configFileName = MARDRE_HOME+slash+"etc"+slash+MARDRE_CONFIG_FILE;
@@ -108,6 +110,36 @@ public final class Configuration {
 		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "IN_MAPPER_COMBINER_CACHE_SIZE", InMapperCombiner.CACHE_SIZE.toString()));
 		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "CLUSTER_LIST_INITIAL_CAPACITY", "65536"));
 		HDFS_BLOCK_REPLICATION = Short.parseShort(Configuration.getProperty(MARDRE_PROPERTIES, "HDFS_BLOCK_REPLICATION", "1"));
+		Path basePath = new Path(Configuration.getProperty(MARDRE_PROPERTIES, "HDFS_BASE_PATH", fs.getHomeDirectory().toString()));
+
+		if (!basePath.equals(fs.getHomeDirectory())) {
+			if (!fs.exists(basePath)) {
+				System.err.println("HDFS_BASE_PATH="+HDFS_BASE_PATH+" value is not valid: "+basePath+" does not exist");
+				return false;
+			}
+
+			if(!fs.isDirectory(basePath)) {
+				System.err.println("HDFS_BASE_PATH="+HDFS_BASE_PATH+" value is not valid: "+basePath+" is not a directory");
+				return false;
+			}
+		} else {
+			if (!fs.exists(basePath))
+				fs.mkdirs(basePath);
+		}
+
+		HDFS_BASE_PATH = fs.resolvePath(basePath).toString();
+		String concatPath = HDFS_BASE_PATH;
+
+		if (basePath.isRoot())
+			concatPath = concatPath.substring(0, concatPath.length()-1);
+
+		OUTPUT_PATH = concatPath+slash+"MarDRe"+slash+"output";
+		TEMP_INPUT_PATH_1 = concatPath+slash+"MarDRe"+slash+"tmp"+slash+"input1";
+		TEMP_INPUT_PATH_2 = concatPath+slash+"MarDRe"+slash+"tmp"+slash+"input2";
+		TEMP_OUTPUT_PATH_1 = concatPath+slash+"MarDRe"+slash+"tmp"+slash+"output1";
+		TEMP_OUTPUT_PATH_2 = concatPath+slash+"MarDRe"+slash+"tmp"+slash+"output2";
+		TEMP_INPUT_PATH_2_PREFIX = TEMP_INPUT_PATH_2+slash+"part";
+		TEMP_OUTPUT_PATH_2_PREFIX = TEMP_OUTPUT_PATH_2+slash+"part";
 
 		if (MERGE == false)
 			DELETE_TEMP = false;

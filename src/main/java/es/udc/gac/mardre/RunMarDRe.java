@@ -238,7 +238,7 @@ public class RunMarDRe extends Configured implements Tool {
 	}
 
 	private static void merge(FileSystem srcFS, Path srcDir, FileSystem dstFS, Path dstFile, int bufferSize, short replication,
-                        long blockSize, boolean deleteSource, org.apache.hadoop.conf.Configuration conf) throws IOException {
+			long blockSize, boolean deleteSource, org.apache.hadoop.conf.Configuration conf) throws IOException {
 
 		if (!srcFS.getFileStatus(srcDir).isDirectory())
 			throw new IOException("Input path is not a directory");
@@ -347,7 +347,7 @@ public class RunMarDRe extends Configured implements Tool {
 		}
 
 		// Load MarDRe configuration
-		if (!Configuration.load(conf, options, inputPath1, format))
+		if (!Configuration.load(fs, conf, options, inputPath1, format))
 			return -1;
 
 		// Get output paths
@@ -367,6 +367,7 @@ public class RunMarDRe extends Configured implements Tool {
 		System.out.println("MarDRe: in-Mapper combiner cache = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE+" entries");
 		System.out.println("MarDRe: cluster initial capacity = "+Configuration.CLUSTER_LIST_INITIAL_CAPACITY+" entries");
 		System.out.println("MarDRe: HDFS block replication = "+Configuration.HDFS_BLOCK_REPLICATION);
+		System.out.println("MarDRe: HDFS base path = "+Configuration.HDFS_BASE_PATH);
 
 		// Check compression options
 		if (Configuration.COMPRESS_MAP_OUTPUT || Configuration.COMPRESS_INTERMEDIATE_OUTPUT) {
@@ -390,7 +391,7 @@ public class RunMarDRe extends Configured implements Tool {
 		conf.setInt("dfs.replication", 1);
 		// The size of the buffer to be used for input read operations
 		conf.setInt("io.file.buffer.size", Configuration.IO_FILE_BUFFER_SIZE);
-		 long blockSize = Long.parseLong(conf.get("dfs.blocksize"));
+		long blockSize = Long.parseLong(conf.get("dfs.blocksize"));
 
 		if (options.isPaired()) {
 			System.out.println("MarDRe: running in paired-end mode");
@@ -528,11 +529,11 @@ public class RunMarDRe extends Configured implements Tool {
 			outputPath2 = tmpOutputPath2;
 		}
 
-		System.out.println("MarDRe: output path = "+fs.getUri()+outputPath1);
+		System.out.println("MarDRe: output path = "+outputPath1);
 
 		// Cleanup
 		if (options.isPaired()) {
-			System.out.println("MarDRe: output path = "+fs.getUri()+outputPath2);
+			System.out.println("MarDRe: output path = "+outputPath2);
 			if (Configuration.DELETE_TEMP) {
 				fs.delete(tmpInputPath1, true);
 				fs.delete(tmpInputPath2, true);

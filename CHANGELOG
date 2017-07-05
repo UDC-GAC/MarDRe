@@ -27,6 +27,9 @@ A point release for the MarDRe 1.x line
 	- New configuration parameter to specify HDFS block replication factor 
 	for output sequence files
 	
+	- New configuration parameter to specify the HDFS base path used by MarDRe
+	to store both the output and intermediate files
+	
 	- Fix bug in paired-end mode when processing FASTA datasets
 
 
