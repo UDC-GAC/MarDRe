@@ -60,7 +60,7 @@ public abstract class SequenceTextInputFormat extends FileInputFormat<LongWritab
 				if (isSplitable(job, path)) {
 					long bytesRemaining = length;
 
-					while (((double) bytesRemaining)/splitSize > SPLIT_SLOP) {
+					while (((double) bytesRemaining) / splitSize > SPLIT_SLOP) {
 						nsplits++;
 						bytesRemaining -= splitSize;
 					}
