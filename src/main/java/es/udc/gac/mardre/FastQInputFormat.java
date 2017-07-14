@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with MarDRe.  If not, see <http://www.gnu.org/licenses/>.
+ * along with MarDRe. If not, see <http://www.gnu.org/licenses/>.
  */
 package es.udc.gac.mardre;
 
@@ -28,6 +28,6 @@ public class FastQInputFormat extends SequenceTextInputFormat {
 
 	@Override
 	public RecordReader<LongWritable, Text> createRecordReader(InputSplit inputSplit, TaskAttemptContext context) {
-		return new FastQRecordReader(true);
+		return new FastQRecordReader();
 	}
 }

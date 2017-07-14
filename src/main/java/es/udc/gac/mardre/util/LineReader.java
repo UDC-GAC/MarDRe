@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with MarDRe.  If not, see <http://www.gnu.org/licenses/>.
+ * along with MarDRe. If not, see <http://www.gnu.org/licenses/>.
  */
 package es.udc.gac.mardre.util;
 
@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.hadoop.io.Text;
+
+import es.udc.gac.mardre.util.Configuration;
 
 /**
  * 
@@ -35,7 +37,8 @@ public class LineReader implements Closeable {
 	 *  Current implementation only consider Line Feed (LF, '\n', 0x0A) as the
 	 *  the newline character. So, it only works on Unix-like systems.
 	 */
-	private static final byte LF = '\n';
+	public static final Text LF = new Text("\n");
+	private static final byte LF_BYTE = '\n';
 
 	private int bufferSize;
 	private InputStream inputStream;
@@ -111,7 +114,7 @@ public class LineReader implements Closeable {
 			}
 
 			for (; bufferPos < bufferLength; ++bufferPos) { //search for newline
-				if (buffer[bufferPos] == LF) {
+				if (buffer[bufferPos] == LF_BYTE) {
 					newLine = true;
 					++bufferPos; // at next invocation proceed from following byte
 					break;
@@ -140,7 +143,7 @@ public class LineReader implements Closeable {
 		int pos = text.find(String.valueOf(what), start);
 
 		if (pos != -1) {
-			text.getBytes()[pos] = LF;
+			text.getBytes()[pos] = LF_BYTE;
 			text.set(text.getBytes(), 0, ++pos);
 		}
 	}

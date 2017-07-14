@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with MarDRe.  If not, see <http://www.gnu.org/licenses/>.
+ * along with MarDRe. If not, see <http://www.gnu.org/licenses/>.
  */
 package es.udc.gac.mardre;
 
@@ -27,17 +27,16 @@ import es.udc.gac.mardre.util.LineReader;
 public class FastQRecordReader extends SequenceRecordReader {
 
 	private static final int NUMBER_OF_LINES_PER_FASTQ_READ = 4;
+	private static final Text COMMENT_LINE = new Text("+" + LineReader.LF);
 
 	private Text newLine;
 	private Text temp;
-	private boolean skipCommentLine;
 	private long numReads;
 
-	public FastQRecordReader(boolean skipCommentLine) {
+	public FastQRecordReader() {
 		super();
 		newLine = new Text();
 		temp = new Text();
-		this.skipCommentLine = skipCommentLine;
 		this.numReads = start;
 	}
 
@@ -92,10 +91,10 @@ public class FastQRecordReader extends SequenceRecordReader {
 			}
 
 			if (found) {
-				if (skipCommentLine && i > 2)
-					continue;
-
-				value.append(newLine.getBytes(), 0, newLine.getLength());
+				if (i != 3)
+					value.append(newLine.getBytes(), 0, newLine.getLength());
+				else
+					value.append(COMMENT_LINE.getBytes(), 0, COMMENT_LINE.getLength());
 			} else if (i == NUMBER_OF_LINES_PER_FASTQ_READ) {
 				//System.out.println("nextKeyValue: last line and no starting '@' has been found (discard previous data)");
 				i = 0;
