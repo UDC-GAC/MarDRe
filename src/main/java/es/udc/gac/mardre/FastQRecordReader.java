@@ -37,7 +37,7 @@ public class FastQRecordReader extends SequenceRecordReader {
 		super();
 		newLine = new Text();
 		temp = new Text();
-		this.numReads = start;
+		numReads = start;
 	}
 
 	@Override
