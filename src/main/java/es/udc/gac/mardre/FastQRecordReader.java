@@ -26,8 +26,8 @@ import es.udc.gac.mardre.util.LineReader;
 
 public class FastQRecordReader extends SequenceRecordReader {
 
-	private static final int NUMBER_OF_LINES_PER_FASTQ_READ = 4;
-	private static final Text COMMENT_LINE = new Text("+" + LineReader.LF);
+	private static final int NUMBER_OF_LINES_PER_READ = 4;
+	private static final Text FASTQ_COMMENT_LINE = new Text("+" + LineReader.LF);
 
 	private Text newLine;
 	private Text temp;
@@ -59,7 +59,7 @@ public class FastQRecordReader extends SequenceRecordReader {
 			if (firstRead == 0) //EOF
 				return false;
 
-			if (found && i == NUMBER_OF_LINES_PER_FASTQ_READ) {
+			if (found && i == NUMBER_OF_LINES_PER_READ) {
 				//System.out.println("nextKeyValue: last line and starting '@' has been previously found");
 				numReads++;
 				key.set(start+numReads);
@@ -94,8 +94,11 @@ public class FastQRecordReader extends SequenceRecordReader {
 				if (i != 3)
 					value.append(newLine.getBytes(), 0, newLine.getLength());
 				else
-					value.append(COMMENT_LINE.getBytes(), 0, COMMENT_LINE.getLength());
-			} else if (i == NUMBER_OF_LINES_PER_FASTQ_READ) {
+					value.append(FASTQ_COMMENT_LINE.getBytes(), 0, FASTQ_COMMENT_LINE.getLength());
+				continue;
+			}
+
+			if (i == NUMBER_OF_LINES_PER_READ) {
 				//System.out.println("nextKeyValue: last line and no starting '@' has been found (discard previous data)");
 				i = 0;
 			}
