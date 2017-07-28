@@ -106,17 +106,14 @@ public class Options {
 		System.out.println(
 				"    -r <string> outputFile2 (output file in FASTQ/FASTA format for paired-end scenarios, default = inputFile2.NonDup)");
 		System.out.println("Computation:");
-		System.out.print(
-				"    -m <integer> (number of allowed mismatches, default ");
-		System.out.println(_misMatch+")");
-		System.out.print(
-				"    -l <integer> (prefix length used for clustering, default ");
-		System.out.println(_prefixLength+")");
+		System.out.println(
+				"    -m <integer> (number of allowed mismatches, default 0)");
+		System.out.println(
+				"    -l <integer> (prefix length used for clustering, default 20)");
 		System.out.println(
 				"    -c <integer> (number of bases to compare for each read starting from the beginning, default is equal to the sequence length)");
-		System.out.print(
-				"    -nr <integer> (number of reducers, default ");
-		System.out.println(_nreducers+")");
+		System.out.println(
+				"    -nr <integer> (number of reducers, default 1)");
 		System.out.println("Others:");
 		System.out.println(
 				"    -h (print out the usage of the program)");
@@ -261,6 +258,7 @@ public class Options {
 				return false;
 			} else {
 				System.err.println("Parameter " + args[argInd] + " is not valid");
+				printUsage(RunMarDRe.class.getName());
 				return false;
 			}
 		}
