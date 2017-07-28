@@ -87,7 +87,7 @@ public class Options {
 		return _nreducers;
 	}
 
-	private void printUsage(String name) {
+	public static void printUsage(String name) {
 		System.out.println();
 		System.out.println(
 				"Usage: " + name + " -i inputFile1 [-o outputFile1] [-p inputFile1] [-r outputFile2] [options]");
@@ -249,7 +249,7 @@ public class Options {
 				} 
 			} else if (args[argInd].equals("-h")) {
 				// Check the help
-				printUsage(RunMarDRe.class.getName());
+				Options.printUsage(RunMarDRe.class.getName());
 				return false;
 			} else if (args[argInd].equals("-v")) {
 				// Check the version
@@ -258,14 +258,12 @@ public class Options {
 				return false;
 			} else {
 				System.err.println("Parameter " + args[argInd] + " is not valid");
-				printUsage(RunMarDRe.class.getName());
 				return false;
 			}
 		}
 
 		if (!withInputFile) {
 			System.err.println("No input file specified with -i");
-			printUsage(RunMarDRe.class.getName());
 			return false;
 		}
 
