@@ -87,7 +87,7 @@ public class Options {
 		return _nreducers;
 	}
 
-	public static void printUsage(String name) {
+	private static void printUsage(String name) {
 		System.out.println();
 		System.out.println(
 				"Usage: " + name + " -i inputFile1 [-o outputFile1] [-p inputFile1] [-r outputFile2] [options]");
@@ -137,6 +137,7 @@ public class Options {
 					argInd++;
 				} else {
 					System.err.println("No value specified for parameter -i");
+					Options.printUsage(RunMarDRe.class.getName());
 					return false;
 				}
 			} else if (args[argInd].equals("-p")) {
@@ -147,6 +148,7 @@ public class Options {
 					argInd++;
 				} else {
 					System.err.println("No value specified for parameter -p");
+					Options.printUsage(RunMarDRe.class.getName());
 					return false;
 				}
 			} else if (args[argInd].equals("-o")) {
@@ -157,6 +159,7 @@ public class Options {
 					argInd++;
 				} else {
 					System.err.println("No value specified for parameter -o");
+					Options.printUsage(RunMarDRe.class.getName());
 					return false;
 				}
 			} else if (args[argInd].equals("-r")) {
@@ -167,6 +170,7 @@ public class Options {
 					argInd++;
 				} else {
 					System.err.println("No value specified for parameter -r");
+					Options.printUsage(RunMarDRe.class.getName());
 					return false;
 				}
 			} else if (args[argInd].equals("-q")) {
@@ -190,6 +194,7 @@ public class Options {
 					argInd++;
 				} else {
 					System.err.println("No value specified for parameter -nr");
+					Options.printUsage(RunMarDRe.class.getName());
 					return false;
 				}
 			} else if (args[argInd].equals("-m")) {
@@ -207,6 +212,7 @@ public class Options {
 					argInd++;
 				} else {
 					System.err.println("No value specified for parameter -m");
+					Options.printUsage(RunMarDRe.class.getName());
 					return false;
 				}
 			} else if (args[argInd].equals("-l")) {
@@ -228,6 +234,7 @@ public class Options {
 					argInd++;
 				} else {
 					System.err.println("No value specified for parameter -l");
+					Options.printUsage(RunMarDRe.class.getName());
 					return false;
 				}
 			} else if (args[argInd].equals("-c")) {
@@ -245,6 +252,7 @@ public class Options {
 					argInd++;
 				} else {
 					System.err.println("No value specified for parameter -c");
+					Options.printUsage(RunMarDRe.class.getName());
 					return false;
 				} 
 			} else if (args[argInd].equals("-h")) {
@@ -258,12 +266,14 @@ public class Options {
 				return false;
 			} else {
 				System.err.println("Parameter " + args[argInd] + " is not valid");
+				Options.printUsage(RunMarDRe.class.getName());
 				return false;
 			}
 		}
 
 		if (!withInputFile) {
 			System.err.println("No input file specified with -i");
+			Options.printUsage(RunMarDRe.class.getName());
 			return false;
 		}
 

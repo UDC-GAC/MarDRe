@@ -301,10 +301,8 @@ public class RunMarDRe extends Configured implements Tool {
 
 		// Parse command line options
 		Options options = new Options();
-		if (!options.parse(args)) {
-			Options.printUsage(RunMarDRe.class.getName());
+		if (!options.parse(args))
 			return -1;
-		}
 
 		// Get input files and check if they are compressed
 		FileSystem fs = FileSystem.get(conf);
