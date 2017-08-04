@@ -144,7 +144,7 @@ public final class Configuration {
 		if (MERGE == false)
 			DELETE_TEMP = false;
 
-		if (IO_FILE_BUFFER_SIZE <= 0) {
+		if (IO_FILE_BUFFER_SIZE < 512) {
 			System.err.println("IO_FILE_BUFFER_SIZE="+IO_FILE_BUFFER_SIZE+" value is not valid");
 			return false;
 		}
