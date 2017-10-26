@@ -45,7 +45,7 @@ public final class Configuration {
 	public static boolean PAIRED_END_MAP_JOIN;
 	public static boolean COMPRESS_MAP_OUTPUT;
 	public static boolean COMPRESS_INTERMEDIATE_OUTPUT;
-	public static int IO_FILE_BUFFER_SIZE;
+	public static int INPUT_BUFFER_SIZE;
 	public static boolean IN_MAPPER_COMBINER;
 	public static int IN_MAPPER_COMBINER_CACHE_SIZE;
 	public static int CLUSTER_LIST_INITIAL_CAPACITY;
@@ -65,7 +65,6 @@ public final class Configuration {
 	public static String TEMP_INPUT_PATH_2_PREFIX;
 	public static String TEMP_OUTPUT_PATH_2_PREFIX;
 
-	private static final String IO_FILE_BUFFER_SIZE_PARAM = "MarDRe_ioFileBufferSize";
 	private static final String IN_MAPPER_COMBINER_PARAM = "MarDRe_inMapperCombiner";
 	private static final String IN_MAPPER_COMBINER_CACHE_SIZE_PARAM = "MarDRe_inMapperCombinerCacheSize";
 	private static final String CLUSTER_LIST_INITIAL_CAPACITY_PARAM = "MarDRe_clusterListInitialCapacity";
@@ -105,7 +104,7 @@ public final class Configuration {
 		PAIRED_END_MAP_JOIN = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "PAIRED_END_MAP_JOIN", "true"));
 		COMPRESS_MAP_OUTPUT = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "COMPRESS_MAP_OUTPUT", "false"));
 		COMPRESS_INTERMEDIATE_OUTPUT = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "COMPRESS_INTERMEDIATE_OUTPUT", "false"));
-		IO_FILE_BUFFER_SIZE = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "IO_FILE_BUFFER_SIZE", "65536"));
+		INPUT_BUFFER_SIZE = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "INPUT_BUFFER_SIZE", "65536"));
 		IN_MAPPER_COMBINER = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "IN_MAPPER_COMBINER", "false"));
 		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "IN_MAPPER_COMBINER_CACHE_SIZE", InMapperCombiner.CACHE_SIZE.toString()));
 		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(Configuration.getProperty(MARDRE_PROPERTIES, "CLUSTER_LIST_INITIAL_CAPACITY", "65536"));
@@ -144,8 +143,8 @@ public final class Configuration {
 		if (MERGE == false)
 			DELETE_TEMP = false;
 
-		if (IO_FILE_BUFFER_SIZE < 512) {
-			System.err.println("IO_FILE_BUFFER_SIZE="+IO_FILE_BUFFER_SIZE+" value is not valid");
+		if (INPUT_BUFFER_SIZE < 512) {
+			System.err.println("INPUT_BUFFER_SIZE="+INPUT_BUFFER_SIZE+" value is not valid");
 			return false;
 		}
 
@@ -164,7 +163,9 @@ public final class Configuration {
 			return false;
 		}
 
-		jobConf.setInt(IO_FILE_BUFFER_SIZE_PARAM, IO_FILE_BUFFER_SIZE);
+		// Configure input buffer size for HSP library
+		es.udc.gac.hadoop.sequence.parser.util.Configuration.setInputBufferSize(jobConf, INPUT_BUFFER_SIZE);
+		// Configure MarDRe paramaters
 		jobConf.setBoolean(IN_MAPPER_COMBINER_PARAM, IN_MAPPER_COMBINER);
 		jobConf.setInt(IN_MAPPER_COMBINER_CACHE_SIZE_PARAM, IN_MAPPER_COMBINER_CACHE_SIZE);
 		jobConf.setInt(CLUSTER_LIST_INITIAL_CAPACITY_PARAM, CLUSTER_LIST_INITIAL_CAPACITY);
@@ -178,7 +179,6 @@ public final class Configuration {
 	}
 
 	public static void set(org.apache.hadoop.conf.Configuration jobConf) {
-		IO_FILE_BUFFER_SIZE = Integer.parseInt(jobConf.get(IO_FILE_BUFFER_SIZE_PARAM));
 		IN_MAPPER_COMBINER = Boolean.parseBoolean(jobConf.get(IN_MAPPER_COMBINER_PARAM));
 		IN_MAPPER_COMBINER_CACHE_SIZE = Integer.parseInt(jobConf.get(IN_MAPPER_COMBINER_CACHE_SIZE_PARAM));
 		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(jobConf.get(CLUSTER_LIST_INITIAL_CAPACITY_PARAM));
@@ -187,10 +187,6 @@ public final class Configuration {
 		NUMBER_BASES_COMPARED = Short.parseShort(jobConf.get(NUMBER_BASES_COMPARED_PARAM));
 		FILE_FORMAT = FileFormat.values()[Integer.parseInt(jobConf.get(FILE_FORMAT_PARAM))];
 		INPUT_PATH_1 = jobConf.get(INPUT_PATH_1_PARAM);
-	}
-
-	public static int getIOFileBufferSize(org.apache.hadoop.conf.Configuration jobConf) {
-		return Integer.parseInt(jobConf.get(IO_FILE_BUFFER_SIZE_PARAM));
 	}
 
 	public static final int fastABS(int value) {

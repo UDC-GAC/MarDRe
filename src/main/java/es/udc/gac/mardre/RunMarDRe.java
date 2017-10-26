@@ -46,6 +46,9 @@ import org.apache.hadoop.mapreduce.lib.join.CompositeInputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import es.udc.gac.hadoop.sequence.parser.mapreduce.FastAInputFormat;
+import es.udc.gac.hadoop.sequence.parser.mapreduce.FastQInputFormat;
+import es.udc.gac.hadoop.sequence.parser.mapreduce.SequenceTextInputFormat;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.Options;
 import es.udc.gac.mardre.util.PairedSequence;
@@ -310,6 +313,8 @@ public class RunMarDRe extends Configured implements Tool {
 		inputPath1Length = fs.getFileStatus(inputPath1).getLen();
 		inputPath1LengthMB = inputPath1Length / (1024 * 1024);
 		isInputPath1Compressed = RunMarDRe.isInputPathCompressed(conf, inputPath1);
+		long inputPathBlockSize = fs.getFileStatus(inputPath1).getBlockSize();
+		long inputPathBlockSizeMB = inputPathBlockSize / (1024 * 1024);
 
 		if (isInputPath1Compressed)
 			// If codec != null => Output must be compressed
@@ -362,12 +367,13 @@ public class RunMarDRe extends Configured implements Tool {
 		System.out.println("MarDRe: allowed mismatches = "+options.getMisMatch());
 		System.out.println("MarDRe: number of bases to compare = "+options.getNumberOfBasesCompared());
 		System.out.println("MarDRe: number of reducers = "+options.getNumberOfReducers());
-		System.out.println("MarDRe: I/O file buffer size = "+Configuration.IO_FILE_BUFFER_SIZE+" bytes");
+		System.out.println("MarDRe: input buffer size = "+Configuration.INPUT_BUFFER_SIZE+" bytes");
 		System.out.println("MarDRe: in-Mapper combiner = "+Configuration.IN_MAPPER_COMBINER);
 		System.out.println("MarDRe: in-Mapper combiner cache = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE+" entries");
 		System.out.println("MarDRe: cluster initial capacity = "+Configuration.CLUSTER_LIST_INITIAL_CAPACITY+" entries");
-		System.out.println("MarDRe: HDFS block replication = "+Configuration.HDFS_BLOCK_REPLICATION);
 		System.out.println("MarDRe: HDFS base path = "+Configuration.HDFS_BASE_PATH);
+		System.out.println("MarDRe: HDFS block replication = "+Configuration.HDFS_BLOCK_REPLICATION);
+		System.out.println("MarDRe: HDFS block size = "+inputPathBlockSizeMB+" MiBytes");
 
 		// Check compression options
 		if (Configuration.COMPRESS_MAP_OUTPUT || Configuration.COMPRESS_INTERMEDIATE_OUTPUT) {
@@ -389,8 +395,6 @@ public class RunMarDRe extends Configured implements Tool {
 		conf.setFloat(MRJobConfig.MAP_SORT_SPILL_PERCENT, 0.9f);
 		// Force one block replica for intermediate output files
 		conf.setInt("dfs.replication", 1);
-		// The size of the buffer to be used for input read operations
-		conf.setInt("io.file.buffer.size", Configuration.IO_FILE_BUFFER_SIZE);
 		long blockSize = Long.parseLong(conf.get("dfs.blocksize"));
 
 		if (options.isPaired()) {
@@ -519,9 +523,9 @@ public class RunMarDRe extends Configured implements Tool {
 			// Merge output files
 			System.out.print("MarDRe: merging output files...");
 			timer.start(T_MERGE);
-			RunMarDRe.merge(fs, tmpOutputPath1, fs, outputPath1, Configuration.IO_FILE_BUFFER_SIZE, Configuration.HDFS_BLOCK_REPLICATION, blockSize, Configuration.DELETE_TEMP, conf);
+			RunMarDRe.merge(fs, tmpOutputPath1, fs, outputPath1, Configuration.INPUT_BUFFER_SIZE, Configuration.HDFS_BLOCK_REPLICATION, blockSize, Configuration.DELETE_TEMP, conf);
 			if (options.isPaired())
-				RunMarDRe.merge(fs, tmpOutputPath2, fs, outputPath2, Configuration.IO_FILE_BUFFER_SIZE, Configuration.HDFS_BLOCK_REPLICATION, blockSize, Configuration.DELETE_TEMP, conf);
+				RunMarDRe.merge(fs, tmpOutputPath2, fs, outputPath2, Configuration.INPUT_BUFFER_SIZE, Configuration.HDFS_BLOCK_REPLICATION, blockSize, Configuration.DELETE_TEMP, conf);
 			timer.stop(T_MERGE);
 			System.out.println("done");
 		} else {

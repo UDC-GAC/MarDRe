@@ -27,6 +27,12 @@
 	</repositories>
 
 	<dependencies>
+                <dependency>
+                        <groupId>es.udc.gac</groupId>
+                        <artifactId>hadoop-sequence-parser</artifactId>
+                        <version>1.0</version>
+                </dependency>
+
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
