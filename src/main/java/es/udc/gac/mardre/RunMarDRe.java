@@ -48,7 +48,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import es.udc.gac.hadoop.sequence.parser.mapreduce.FastAInputFormat;
 import es.udc.gac.hadoop.sequence.parser.mapreduce.FastQInputFormat;
-import es.udc.gac.hadoop.sequence.parser.mapreduce.SequenceTextInputFormat;
+import es.udc.gac.hadoop.sequence.parser.mapreduce.SingleEndSequenceInputFormat;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.Options;
 import es.udc.gac.mardre.util.PairedSequence;
@@ -71,7 +71,7 @@ public class RunMarDRe extends Configured implements Tool {
 		System.exit(ToolRunner.run(new org.apache.hadoop.conf.Configuration(), new RunMarDRe(), args));
 	}
 
-	private static Job configureSingleEndJob(org.apache.hadoop.conf.Configuration conf, Class<? extends SequenceTextInputFormat> inputFormatClass, int nreducers, CompressionCodec codec) throws IOException {
+	private static Job configureSingleEndJob(org.apache.hadoop.conf.Configuration conf, Class<? extends SingleEndSequenceInputFormat> inputFormatClass, int nreducers, CompressionCodec codec) throws IOException {
 
 		Job job = Job.getInstance(conf, "MarDRe_SingleEnd");
 		job.setJarByClass(RunMarDRe.class);
@@ -160,7 +160,7 @@ public class RunMarDRe extends Configured implements Tool {
 		return job;
 	}
 
-	private static Job configureMapJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends SequenceTextInputFormat> inputFormatClass) throws IOException {
+	private static Job configureMapJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends SingleEndSequenceInputFormat> inputFormatClass) throws IOException {
 		Job job = Job.getInstance(conf, "MarDRe_MapJoinSequences");
 		job.setJarByClass(RunMarDRe.class);
 
@@ -199,7 +199,7 @@ public class RunMarDRe extends Configured implements Tool {
 		return job;
 	}
 
-	private static Job configureReduceJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends SequenceTextInputFormat> inputFormatClass, int nreducers) throws IOException {
+	private static Job configureReduceJoinSequencesJob(org.apache.hadoop.conf.Configuration conf, Class<? extends SingleEndSequenceInputFormat> inputFormatClass, int nreducers) throws IOException {
 		Job job = Job.getInstance(conf, "MarDRe_ReduceJoinSequences");
 		job.setJarByClass(RunMarDRe.class);
 
@@ -341,7 +341,7 @@ public class RunMarDRe extends Configured implements Tool {
 		}
 
 		// Set input format class
-		Class<? extends SequenceTextInputFormat> inputFormatClass = null;
+		Class<? extends SingleEndSequenceInputFormat> inputFormatClass = null;
 
 		if (format == FileFormat.FILE_FORMAT_FASTQ) {
 			System.out.println("MarDRe: FASTQ format identified");
@@ -443,7 +443,7 @@ public class RunMarDRe extends Configured implements Tool {
 			if (Configuration.PAIRED_END_MAP_JOIN) {
 				// Paired-end mode using a map-side composite join executes a previous map-only job to partition both input files
 				Job jobPairedSequences = RunMarDRe.configureMapJoinSequencesJob(conf, inputFormatClass);
-				SequenceTextInputFormat.setInputPaths(jobPairedSequences, inputPath1, inputPath2);
+				SingleEndSequenceInputFormat.setInputPaths(jobPairedSequences, inputPath1, inputPath2);
 				SequenceFileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
 				// Add additional output for the second temporal path
 				MultipleOutputs.addNamedOutput(jobPairedSequences, "tempOutput", SequenceFileOutputFormat.class, LongWritable.class, Sequence.class);
@@ -466,7 +466,7 @@ public class RunMarDRe extends Configured implements Tool {
 			} else {
 				// Paired-end mode using a reduce-side join executes a previous map-reduce job processing both input files
 				Job jobPairedSequences = RunMarDRe.configureReduceJoinSequencesJob(conf, inputFormatClass, options.getNumberOfReducers());
-				SequenceTextInputFormat.setInputPaths(jobPairedSequences, inputPath1, inputPath2);
+				SingleEndSequenceInputFormat.setInputPaths(jobPairedSequences, inputPath1, inputPath2);
 				SequenceFileOutputFormat.setOutputPath(jobPairedSequences, tmpInputPath1);
 				SequenceFileInputFormat.addInputPath(jobRemoveDuplicate, tmpInputPath1);
 				timer.stop(T_INIT);
@@ -498,7 +498,7 @@ public class RunMarDRe extends Configured implements Tool {
 
 			// Configure job
 			jobRemoveDuplicate = RunMarDRe.configureSingleEndJob(conf, inputFormatClass, options.getNumberOfReducers(), codec);
-			SequenceTextInputFormat.addInputPath(jobRemoveDuplicate, inputPath1);
+			SingleEndSequenceInputFormat.addInputPath(jobRemoveDuplicate, inputPath1);
 			TextOutputFormat.setOutputPath(jobRemoveDuplicate, tmpOutputPath1);
 			timer.stop(T_INIT);
 		}
