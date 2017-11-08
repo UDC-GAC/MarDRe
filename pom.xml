@@ -8,66 +8,53 @@
 	<packaging>jar</packaging>
 
 	<name>MarDRe</name>
+	<url>http://mardre.des.udc.es</url>
+	<licenses>
+		<license>
+		<name>GNU General Public Licence Version 3</name>
+        	<url>https://www.gnu.org/licenses/gpl.txt</url>
+		</license>
+	</licenses>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<hadoop-sequence-parser.version>1.0</hadoop-sequence-parser.version>
+		<hadoop.version>2.2.0</hadoop.version>
+		<maven.compiler.version>3.7.0</maven.compiler.version>
+		<maven.compiler.source>1.7</maven.compiler.source>
+		<maven.compiler.target>1.7</maven.compiler.target>
+		<maven.assembly.version>3.1.0</maven.assembly.version>
 	</properties>
-
-	<repositories>
-		<repository>
-			<id>central</id>
-			<url>http://repo1.maven.org/maven2</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
 
 	<dependencies>
                 <dependency>
                         <groupId>es.udc.gac</groupId>
                         <artifactId>hadoop-sequence-parser</artifactId>
-                        <version>1.0</version>
+                        <version>${hadoop-sequence-parser.version}</version>
                 </dependency>
-
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-client</artifactId>
-			<version>2.7.1</version>
+			<version>${hadoop.version}</version>
 			<scope>provided</scope>
 		</dependency>
-	</dependencies>
+        </dependencies>
 
 	<build>
 		<plugins>
 			<plugin>
-				<!-- NOTE: We don't need a groupId specification because the group
-				is org.apache.maven.plugins ...which is assumed by default.
-				-->
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.7.0</version>
+				<version>${maven.compiler.version}</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
 				</configuration>
 			</plugin>
 			<plugin>
-				<!-- NOTE: We don't need a groupId specification because the group
-				is org.apache.maven.plugins ...which is assumed by default.
-				-->
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>3.1.0</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
+				<version>${maven.assembly.version}</version>
 				<configuration>
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
@@ -81,6 +68,14 @@
 						</manifest>
 					</archive>
 				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
