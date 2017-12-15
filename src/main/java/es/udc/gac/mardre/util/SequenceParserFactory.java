@@ -34,12 +34,12 @@ public class SequenceParserFactory {
 
 	private SequenceParserFactory() {}
 
-	public static SeqStringParser createParser(FileFormat format, short prefixLength, short numBasesCompared, boolean isSecondPairedRead) {
+	public static SeqStringParser createParser(FileFormat format, short prefixLength, short numBasesCompared) {
 
 		if (format == FileFormat.FILE_FORMAT_FASTQ)
-			return new FastQSeqStringParser(prefixLength, numBasesCompared, isSecondPairedRead);
+			return new FastQSeqStringParser(prefixLength, numBasesCompared);
 		else if (format == FileFormat.FILE_FORMAT_FASTA)
-			return new FastASeqStringParser(prefixLength, numBasesCompared, isSecondPairedRead);
+			return new FastASeqStringParser(prefixLength, numBasesCompared);
 		else
 			throw new IllegalArgumentException("Unrecognized file format ("+format+")");
 	}

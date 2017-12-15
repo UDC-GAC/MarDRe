@@ -22,12 +22,10 @@ public abstract class SeqStringParser {
 
 	private final short prefixLength;
 	private final short numBasesCompared;
-	private final boolean isSecondPairedRead; 
 
-	public SeqStringParser(short prefixLength, short numBasesCompared, boolean isSecondPairedRead) {
+	public SeqStringParser(short prefixLength, short numBasesCompared) {
 		this.prefixLength = prefixLength;
 		this.numBasesCompared = numBasesCompared;
-		this.isSecondPairedRead = isSecondPairedRead;
 	}
 
 	public short getPrefixLength() {
@@ -38,9 +36,5 @@ public abstract class SeqStringParser {
 		return numBasesCompared;
 	}
 
-	public boolean isSecondPairedRead() {
-		return isSecondPairedRead;
-	}
-
-	public abstract int getSeq(String s, Sequence seq);
+	public abstract int getSeq(String s, Sequence seq, boolean isFirstSeq);
 }

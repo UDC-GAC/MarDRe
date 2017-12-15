@@ -197,7 +197,7 @@ public class Sequence implements Writable {
 		}
 	}
 
-	public void setSuffix(String bases, int prefixLength, int numBasesCompared, boolean isSecondPairedRead) {
+	public void setSuffix(String bases, int prefixLength, int numBasesCompared) {
 
 		int i,j;
 		int iterBases = prefixLength;
@@ -212,7 +212,7 @@ public class Sequence implements Writable {
 
 		// Set compress suffix length
 		if (Sequence.totalSuffixLength != totalSuffixLength)
-			Sequence.setCompressSuffixLength(_length, prefixLength, numBasesCompared, isSecondPairedRead);
+			Sequence.setCompressSuffixLength(_length, prefixLength, numBasesCompared, !_isFirstSeq);
 
 		// Code the part of the suffix to be compared (if any)
 		if (Sequence.suffixLength > 0) {
@@ -303,7 +303,7 @@ public class Sequence implements Writable {
 		return true;
 	}
 
-	private void decodeBases(short prefixLength, int numBasesCompared, boolean isSecondPairedRead) {
+	private void decodeBases(short prefixLength, int numBasesCompared) {
 
 		if (Sequence.bases == null || Sequence.bases.length != _length)
 			Sequence.bases = new char[_length];
@@ -320,7 +320,7 @@ public class Sequence implements Writable {
 		}
 
 		int totalSuffixLength = _length - prefixLength;
-		int suffixLengthToCompare = Sequence.getSuffixLengthToCompare(_length, prefixLength, totalSuffixLength, numBasesCompared, isSecondPairedRead);
+		int suffixLengthToCompare = Sequence.getSuffixLengthToCompare(_length, prefixLength, totalSuffixLength, numBasesCompared, !_isFirstSeq);
 		int suffixLengthRemainder = totalSuffixLength - suffixLengthToCompare;
 
 		// Decode the suffix
@@ -392,7 +392,7 @@ public class Sequence implements Writable {
 
 		try {
 			// Decode the bases
-			decodeBases((_isFirstSeq)? Configuration.PREFIX_LENGTH : 0, Configuration.NUMBER_BASES_COMPARED, !_isFirstSeq);
+			decodeBases((_isFirstSeq)? Configuration.PREFIX_LENGTH : 0, Configuration.NUMBER_BASES_COMPARED);
 
 			// Print name and bases
 			bufferedWriter.write(_name);

@@ -103,7 +103,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
-		parser = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, Configuration.PREFIX_LENGTH, Configuration.NUMBER_BASES_COMPARED, false);
+		parser = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, Configuration.PREFIX_LENGTH, Configuration.NUMBER_BASES_COMPARED);
 		numInputSequences = 0;
 
 		if (Configuration.IN_MAPPER_COMBINER == false) {
@@ -123,7 +123,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 	public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 
 		String str = Text.decode(value.getBytes(), 0, value.getLength(), false);
-		parser.getSeq(str, seq);
+		parser.getSeq(str, seq, true);
 		longKey.set(seq.getKey());
 		combiner.write(longKey, seq, context);
 		numInputSequences++;

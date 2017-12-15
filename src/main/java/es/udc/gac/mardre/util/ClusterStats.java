@@ -94,7 +94,7 @@ public final class ClusterStats {
 					+ "highest cluster time %d/%d: %.3f sec (%.3f/%.3f), "
 					+ "highest write time %d/%d: %.3f sec (%.3f/%.3f)\n",
 					numOutputSequences, numInputSequences, numClusters, reduceTime,
-					maxOutputClusterSize, maxInputClusterSize, maxInputClusterTime + maxInputWriteTime,maxInputClusterTime, maxInputWriteTime,
+					maxOutputClusterSize, maxInputClusterSize, maxInputClusterTime + maxInputWriteTime, maxInputClusterTime, maxInputWriteTime,
 					maxOutputClusterTimeSize, maxInputClusterTimeSize, maxClusterTime + maxClusterWriteTime, maxClusterTime, maxClusterWriteTime,
 					maxOutputWriteTimeSize, maxInputWriteTimeSize, maxWriteClusterTime + maxWriteTime, maxWriteClusterTime, maxWriteTime);
 		}

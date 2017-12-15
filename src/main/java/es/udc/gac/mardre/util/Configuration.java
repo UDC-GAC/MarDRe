@@ -59,7 +59,6 @@ public final class Configuration {
 
 	public static String OUTPUT_PATH;
 	public static String TEMP_INPUT_PATH_1;
-	public static String TEMP_INPUT_PATH_2;
 	public static String TEMP_OUTPUT_PATH_1;
 	public static String TEMP_OUTPUT_PATH_2;
 	public static String TEMP_INPUT_PATH_2_PREFIX;
@@ -73,6 +72,7 @@ public final class Configuration {
 	private static final String NUMBER_BASES_COMPARED_PARAM = "MarDRe_numBasesCompared";
 	private static final String FILE_FORMAT_PARAM = "MarDRe_fileFormat";
 	private static final String INPUT_PATH_1_PARAM = "MarDRe_inputPath1";
+	private static final String TEMP_OUTPUT_PATH_2_PREFIX_PARAM = "MarDRe_tempOutputPath2Prefix";
 
 	static {
 		Map<String,String> map = System.getenv();
@@ -134,10 +134,8 @@ public final class Configuration {
 
 		OUTPUT_PATH = concatPath+slash+"MarDRe"+slash+"output";
 		TEMP_INPUT_PATH_1 = concatPath+slash+"MarDRe"+slash+"tmp"+slash+"input1";
-		TEMP_INPUT_PATH_2 = concatPath+slash+"MarDRe"+slash+"tmp"+slash+"input2";
 		TEMP_OUTPUT_PATH_1 = concatPath+slash+"MarDRe"+slash+"tmp"+slash+"output1";
 		TEMP_OUTPUT_PATH_2 = concatPath+slash+"MarDRe"+slash+"tmp"+slash+"output2";
-		TEMP_INPUT_PATH_2_PREFIX = TEMP_INPUT_PATH_2+slash+"part";
 		TEMP_OUTPUT_PATH_2_PREFIX = TEMP_OUTPUT_PATH_2+slash+"part";
 
 		if (MERGE == false)
@@ -174,6 +172,7 @@ public final class Configuration {
 		jobConf.setInt(NUMBER_BASES_COMPARED_PARAM, options.getNumberOfBasesCompared());
 		jobConf.setInt(FILE_FORMAT_PARAM, format.ordinal());
 		jobConf.set(INPUT_PATH_1_PARAM, inputPath1.toString());
+		jobConf.set(TEMP_OUTPUT_PATH_2_PREFIX_PARAM, TEMP_OUTPUT_PATH_2_PREFIX);
 
 		return true;
 	}
@@ -187,6 +186,7 @@ public final class Configuration {
 		NUMBER_BASES_COMPARED = Short.parseShort(jobConf.get(NUMBER_BASES_COMPARED_PARAM));
 		FILE_FORMAT = FileFormat.values()[Integer.parseInt(jobConf.get(FILE_FORMAT_PARAM))];
 		INPUT_PATH_1 = jobConf.get(INPUT_PATH_1_PARAM);
+		TEMP_OUTPUT_PATH_2_PREFIX = jobConf.get(TEMP_OUTPUT_PATH_2_PREFIX_PARAM);
 	}
 
 	public static final int fastABS(int value) {

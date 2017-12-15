@@ -20,12 +20,12 @@ package es.udc.gac.mardre.util;
 
 public class FastASeqStringParser extends SeqStringParser {
 
-	public FastASeqStringParser(short prefixLength, short numBasesCompared, boolean isSecondPairedRead) {
-		super(prefixLength, numBasesCompared, isSecondPairedRead);
+	public FastASeqStringParser(short prefixLength, short numBasesCompared) {
+		super(prefixLength, numBasesCompared);
 	}
 
 	@Override
-	public int getSeq(String value, Sequence seq) {
+	public int getSeq(String value, Sequence seq, boolean isFirstSeq) {
 
 		OptimizedStringTokenizer st = new OptimizedStringTokenizer(value, '\n');
 
@@ -46,8 +46,9 @@ public class FastASeqStringParser extends SeqStringParser {
 		while(st.hasMoreTokens())
 			bases += st.nextToken();
 
+		seq.setIsFirstSeq(isFirstSeq);
 		seq.setKey(bases, this.getPrefixLength());
-		seq.setSuffix(bases, this.getPrefixLength(), this.getNumBasesCompared(), this.isSecondPairedRead());
+		seq.setSuffix(bases, this.getPrefixLength(), this.getNumBasesCompared());
 
 		return bases.length();
 	}

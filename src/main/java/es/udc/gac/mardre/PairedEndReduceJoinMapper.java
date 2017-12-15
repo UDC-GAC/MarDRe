@@ -19,31 +19,49 @@
 package es.udc.gac.mardre;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 
 import es.udc.gac.mardre.util.Configuration;
-import es.udc.gac.mardre.util.SeqStringParser;
-import es.udc.gac.mardre.util.Sequence;
-import es.udc.gac.mardre.util.SequenceParserFactory;
+import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.Timer;
 
-public class ParseJoinSequencesMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
+public class PairedEndReduceJoinMapper extends Mapper<LongWritable, PairedSequence, LongWritable, PairedSequence> {
 
 	private static final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
 	private static final int T_SETUP = 1;
 	private static final int T_MAP = 2;
 	private static final int T_CLEANUP = 3;
-	private static Sequence seq = new Sequence();
-	private static SeqStringParser parser;
-	private static MultipleOutputs<LongWritable,Sequence> mos = null;
-	private static boolean isFirstInputPath = true;
+	private static LongWritable longKey = new LongWritable();
 	private static long numInputSequences;
+
+	private static final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
+			new CombiningFunction<LongWritable, PairedSequence>() {
+				@Override
+				public void combine(Map<LongWritable, List<PairedSequence>> cache, List<PairedSequence> seqsInCache, PairedSequence newSeq) {
+
+					boolean insert = true;
+
+					for (PairedSequence seq : seqsInCache) {
+						if (newSeq.equal(seq, Configuration.MISMATCH)) {
+							insert = false;
+							break;
+						}
+					}
+
+					if (insert) {
+						// Put the sequence into the cache
+						seqsInCache.add(newSeq);
+						longKey.set(newSeq.getKey());
+						cache.put(longKey, seqsInCache);
+					}
+				}
+			}
+			);
 
 	@Override
 	public void run(Context context) throws IOException, InterruptedException {
@@ -80,37 +98,28 @@ public class ParseJoinSequencesMapper extends Mapper<LongWritable, Text, LongWri
 
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
-		String inputSplitPath = ((FileSplit) context.getInputSplit()).getPath().toString();
 		numInputSequences = 0;
 
-		if (!inputSplitPath.equals(Configuration.INPUT_PATH_1)) {
-			isFirstInputPath = false;
-			mos = new MultipleOutputs<LongWritable,Sequence>(context);
+		if (Configuration.IN_MAPPER_COMBINER == false) {
+			// Disable the in-Mapper combiner
+			combiner.setCombiningFunction(null);
+		} else {
+			combiner.setMaxCacheCapacity(Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
 		}
-
-		short prefixLength = (isFirstInputPath)? Configuration.PREFIX_LENGTH : 0;
-		parser = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, prefixLength, Configuration.NUMBER_BASES_COMPARED, !isFirstInputPath);
 	}
 
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
-		if (mos != null)
-			mos.close();
+		combiner.flush(context, true);
 	}
 
 	@Override
-	public void map(LongWritable key, Text value, Context context)
+	public void map(LongWritable key, PairedSequence value, Context context)
 			throws IOException, InterruptedException {
 
-		String str = Text.decode(value.getBytes(), 0, value.getLength(), false);
-		parser.getSeq(str, seq);
-		seq.setIsFirstSeq(isFirstInputPath);
-
-		if (isFirstInputPath)
-			context.write(key, seq);
-		else
-			mos.write("tempOutput", key, seq, Configuration.TEMP_INPUT_PATH_2_PREFIX);
-
+		longKey.set(value.getKey());
+		combiner.write(longKey, value, context);
 		numInputSequences++;
+		combiner.flush(context, false);
 	}
 }

@@ -81,7 +81,7 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 			isFirstInputPath = false;
 
 		short prefixLength = (isFirstInputPath)? Configuration.PREFIX_LENGTH : 0;
-		parser = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, prefixLength, Configuration.NUMBER_BASES_COMPARED, !isFirstInputPath);
+		parser = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, prefixLength, Configuration.NUMBER_BASES_COMPARED);
 	}
 
 	@Override
@@ -89,8 +89,7 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 			throws IOException, InterruptedException {
 
 		String str = Text.decode(value.getBytes(), 0, value.getLength(), false);
-		parser.getSeq(str, seq);
-		seq.setIsFirstSeq(isFirstInputPath);
+		parser.getSeq(str, seq, isFirstInputPath);
 		context.write(key, seq);
 		numInputSequences++;
 	}

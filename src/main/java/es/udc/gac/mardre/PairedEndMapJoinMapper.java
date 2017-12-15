@@ -23,15 +23,17 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.lib.join.TupleWritable;
 
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.PairedSequence;
+import es.udc.gac.mardre.util.SeqStringParser;
 import es.udc.gac.mardre.util.Sequence;
+import es.udc.gac.mardre.util.SequenceParserFactory;
 import es.udc.gac.mardre.util.Timer;
 
-public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, LongWritable, PairedSequence> {
+public class PairedEndMapJoinMapper extends Mapper<LongWritable, Text, LongWritable, PairedSequence> {
 
 	private static final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
@@ -40,6 +42,10 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	private static final int T_CLEANUP = 3;
 	private static PairedSequence pairedSeq = new PairedSequence();
 	private static LongWritable longKey = new LongWritable();
+	private static Sequence firstSeq = new Sequence();
+	private static Sequence secondSeq = new Sequence();
+	private static SeqStringParser firstParser;
+	private static SeqStringParser secondParser;
 	private static long numInputSequences;
 
 	private static final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
@@ -103,6 +109,9 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	protected void setup(Context context) throws IOException, InterruptedException {
 		numInputSequences = 0;
 
+		firstParser = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, Configuration.PREFIX_LENGTH, Configuration.NUMBER_BASES_COMPARED);
+		secondParser = SequenceParserFactory.createParser(Configuration.FILE_FORMAT, (short) 0, Configuration.NUMBER_BASES_COMPARED);
+
 		if (Configuration.IN_MAPPER_COMBINER == false) {
 			// Disable the in-Mapper combiner
 			combiner.setCombiningFunction(null);
@@ -117,14 +126,14 @@ public class JoinPairedEndMapper extends Mapper<LongWritable, TupleWritable, Lon
 	}
 
 	@Override
-	public void map(LongWritable key, TupleWritable value, Context context)
+	public void map(LongWritable key, Text value, Context context)
 			throws IOException, InterruptedException {
 
-		if (value.size() != 2)
-			throw new IndexOutOfBoundsException("PairedSequence consists of "+value.size()+" sequence/s");
-
-		pairedSeq.setFirstSeq((Sequence) value.get(0));
-		pairedSeq.setSecondSeq((Sequence) value.get(1));
+		int length = (int) key.get();
+		firstParser.getSeq(Text.decode(value.getBytes(), 0, length, false), firstSeq, true);
+		secondParser.getSeq(Text.decode(value.getBytes(), length, length, false), secondSeq, false);
+		pairedSeq.setFirstSeq(firstSeq);
+		pairedSeq.setSecondSeq(secondSeq);
 		longKey.set(pairedSeq.getKey());
 		combiner.write(longKey, pairedSeq, context);
 		numInputSequences++;
