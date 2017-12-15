@@ -61,7 +61,6 @@ public final class Configuration {
 	public static String TEMP_INPUT_PATH_1;
 	public static String TEMP_OUTPUT_PATH_1;
 	public static String TEMP_OUTPUT_PATH_2;
-	public static String TEMP_INPUT_PATH_2_PREFIX;
 	public static String TEMP_OUTPUT_PATH_2_PREFIX;
 
 	private static final String IN_MAPPER_COMBINER_PARAM = "MarDRe_inMapperCombiner";
