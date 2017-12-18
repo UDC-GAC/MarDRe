@@ -3,18 +3,20 @@ MarDRe Changelog
 This file briefly describes the main changes for each version of
 the MarDRe software package.
 
-MarDRe v1.3 - 2017/XX/XX
+MarDRe v1.3 - 2017/12/20
 ------------------------
 A point release for the MarDRe 1.x line
 
-	- MarDRe now uses the Hadoop Sequence Parser (HSP) library to read
+	- MarDRe now uses the Hadoop Sequence Parser (HSP)* library to read
 	input FASTQ/FASTA datasets. Overall performance is improved due to the
-	sequence record readers provided by the HSP library, especially in
-	the paired-end mode when using a map-side join. This mode now executes
-	a single MapReduce job (note that paired-end mode using a reduce-side
-	join still requires to execute two MapReduce jobs)
+	custom sequence record readers provided by this library, especially in
+	the paired-end mode when using a map-side join. Using HSP, this mode
+	now executes a single MapReduce job (note that paired-end mode using a
+	reduce-side join still needs to execute two MapReduce jobs)
 
-	- Fix bug in paired-end mode
+		* HSP is available at https://github.com/rreye/hsp
+
+	- Fix bug in paired-end mode scenarios
 
 
 MarDRe v1.2 - 2017/07/28
