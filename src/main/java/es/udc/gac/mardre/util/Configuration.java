@@ -33,7 +33,7 @@ import java.util.Map;
 
 public final class Configuration {
 
-	public static final String MARDRE_VERSION = "1.3";
+	public static final String MARDRE_VERSION = "1.4";
 	public static final String MARDRE_WEBPAGE = "http://mardre.des.udc.es";
 
 	// MarDRe configuration (madre.conf)

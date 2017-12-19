@@ -4,7 +4,7 @@
 
 	<groupId>es.udc.gac</groupId>
 	<artifactId>MarDRe</artifactId>
-	<version>1.3</version>
+	<version>1.4</version>
 	<packaging>jar</packaging>
 
 	<name>MarDRe</name>
