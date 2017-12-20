@@ -26,6 +26,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
+import es.udc.gac.hadoop.sequence.parser.mapreduce.PairedEndSequenceRecordReader;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.SeqStringParser;
@@ -129,9 +130,8 @@ public class PairedEndMapJoinMapper extends Mapper<LongWritable, Text, LongWrita
 	public void map(LongWritable key, Text value, Context context)
 			throws IOException, InterruptedException {
 
-		int length = (int) key.get();
-		firstParser.getSeq(Text.decode(value.getBytes(), 0, length, false), firstSeq, true);
-		secondParser.getSeq(Text.decode(value.getBytes(), length, length, false), secondSeq, false);
+		firstParser.getSeq(PairedEndSequenceRecordReader.getLeftRead(key, value), firstSeq, true);
+		secondParser.getSeq(PairedEndSequenceRecordReader.getRightRead(key, value), secondSeq, false);
 		pairedSeq.setFirstSeq(firstSeq);
 		pairedSeq.setSecondSeq(secondSeq);
 		longKey.set(pairedSeq.getKey());

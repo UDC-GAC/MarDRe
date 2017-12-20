@@ -27,6 +27,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import es.udc.gac.mardre.util.Timer;
+import es.udc.gac.hadoop.sequence.parser.mapreduce.SingleEndSequenceRecordReader;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.SeqStringParser;
 import es.udc.gac.mardre.util.Sequence;
@@ -122,8 +123,7 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 	@Override
 	public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 
-		String str = Text.decode(value.getBytes(), 0, value.getLength(), false);
-		parser.getSeq(str, seq, true);
+		parser.getSeq(SingleEndSequenceRecordReader.getRead(value), seq, true);
 		longKey.set(seq.getKey());
 		combiner.write(longKey, seq, context);
 		numInputSequences++;
