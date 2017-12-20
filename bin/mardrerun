@@ -11,4 +11,3 @@ if [ -z "$MARDRE_HOME" ]; then
 fi
 
 $HADOOP_HOME/bin/hadoop jar $MARDRE_HOME/target/MarDRe-1.4-exec.jar "$@"
-
