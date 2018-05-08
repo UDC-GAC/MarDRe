@@ -18,7 +18,6 @@
  */
 package es.udc.gac.mardre.util;
 
-import java.io.BufferedWriter;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.EOFException;
@@ -31,7 +30,8 @@ import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class Sequence implements Writable {
 
-	private static final StringWriter stringWriter = new StringWriter();
+	private static final String COMMENT_LINE = "\n+\n";
+	private static final String LF = "\n";
 	private static char[] bases = null;
 	private static short compressSuffixLength = -1;
 	private static short compressSuffixLengthRemainder = -1;
@@ -387,27 +387,22 @@ public class Sequence implements Writable {
 	@Override
 	public String toString() {
 
-		stringWriter.getBuffer().setLength(0);
-		BufferedWriter bufferedWriter = new BufferedWriter(stringWriter);
+		StringWriter stringWriter = new StringWriter();
 
 		try {
 			// Decode the bases
 			decodeBases((_isFirstSeq)? Configuration.PREFIX_LENGTH : 0, Configuration.NUMBER_BASES_COMPARED);
 
 			// Print name and bases
-			bufferedWriter.write(_name);
-			bufferedWriter.newLine();
-			bufferedWriter.write(Sequence.bases);
+			stringWriter.write(_name);
+			stringWriter.write(LF);
+			stringWriter.write(Sequence.bases);
 
 			// Print quality scores if available
 			if (_quals != null) {
-				bufferedWriter.newLine();
-				bufferedWriter.write('+');
-				bufferedWriter.newLine();
-				bufferedWriter.write(_quals);
+				stringWriter.write(COMMENT_LINE);
+				stringWriter.write(_quals);
 			}
-
-			bufferedWriter.close();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
