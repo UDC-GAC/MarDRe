@@ -7,6 +7,8 @@ MarDRe v1.4 - 2018/XX/XX
 ------------------------
 A point release for the MarDRe 1.x line
 
+	- Improved performance by optimizing the writing of Sequence objects
+
 
 MarDRe v1.3 - 2017/12/19
 ------------------------
