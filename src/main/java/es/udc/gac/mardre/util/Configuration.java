@@ -98,7 +98,7 @@ public final class Configuration {
 			throw new FileNotFoundException("File: "+configFileName);
 		}
 
-		MERGE = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "MERGE_OUTPUT", "true"));
+		MERGE = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "MERGE_OUTPUT", "false"));
 		DELETE_TEMP = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "DELETE_TEMP", "true"));
 		PAIRED_END_MAP_JOIN = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "PAIRED_END_MAP_JOIN", "true"));
 		COMPRESS_MAP_OUTPUT = Boolean.parseBoolean(Configuration.getProperty(MARDRE_PROPERTIES, "COMPRESS_MAP_OUTPUT", "false"));
