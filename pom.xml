@@ -59,14 +59,9 @@
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
-					<finalName>${project.artifactId}-${project.version}-exec</finalName>
+					<finalName>${project.artifactId}-bin</finalName>
 					<appendAssemblyId>false</appendAssemblyId>
 					<attach>false</attach>
-					<archive>
-						<manifest>
-							<mainClass>es.udc.gac.mardre.RunMarDRe</mainClass>
-						</manifest>
-					</archive>
 				</configuration>
 				<executions>
 					<execution>
