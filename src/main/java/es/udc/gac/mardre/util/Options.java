@@ -90,7 +90,7 @@ public class Options {
 	private static void printUsage(String name) {
 		System.out.println();
 		System.out.println(
-				"Usage: " + name + " -i inputFile1 [-o outputFile1] [-p inputFile1] [-r outputFile2] [options]");
+				"Usage: " + name + " -i inputFile1 [-o outputFile1] [-p inputFile2] [-r outputFile2] [options]");
 		System.out.println("Input:");
 		System.out.println(
 				"    -i <string> inputFile1 (input file in FASTQ/FASTA format)");
