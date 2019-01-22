@@ -3,11 +3,11 @@ MarDRe Changelog
 This file briefly describes the main changes for each version of
 the MarDRe software package.
 
-MarDRe v1.4 - 2018/XX/XX
+MarDRe v1.4 - 2019/XX/XX
 ------------------------
 A point release for the MarDRe 1.x line
 
-	- Improved performance by optimizing the writing of Sequence objects
+	- Improved overall performance by optimizing the writing of Sequence objects
 
 
 MarDRe v1.3 - 2017/12/19
