@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Universidade da Coruña
+ * Copyright (C) 2017-2026 Universidade da Coruña
  * 
  * This file is part of MarDRe.
  * 
