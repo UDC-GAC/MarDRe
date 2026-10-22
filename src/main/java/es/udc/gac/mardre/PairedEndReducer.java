@@ -128,7 +128,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 						if(newSeq.equal(iterSeq, Configuration.MISMATCH)) {
 							insert = false;
 
-							if (newSeq.getAvgQual() > iterSeq.getAvgQual())
+							if (newSeq.isBetterThan(iterSeq))
 								// Update existing element in the list
 								iterSeq.set(newSeq);
 
@@ -147,7 +147,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 					}
 					outputClusterSize++;
 				}
-			} else if (newSeq.getAvgQual() > firstSeq.getAvgQual()) {
+			} else if (newSeq.isBetterThan(firstSeq)) {
 				// Duplicate of the first read with higher quality
 				firstSeq.set(newSeq);
 			}

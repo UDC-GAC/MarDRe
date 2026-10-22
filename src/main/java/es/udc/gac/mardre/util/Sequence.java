@@ -150,6 +150,24 @@ public class Sequence implements Writable {
 		return _avgQual;
 	}
 
+	/**
+	 * Whether this read is preferred over a duplicate: the highest average quality wins and, if they
+	 * are exactly equal, the lowest name, so the kept read does not depend on the arrival order.
+	 */
+	public boolean isBetterThan(Sequence s) {
+		float qual = getAvgQual();
+		float qual2 = s.getAvgQual();
+
+		if (qual != qual2)
+			return qual > qual2;
+
+		return hasLowerNameThan(s);
+	}
+
+	boolean hasLowerNameThan(Sequence s) {
+		return _name != null && s._name != null && _name.compareTo(s._name) < 0;
+	}
+
 	public short getDist() {
 		return _dist;
 	}

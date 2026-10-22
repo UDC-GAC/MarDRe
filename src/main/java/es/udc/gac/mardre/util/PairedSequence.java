@@ -81,6 +81,17 @@ public class PairedSequence implements Writable {
 		return firstSeq.getAvgQual() + secondSeq.getAvgQual();
 	}
 
+	/** Same criteria as {@link Sequence#isBetterThan}, with the summed quality and the name of the first read. */
+	public boolean isBetterThan(PairedSequence seq2) {
+		float qual = getAvgQual();
+		float qual2 = seq2.getAvgQual();
+
+		if (qual != qual2)
+			return qual > qual2;
+
+		return firstSeq.hasLowerNameThan(seq2.firstSeq);
+	}
+
 	public boolean equal(PairedSequence seq2, short misMatch) {
 		short numMisMatch = this.firstSeq.misMatches(seq2.firstSeq, misMatch, (short) 0);
 

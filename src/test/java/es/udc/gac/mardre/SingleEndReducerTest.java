@@ -271,6 +271,63 @@ public class SingleEndReducerTest {
 			assertEquals("arrival order " + arrival(order), Arrays.asList("@a2", "@b2"), names(reduce(order, 0)));
 	}
 
+	@Test
+	public void duplicatesWithTheSameQualityKeepTheLowestNameWhateverTheArrivalOrder() throws Exception {
+		List<Read> reads = Arrays.asList(
+				new Read("@c", BASES, '5'),
+				new Read("@a", BASES, '5'),
+				new Read("@b", BASES, '5'));
+
+		for (List<Read> order : permutations(reads))
+			assertEquals("arrival order " + arrival(order), Arrays.asList("@a"), names(reduce(order, 0)));
+	}
+
+	@Test
+	public void theNameOnlyDecidesBetweenReadsWithTheBestQuality() throws Exception {
+		List<Read> reads = Arrays.asList(
+				new Read("@a", BASES, '5'),
+				new Read("@z", BASES, 'I'),
+				new Read("@m", BASES, 'I'),
+				new Read("@b", BASES, '?'));
+
+		for (List<Read> order : permutations(reads))
+			assertEquals("arrival order " + arrival(order), Arrays.asList("@m"), names(reduce(order, 0)));
+	}
+
+	/** Few quality levels, so there are many ties: the kept read of each sequence does not depend on the arrival order. */
+	@Test
+	public void randomGroupsWithTiesKeepTheBestQualityAndTheLowestName() throws Exception {
+		Random random = new Random(7);
+		String[] variants = new String[4];
+		for (int i = 0; i < variants.length; i++) {
+			StringBuilder sb = new StringBuilder("ACGTA");
+			for (int j = 0; j < 19; j++)
+				sb.append("ACGT".charAt(random.nextInt(4)));
+			variants[i] = sb.toString();
+		}
+
+		for (int round = 0; round < 200; round++) {
+			List<Read> reads = new ArrayList<Read>();
+			Map<String, Read> best = new HashMap<String, Read>();
+
+			for (int i = 0; i < 2 + random.nextInt(14); i++) {
+				Read read = new Read("@r" + i, variants[random.nextInt(variants.length)], "5?I".charAt(random.nextInt(3)));
+				reads.add(read);
+
+				Read current = best.get(read.bases);
+				if (current == null || read.qual > current.qual || (read.qual == current.qual && read.name.compareTo(current.name) < 0))
+					best.put(read.bases, read);
+			}
+
+			List<String> expected = new ArrayList<String>();
+			for (Read read : best.values())
+				expected.add(read.name);
+			Collections.sort(expected);
+
+			assertEquals("round " + round + ", arrival order " + arrival(reads), expected, names(reduce(reads, 0)));
+		}
+	}
+
 	/**
 	 * With mismatches, the distances of the reads kept so far are relative to the first read of the group: they
 	 * must not change when a better duplicate replaces it, or later duplicates would be compared with a wrong filter.

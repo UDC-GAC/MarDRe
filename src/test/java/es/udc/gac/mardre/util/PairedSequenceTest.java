@@ -93,4 +93,41 @@ public class PairedSequenceTest {
 
 		assertEquals(3, other.setDist(reference));
 	}
+
+	private static PairedSequence pair(String name, String quals1, String quals2) {
+		PairedSequence pair = new PairedSequence();
+		pair.setFirstSeq(parse(name, quals1));
+		pair.setSecondSeq(parse(name, quals2));
+		return pair;
+	}
+
+	private static Sequence parse(String name, String quals) {
+		Sequence seq = new Sequence();
+		PARSER.getSeq(name + "\n" + BASES + "\n+\n" + quals, seq, true);
+		return seq;
+	}
+
+	private static String quals(char c) {
+		return String.valueOf(c).repeat(BASES.length());
+	}
+
+	@Test
+	public void aPairIsBetterWhenTheQualityOfBothReadsIsHigher() {
+		PairedSequence high = pair("@z", quals('5'), quals('I'));
+		PairedSequence low = pair("@a", quals('5'), quals('?'));
+
+		assertTrue(high.isBetterThan(low));
+		assertFalse(low.isBetterThan(high));
+	}
+
+	@Test
+	public void withTheSameQualityTheLowestNameOfTheFirstReadIsBetter() {
+		PairedSequence a = pair("@a", quals('5'), quals('I'));
+		// Same summed quality with the scores swapped between the reads
+		PairedSequence b = pair("@b", quals('I'), quals('5'));
+
+		assertTrue(a.isBetterThan(b));
+		assertFalse(b.isBetterThan(a));
+		assertFalse(a.isBetterThan(a));
+	}
 }

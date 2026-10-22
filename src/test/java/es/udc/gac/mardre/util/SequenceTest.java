@@ -19,6 +19,8 @@
 package es.udc.gac.mardre.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -83,6 +85,71 @@ public class SequenceTest {
 
 	private static void readFields(Sequence seq, byte[] data) throws IOException {
 		seq.readFields(new DataInputStream(new ByteArrayInputStream(data)));
+	}
+
+	private static Sequence read(String name, String quals) {
+		Sequence seq = new Sequence();
+		PARSER.getSeq(record(name, "ACGTAAAAAAAAAAAAAAAAAAAA".substring(0, quals.length()), quals), seq, true);
+		return seq;
+	}
+
+	@Test
+	public void aReadWithHigherQualityIsBetterWhateverTheName() {
+		Sequence high = read("@z", "IIIIIIIIII");
+		Sequence low = read("@a", "5555555555");
+
+		assertTrue(high.isBetterThan(low));
+		assertFalse(low.isBetterThan(high));
+	}
+
+	@Test
+	public void withTheSameQualityTheLowestNameIsBetter() {
+		Sequence a = read("@a", "5555555555");
+		Sequence b = read("@b", "5555555555");
+
+		assertTrue(a.isBetterThan(b));
+		assertFalse(b.isBetterThan(a));
+	}
+
+	@Test
+	public void withTheSameAverageQualityTheNameDecides() {
+		// Different scores, same average
+		Sequence a = read("@b", "5?5?5?5?5?");
+		Sequence b = read("@a", "?5?5?5?5?5");
+
+		assertTrue(b.isBetterThan(a));
+		assertFalse(a.isBetterThan(b));
+	}
+
+	@Test
+	public void aReadIsNotBetterThanItselfOrThanAnotherWithTheSameNameAndQuality() {
+		Sequence a = read("@a", "5555555555");
+
+		assertFalse(a.isBetterThan(a));
+		assertFalse(a.isBetterThan(read("@a", "5555555555")));
+	}
+
+	@Test
+	public void readsWithoutQualitiesAreComparedByName() {
+		Sequence a = new Sequence();
+		a.setName(">a");
+		Sequence b = new Sequence();
+		b.setName(">b");
+
+		assertTrue(a.isBetterThan(b));
+		assertFalse(b.isBetterThan(a));
+	}
+
+	@Test
+	public void theQualityIsNotStaleAfterReusingTheObject() throws IOException {
+		Sequence reused = new Sequence();
+		Sequence low = read("@a", "5555555555");
+		Sequence high = read("@b", "IIIIIIIIII");
+
+		reused.readFields(new DataInputStream(new ByteArrayInputStream(serialize(low))));
+		assertFalse(reused.isBetterThan(high));
+		reused.readFields(new DataInputStream(new ByteArrayInputStream(serialize(high))));
+		assertTrue(reused.isBetterThan(low));
 	}
 
 	@Test
