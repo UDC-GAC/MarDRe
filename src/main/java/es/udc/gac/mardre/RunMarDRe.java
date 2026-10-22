@@ -41,6 +41,7 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -372,8 +373,9 @@ public class RunMarDRe extends Configured implements Tool {
 		// Check compression options
 		if (Configuration.COMPRESS_MAP_OUTPUT || Configuration.COMPRESS_INTERMEDIATE_OUTPUT) {
 			try {
-				SnappyCodec.checkNativeCodeLoaded();
-			} catch (Exception e) {
+				// Hadoop 3.3 has no native code check for Snappy: creating a compressor fails if it is not usable
+				ReflectionUtils.newInstance(SnappyCodec.class, conf).createCompressor();
+			} catch (Exception | LinkageError e) {
 				System.out.println("MarDRe-WARNING: "+e.getMessage());
 				Configuration.COMPRESS_MAP_OUTPUT = false;
 			}
