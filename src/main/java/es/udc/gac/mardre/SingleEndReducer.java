@@ -35,16 +35,14 @@ import es.udc.gac.mardre.util.Timer;
 
 public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritable, Sequence> {
 
-	private static final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
 	private static final int T_REDUCE = 1;
 	private static final int T_CLUSTER = 2;
 	private static final int T_WRITE = 3;
 	private static final NullWritable nullKey = NullWritable.get();
-	private static List<Sequence> sequences;
-	private static Sequence firstSeq;
-	private static Sequence refSeq;
-	private static Sequence iterSeq;
+	private final Timer timer = new Timer();
+	private final ClusterStats clusterStats = new ClusterStats();
+	private List<Sequence> sequences;
 
 	@Override
 	public void run(Reducer<LongWritable, Sequence, NullWritable, Sequence>.Context context) throws IOException, InterruptedException {
@@ -53,7 +51,6 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		Configuration.set(context.getConfiguration());
 		int taskID = context.getTaskAttemptID().getTaskID().getId();
-		ClusterStats.init();
 		sequences = new ArrayList<Sequence>(Configuration.CLUSTER_LIST_INITIAL_CAPACITY);		
 
 		setup(context);
@@ -78,13 +75,13 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		double reduceTime = timer.readTotal(T_REDUCE);
 
 		// Report times
-		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds (%d reads)\n", taskID, timer.readTotal(T_TOTAL), ClusterStats.getNumInputSequences());
+		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds (%d reads)\n", taskID, timer.readTotal(T_TOTAL), clusterStats.getNumInputSequences());
 		System.out.format(java.util.Locale.ENGLISH,"\tReduce time: %.3f seconds\n", reduceTime);
 		System.out.format(java.util.Locale.ENGLISH,"\tClustering time: %.3f seconds\n", timer.readTotal(T_CLUSTER));
 		System.out.format(java.util.Locale.ENGLISH,"\tWrite time: %.3f seconds\n", timer.readTotal(T_WRITE));
 
 		// Report stats
-		ClusterStats.report(reduceTime);
+		clusterStats.report(reduceTime);
 	}
 
 	@Override
@@ -94,13 +91,14 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		int inputClusterSize = 1, outputClusterSize = 0;
 		boolean insert;
 		int diff, j;
+		Sequence iterSeq;
 
 		timer.start(T_CLUSTER);
 
 		// Get the first sequence
-		firstSeq = new Sequence(values.iterator().next());
+		Sequence firstSeq = new Sequence(values.iterator().next());
 		// Reference of the distances: it must not change when a better duplicate replaces firstSeq
-		refSeq = new Sequence(firstSeq);
+		Sequence refSeq = new Sequence(firstSeq);
 
 		// Iterate over the remaining sequences
 		for (Sequence newSeq : values) {
@@ -156,6 +154,6 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 		timer.stop(T_WRITE);
 
 		// Update stats
-		ClusterStats.update(inputClusterSize, outputClusterSize, timer.readLast(T_CLUSTER), timer.readLast(T_WRITE));
+		clusterStats.update(inputClusterSize, outputClusterSize, timer.readLast(T_CLUSTER), timer.readLast(T_WRITE));
 	}
 }

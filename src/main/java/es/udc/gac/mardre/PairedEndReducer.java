@@ -37,17 +37,15 @@ import es.udc.gac.mardre.util.Timer;
 
 public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, NullWritable, Sequence> {
 
-	private static final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
 	private static final int T_REDUCE = 1;
 	private static final int T_CLUSTER = 2;
 	private static final int T_WRITE = 3;
 	private static final NullWritable nullKey = NullWritable.get();
-	private static List<PairedSequence> sequences;
-	private static PairedSequence firstSeq;
-	private static PairedSequence refSeq;
-	private static PairedSequence iterSeq;
-	private static MultipleOutputs<NullWritable,Sequence> mos;
+	private final Timer timer = new Timer();
+	private final ClusterStats clusterStats = new ClusterStats();
+	private List<PairedSequence> sequences;
+	private MultipleOutputs<NullWritable,Sequence> mos;
 
 	@Override
 	public void run(Reducer<LongWritable, PairedSequence, NullWritable, Sequence>.Context context) throws IOException, InterruptedException {		
@@ -56,7 +54,6 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		Configuration.set(context.getConfiguration());
 		int taskID = context.getTaskAttemptID().getTaskID().getId();
-		ClusterStats.init();
 		sequences = new ArrayList<PairedSequence>(Configuration.CLUSTER_LIST_INITIAL_CAPACITY);
 
 		setup(context);
@@ -81,13 +78,13 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		double reduceTime = timer.readTotal(T_REDUCE);
 
 		// Report times
-		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds (%d reads)\n", taskID, timer.readTotal(T_TOTAL), ClusterStats.getNumInputSequences());
+		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds (%d reads)\n", taskID, timer.readTotal(T_TOTAL), clusterStats.getNumInputSequences());
 		System.out.format(java.util.Locale.ENGLISH,"\tReduce time: %.3f seconds\n", reduceTime);
 		System.out.format(java.util.Locale.ENGLISH,"\tClustering time: %.3f seconds\n", timer.readTotal(T_CLUSTER));
 		System.out.format(java.util.Locale.ENGLISH,"\tWrite time: %.3f seconds\n", timer.readTotal(T_WRITE));
 
 		// Report stats
-		ClusterStats.report(reduceTime);
+		clusterStats.report(reduceTime);
 	}
 
 	@Override
@@ -107,13 +104,14 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		int inputClusterSize = 1, outputClusterSize = 0;
 		boolean insert;
 		int diff, j;
+		PairedSequence iterSeq;
 
 		timer.start(T_CLUSTER);
 
 		// Get the first sequence
-		firstSeq = new PairedSequence(values.iterator().next());
+		PairedSequence firstSeq = new PairedSequence(values.iterator().next());
 		// Reference of the distances: it must not change when a better duplicate replaces firstSeq
-		refSeq = new PairedSequence(firstSeq);
+		PairedSequence refSeq = new PairedSequence(firstSeq);
 
 		// Iterate over the remaining sequences
 		for (PairedSequence newSeq : values) {
@@ -173,6 +171,6 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		timer.stop(T_WRITE);
 
 		// Update stats
-		ClusterStats.update(inputClusterSize, outputClusterSize, timer.readLast(T_CLUSTER), timer.readLast(T_WRITE));
+		clusterStats.update(inputClusterSize, outputClusterSize, timer.readLast(T_CLUSTER), timer.readLast(T_WRITE));
 	}
 }

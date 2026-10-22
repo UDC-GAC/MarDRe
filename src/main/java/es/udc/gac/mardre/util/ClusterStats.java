@@ -18,27 +18,29 @@
  */
 package es.udc.gac.mardre.util;
 
-public final class ClusterStats {
+public class ClusterStats {
 
-	private static long maxInputClusterSize;
-	private static long maxOutputClusterSize;
-	private static double maxInputClusterTime;
-	private static double maxInputWriteTime;
-	private static long maxInputClusterTimeSize;
-	private static long maxOutputClusterTimeSize;
-	private static double maxClusterTime;
-	private static double maxClusterWriteTime;
-	private static long maxInputWriteTimeSize;
-	private static long maxOutputWriteTimeSize;
-	private static double maxWriteClusterTime;
-	private static double maxWriteTime;
-	private static long numInputSequences;
-	private static long numOutputSequences;
-	private static long numClusters;
+	private long maxInputClusterSize;
+	private long maxOutputClusterSize;
+	private double maxInputClusterTime;
+	private double maxInputWriteTime;
+	private long maxInputClusterTimeSize;
+	private long maxOutputClusterTimeSize;
+	private double maxClusterTime;
+	private double maxClusterWriteTime;
+	private long maxInputWriteTimeSize;
+	private long maxOutputWriteTimeSize;
+	private double maxWriteClusterTime;
+	private double maxWriteTime;
+	private long numInputSequences;
+	private long numOutputSequences;
+	private long numClusters;
 
-	private ClusterStats() {}
+	public ClusterStats() {
+		init();
+	}
 
-	public static void init() {
+	public void init() {
 		maxInputClusterSize = 0;
 		maxOutputClusterSize = 0;
 		maxInputClusterTime = 0;
@@ -56,11 +58,11 @@ public final class ClusterStats {
 		numClusters = 0;
 	}
 
-	public static void reset() {
+	public void reset() {
 		init();
 	}
 
-	public static void update(long inputClusterSize, long outputClusterSize, double clusterTime, double writeTime) {
+	public void update(long inputClusterSize, long outputClusterSize, double clusterTime, double writeTime) {
 		numInputSequences += inputClusterSize;
 		numOutputSequences += outputClusterSize;
 		numClusters++;
@@ -87,7 +89,7 @@ public final class ClusterStats {
 		}
 	}
 
-	public static void report(double reduceTime) {
+	public void report(double reduceTime) {
 		if (numInputSequences > 0) {
 			System.out.format(java.util.Locale.ENGLISH,"\n%d/%d reads in %d clusters: %.3f sec => "
 					+ "largest cluster %d/%d: %.3f sec (%.3f/%.3f), "
@@ -100,7 +102,7 @@ public final class ClusterStats {
 		}
 	}
 
-	public static long getNumInputSequences() {
+	public long getNumInputSequences() {
 		return numInputSequences;
 	}
 }
