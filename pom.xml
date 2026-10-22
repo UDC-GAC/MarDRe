@@ -61,6 +61,12 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven.surefire.version}</version>
+				<configuration>
+					<environmentVariables>
+						<!-- The integration tests write their mardre.conf here -->
+						<MARDRE_HOME>${project.build.directory}/mardre-home</MARDRE_HOME>
+					</environmentVariables>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
