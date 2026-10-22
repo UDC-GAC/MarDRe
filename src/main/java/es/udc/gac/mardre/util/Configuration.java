@@ -29,17 +29,14 @@ import org.apache.hadoop.fs.Path;
 import es.udc.gac.mardre.InMapperCombiner;
 import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
-import java.util.Map;
-
 public final class Configuration {
 
 	public static final String MARDRE_VERSION = "1.4";
 	public static final String MARDRE_WEBPAGE = "http://mardre.des.udc.es";
 
 	// MarDRe configuration (madre.conf)
-	public static final String MARDRE_HOME;
 	private static final String MARDRE_CONFIG_FILE = "mardre.conf";
-	private static final Properties MARDRE_PROPERTIES;
+	private static final Properties MARDRE_PROPERTIES = new Properties();
 	public static boolean MERGE;
 	public static boolean DELETE_TEMP;
 	public static boolean PAIRED_END_MAP_JOIN;
@@ -73,14 +70,17 @@ public final class Configuration {
 	private static final String INPUT_PATH_1_PARAM = "MarDRe_inputPath1";
 	private static final String TEMP_OUTPUT_PATH_2_PREFIX_PARAM = "MarDRe_tempOutputPath2Prefix";
 
-	static {
-		Map<String,String> map = System.getenv();
-		MARDRE_HOME = map.get("MARDRE_HOME");
+	/**
+	 * Returns the installation directory of MarDRe. Only the client needs it (to read mardre.conf):
+	 * the tasks get their settings from the job configuration.
+	 */
+	public static String getHome() {
+		String home = System.getenv("MARDRE_HOME");
 
-		if(MARDRE_HOME == null)
+		if (home == null)
 			throw new RuntimeException("'MARDRE_HOME' must be set");
 
-		MARDRE_PROPERTIES = new Properties();
+		return home;
 	}
 
 	private Configuration() {}
@@ -88,7 +88,7 @@ public final class Configuration {
 	public static boolean load(FileSystem fs, org.apache.hadoop.conf.Configuration jobConf, Options options, Path inputPath1, FileFormat format) throws IOException {
 
 		String slash = System.getProperty("file.separator");
-		String configFileName = MARDRE_HOME+slash+"etc"+slash+MARDRE_CONFIG_FILE;
+		String configFileName = getHome()+slash+"etc"+slash+MARDRE_CONFIG_FILE;
 
 		try {
 			FileInputStream configFile = new FileInputStream(configFileName);
