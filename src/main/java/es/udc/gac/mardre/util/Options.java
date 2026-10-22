@@ -18,10 +18,15 @@
  */
 package es.udc.gac.mardre.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import es.udc.gac.mardre.RunMarDRe;
 import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class Options {
+
+	private static final Logger LOG = LoggerFactory.getLogger(Options.class);
 
 	private String _readFileName1;
 	private String _readFileName2;
@@ -186,8 +191,7 @@ public class Options {
 					_nreducers = Short.parseShort(args[argInd]);
 
 					if (_nreducers < 1) {
-						System.out.println("MarDRe-WARNING: The number of reducers "
-								+ "(-m "+_nreducers+") can not be less than 1. Using -nr 1 instead");
+						LOG.warn("The number of reducers (-nr {}) can not be less than 1. Using -nr 1 instead", _nreducers);
 						_nreducers = 1;
 					}
 
@@ -204,8 +208,7 @@ public class Options {
 					_misMatch = Short.parseShort(args[argInd]);
 
 					if (_misMatch < 0) {
-						System.out.println("MarDRe-WARNING: The number of allowed mismatches "
-								+ "(-m "+_misMatch+") can not be less than 0. Using -m 0 instead");
+						LOG.warn("The number of allowed mismatches (-m {}) can not be less than 0. Using -m 0 instead", _misMatch);
 						_misMatch = 0;
 					}
 
@@ -222,12 +225,10 @@ public class Options {
 					_prefixLength = Short.parseShort(args[argInd]);
 
 					if (_prefixLength < 1) {
-						System.out.println("MarDRe-WARNING: The length of the prefix "
-								+ "(-l "+_prefixLength+") can not be less than 1. Using -l 20 instead");
+						LOG.warn("The length of the prefix (-l {}) can not be less than 1. Using -l 20 instead", _prefixLength);
 						_prefixLength = 20;
 					} else if (_prefixLength > 27) {
-						System.out.println("MarDRe-WARNING: The length of the prefix "
-								+ "(-l "+_prefixLength+") can not be greater than 27. Using -l 27 instead");
+						LOG.warn("The length of the prefix (-l {}) can not be greater than 27. Using -l 27 instead", _prefixLength);
 						_prefixLength = 27;
 					}
 
@@ -244,8 +245,7 @@ public class Options {
 					_numBasesCompared = Short.parseShort(args[argInd]);
 
 					if (_numBasesCompared < 1) {
-						System.out.println("MarDRe-WARNING: The number of bases to compare "
-								+ "(-c "+_numBasesCompared+") can not be less than 1. Using -c 1 instead");
+						LOG.warn("The number of bases to compare (-c {}) can not be less than 1. Using -c 1 instead", _numBasesCompared);
 						_numBasesCompared = 1;
 					}
 
@@ -278,7 +278,7 @@ public class Options {
 		}
 
 		if((_numBasesCompared > 0) && (_numBasesCompared < _prefixLength)){
-			System.out.println("MarDRe-WARNING: The number of bases to compare (-c "+_numBasesCompared+") must be at least as high as the prefix length (-l "+_prefixLength+"). Using -c "+_prefixLength+" instead");
+			LOG.warn("The number of bases to compare (-c {}) must be at least as high as the prefix length (-l {}). Using -c {} instead", _numBasesCompared, _prefixLength, _prefixLength);
 			_numBasesCompared = _prefixLength;
 		}
 

@@ -44,6 +44,8 @@ import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import es.udc.gac.hadoop.sequence.parser.mapreduce.FastAInputFormat;
 import es.udc.gac.hadoop.sequence.parser.mapreduce.FastQInputFormat;
@@ -58,6 +60,8 @@ import es.udc.gac.mardre.util.SequenceParserFactory;
 import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public class RunMarDRe extends Configured implements Tool {
+
+	private static final Logger LOG = LoggerFactory.getLogger(RunMarDRe.class);
 
 	// Timers
 	private static final Timer timer = new Timer();
@@ -292,7 +296,7 @@ public class RunMarDRe extends Configured implements Tool {
 
 		timer.start(T_INIT);
 
-		System.out.println("MarDRe: starting from MARDRE_HOME = "+Configuration.getHome());
+		LOG.info("Starting from MARDRE_HOME = {}", Configuration.getHome());
 
 		// Get Hadoop configuration
 		org.apache.hadoop.conf.Configuration conf = this.getConf();
@@ -327,7 +331,7 @@ public class RunMarDRe extends Configured implements Tool {
 
 		if (format == FileFormat.FILE_FORMAT_UNKNOWN) {
 			// Try to autodetect the file format
-			System.out.println("MarDRe: detecting input file format from "+inputPath1);
+			LOG.info("Detecting input file format from {}", inputPath1);
 
 			if (isInputPath1Compressed)
 				throw new IOException("Input file "+inputPath1.getName()+" is compressed. You must specify its format using -q (FASTQ) or -f (FASTA) command-line options.");
@@ -339,10 +343,10 @@ public class RunMarDRe extends Configured implements Tool {
 		Class<? extends SingleEndSequenceInputFormat> inputFormatClass = null;
 
 		if (format == FileFormat.FILE_FORMAT_FASTQ) {
-			System.out.println("MarDRe: FASTQ format identified");
+			LOG.info("FASTQ format identified");
 			inputFormatClass = FastQInputFormat.class;
 		} else if (format == FileFormat.FILE_FORMAT_FASTA) {
-			System.out.println("MarDRe: FASTA format identified");
+			LOG.info("FASTA format identified");
 			inputFormatClass = FastAInputFormat.class;
 		}
 
@@ -358,17 +362,17 @@ public class RunMarDRe extends Configured implements Tool {
 			fs.delete(tmpOutputPath1, true);
 
 		// Print command line options and configuration parameters
-		System.out.println("MarDRe: prefix length = "+options.getPrefixLength());
-		System.out.println("MarDRe: allowed mismatches = "+options.getMisMatch());
-		System.out.println("MarDRe: number of bases to compare = "+options.getNumberOfBasesCompared());
-		System.out.println("MarDRe: number of reducers = "+options.getNumberOfReducers());
-		System.out.println("MarDRe: input buffer size = "+Configuration.INPUT_BUFFER_SIZE+" bytes");
-		System.out.println("MarDRe: in-Mapper combiner = "+Configuration.IN_MAPPER_COMBINER);
-		System.out.println("MarDRe: in-Mapper combiner cache = "+Configuration.IN_MAPPER_COMBINER_CACHE_SIZE+" entries");
-		System.out.println("MarDRe: cluster initial capacity = "+Configuration.CLUSTER_LIST_INITIAL_CAPACITY+" entries");
-		System.out.println("MarDRe: HDFS base path = "+Configuration.HDFS_BASE_PATH);
-		System.out.println("MarDRe: HDFS block replication = "+Configuration.HDFS_BLOCK_REPLICATION);
-		System.out.println("MarDRe: HDFS block size = "+inputPathBlockSizeMB+" MiBytes");
+		LOG.info("prefix length = {}", options.getPrefixLength());
+		LOG.info("allowed mismatches = {}", options.getMisMatch());
+		LOG.info("number of bases to compare = {}", options.getNumberOfBasesCompared());
+		LOG.info("number of reducers = {}", options.getNumberOfReducers());
+		LOG.info("input buffer size = {} bytes", Configuration.INPUT_BUFFER_SIZE);
+		LOG.info("in-Mapper combiner = {}", Configuration.IN_MAPPER_COMBINER);
+		LOG.info("in-Mapper combiner cache = {} entries", Configuration.IN_MAPPER_COMBINER_CACHE_SIZE);
+		LOG.info("cluster initial capacity = {} entries", Configuration.CLUSTER_LIST_INITIAL_CAPACITY);
+		LOG.info("HDFS base path = {}", Configuration.HDFS_BASE_PATH);
+		LOG.info("HDFS block replication = {}", Configuration.HDFS_BLOCK_REPLICATION);
+		LOG.info("HDFS block size = {} MiBytes", inputPathBlockSizeMB);
 
 		// Check compression options
 		if (Configuration.COMPRESS_MAP_OUTPUT || Configuration.COMPRESS_INTERMEDIATE_OUTPUT) {
@@ -376,7 +380,7 @@ public class RunMarDRe extends Configured implements Tool {
 				// Hadoop 3.3 has no native code check for Snappy: creating a compressor fails if it is not usable
 				ReflectionUtils.newInstance(SnappyCodec.class, conf).createCompressor();
 			} catch (Exception | LinkageError e) {
-				System.out.println("MarDRe-WARNING: "+e.getMessage());
+				LOG.warn("Snappy compression of the map output is not available: {}", e.getMessage());
 				Configuration.COMPRESS_MAP_OUTPUT = false;
 			}
 			conf.setBoolean(MRJobConfig.MAP_OUTPUT_COMPRESS, Configuration.COMPRESS_MAP_OUTPUT);
@@ -384,7 +388,7 @@ public class RunMarDRe extends Configured implements Tool {
 		}
 
 		if (Configuration.COMPRESS_MAP_OUTPUT)
-			System.out.println("MarDRe: using map output Snappy compression");
+			LOG.info("using map output Snappy compression");
 
 		// Configure some MapReduce/HDFS properties
 		conf.setInt(MRJobConfig.TASK_TIMEOUT, 0);
@@ -394,10 +398,10 @@ public class RunMarDRe extends Configured implements Tool {
 		long blockSize = Long.parseLong(conf.get("dfs.blocksize"));
 
 		if (options.isPaired()) {
-			System.out.println("MarDRe: running in paired-end mode");
+			LOG.info("running in paired-end mode");
 
 			if (Configuration.COMPRESS_INTERMEDIATE_OUTPUT)
-				System.out.println("MarDRe: using intermediate output Snappy compression");
+				LOG.info("using intermediate output Snappy compression");
 
 			// Paired-end mode writes a second output file
 			outputPath2 = new Path(Configuration.OUTPUT_PATH + "/" + (new Path(options.getWriteFileName2()).getName()));
@@ -405,14 +409,14 @@ public class RunMarDRe extends Configured implements Tool {
 			tmpInputPath1 = new Path(Configuration.TEMP_INPUT_PATH_1);
 
 			if (inputPath1LengthMB > 0)
-				System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1LengthMB+" MiBytes)");
+				LOG.info("input path = {} ({} MiBytes)", inputPath1, inputPath1LengthMB);
 			else
-				System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1Length+" bytes)");
+				LOG.info("input path = {} ({} bytes)", inputPath1, inputPath1Length);
 
 			if (inputPath2LengthMB > 0)
-				System.out.println("MarDRe: input path = "+inputPath2+" ("+inputPath2LengthMB+" MiBytes)");
+				LOG.info("input path = {} ({} MiBytes)", inputPath2, inputPath2LengthMB);
 			else
-				System.out.println("MarDRe: input path = "+inputPath2+" ("+inputPath2Length+" bytes)");
+				LOG.info("input path = {} ({} bytes)", inputPath2, inputPath2Length);
 
 			if ((isInputPath1Compressed && !isInputPath2Compressed) || (!isInputPath1Compressed && isInputPath2Compressed))
 				throw new UnsupportedOperationException("Both input files must be compressed or not compressed");
@@ -446,13 +450,13 @@ public class RunMarDRe extends Configured implements Tool {
 				timer.stop(T_INIT);
 
 				// Run preprocessing job
-				System.out.println("MarDRe: using reduce-side join. Joining paired sequences...");
+				LOG.info("using reduce-side join. Joining paired sequences...");
 				timer.start(T_PARSE_READS);
 				status = jobPairedSequences.waitForCompletion(true);
 				timer.stop(T_PARSE_READS);
 
 				if (!status) {
-					System.out.println("MarDRe: job failed!");
+					LOG.error("Job {} failed: {}", jobPairedSequences.getJobID(), jobPairedSequences.getStatus().getFailureInfo());
 					return -1;
 				} else {
 					Path success = new Path(tmpInputPath1+"/_SUCCESS");
@@ -463,12 +467,12 @@ public class RunMarDRe extends Configured implements Tool {
 			}
 		} else {
 			// Single-end mode reads and writes a single file
-			System.out.println("MarDRe: running in single-end mode");
+			LOG.info("running in single-end mode");
 
 			if (inputPath1LengthMB > 0)
-				System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1LengthMB+" MiBytes)");
+				LOG.info("input path = {} ({} MiBytes)", inputPath1, inputPath1LengthMB);
 			else
-				System.out.println("MarDRe: input path = "+inputPath1+" ("+inputPath1Length+" bytes)");
+				LOG.info("input path = {} ({} bytes)", inputPath1, inputPath1Length);
 
 			// Configure job to remove duplicate reads
 			jobRemoveDuplicate = RunMarDRe.configureSingleEndJob(conf, inputFormatClass, inputPath1, tmpOutputPath1, options.getNumberOfReducers(), codec);
@@ -476,13 +480,13 @@ public class RunMarDRe extends Configured implements Tool {
 		}
 
 		// Run duplicate removal job 
-		System.out.println("MarDRe: removing duplicate reads...");
+		LOG.info("removing duplicate reads...");
 		timer.start(T_REMOVE_DUP);
 		status = jobRemoveDuplicate.waitForCompletion(true);
 		timer.stop(T_REMOVE_DUP);
 
 		if (!status) {
-			System.out.println("MarDRe: job failed!");
+			LOG.error("Job {} failed: {}", jobRemoveDuplicate.getJobID(), jobRemoveDuplicate.getStatus().getFailureInfo());
 			return -1;
 		}
 
@@ -493,13 +497,13 @@ public class RunMarDRe extends Configured implements Tool {
 
 		if (Configuration.MERGE) {
 			// Merge output files
-			System.out.print("MarDRe: merging output files...");
+			LOG.info("merging output files...");
 			timer.start(T_MERGE);
 			RunMarDRe.merge(fs, tmpOutputPath1, fs, outputPath1, Configuration.INPUT_BUFFER_SIZE, Configuration.HDFS_BLOCK_REPLICATION, blockSize, Configuration.DELETE_TEMP, conf);
 			if (options.isPaired())
 				RunMarDRe.merge(fs, tmpOutputPath2, fs, outputPath2, Configuration.INPUT_BUFFER_SIZE, Configuration.HDFS_BLOCK_REPLICATION, blockSize, Configuration.DELETE_TEMP, conf);
 			timer.stop(T_MERGE);
-			System.out.println("done");
+			LOG.info("output files merged");
 		} else {
 			outputPath1 = tmpOutputPath1;
 			outputPath2 = tmpOutputPath2;

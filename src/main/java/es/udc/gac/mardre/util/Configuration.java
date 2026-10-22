@@ -25,11 +25,15 @@ import java.util.Properties;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import es.udc.gac.mardre.InMapperCombiner;
 import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
 public final class Configuration {
+
+	private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
 
 	public static final String MARDRE_VERSION = "1.4";
 	public static final String MARDRE_WEBPAGE = "http://mardre.des.udc.es";
@@ -112,12 +116,12 @@ public final class Configuration {
 
 		if (!basePath.equals(fs.getHomeDirectory())) {
 			if (!fs.exists(basePath)) {
-				System.err.println("HDFS_BASE_PATH="+HDFS_BASE_PATH+" value is not valid: "+basePath+" does not exist");
+				LOG.error("HDFS_BASE_PATH value is not valid: {} does not exist", basePath);
 				return false;
 			}
 
 			if(!fs.isDirectory(basePath)) {
-				System.err.println("HDFS_BASE_PATH="+HDFS_BASE_PATH+" value is not valid: "+basePath+" is not a directory");
+				LOG.error("HDFS_BASE_PATH value is not valid: {} is not a directory", basePath);
 				return false;
 			}
 		} else {
@@ -141,22 +145,22 @@ public final class Configuration {
 			DELETE_TEMP = false;
 
 		if (INPUT_BUFFER_SIZE < 512) {
-			System.err.println("INPUT_BUFFER_SIZE="+INPUT_BUFFER_SIZE+" value is not valid");
+			LOG.error("INPUT_BUFFER_SIZE={} value is not valid", INPUT_BUFFER_SIZE);
 			return false;
 		}
 
 		if (IN_MAPPER_COMBINER_CACHE_SIZE <= 0) {
-			System.err.println("IN_MAPPER_COMBINER_CACHE_SIZE="+IN_MAPPER_COMBINER_CACHE_SIZE+" value is not valid");
+			LOG.error("IN_MAPPER_COMBINER_CACHE_SIZE={} value is not valid", IN_MAPPER_COMBINER_CACHE_SIZE);
 			return false;
 		}
 
 		if (CLUSTER_LIST_INITIAL_CAPACITY < 0) {
-			System.err.println("CLUSTER_LIST_INITIAL_CAPACITY="+CLUSTER_LIST_INITIAL_CAPACITY+" value is not valid");
+			LOG.error("CLUSTER_LIST_INITIAL_CAPACITY={} value is not valid", CLUSTER_LIST_INITIAL_CAPACITY);
 			return false;
 		}
 
 		if (HDFS_BLOCK_REPLICATION <= 0) {
-			System.err.println("HDFS_BLOCK_REPLICATION="+HDFS_BLOCK_REPLICATION+" value is not valid");
+			LOG.error("HDFS_BLOCK_REPLICATION={} value is not valid", HDFS_BLOCK_REPLICATION);
 			return false;
 		}
 

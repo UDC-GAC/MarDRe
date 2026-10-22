@@ -19,11 +19,14 @@
 package es.udc.gac.mardre;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeNotNull;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -39,6 +42,10 @@ import java.util.TreeMap;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggingEvent;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -113,9 +120,15 @@ public class RunMarDReLocalTest {
 	private void writeConf(boolean mapJoin, boolean combiner) throws IOException {
 		File etc = new File(home, "etc");
 		assertTrue(etc.isDirectory() || etc.mkdirs());
+		// Every parameter: Configuration keeps the properties of the previous loads
 		String conf = "HDFS_BASE_PATH=" + new File(tmp.getRoot(), "base").getAbsolutePath() + "\n"
+				+ "HDFS_BLOCK_REPLICATION=1\n"
 				+ "MERGE_OUTPUT=false\n"
+				+ "DELETE_TEMP=true\n"
 				+ "PAIRED_END_MAP_JOIN=" + mapJoin + "\n"
+				+ "COMPRESS_MAP_OUTPUT=false\n"
+				+ "COMPRESS_INTERMEDIATE_OUTPUT=false\n"
+				+ "INPUT_BUFFER_SIZE=65536\n"
 				+ "IN_MAPPER_COMBINER=" + combiner + "\n"
 				+ "IN_MAPPER_COMBINER_CACHE_SIZE=32\n"
 				+ "CLUSTER_LIST_INITIAL_CAPACITY=16\n";
@@ -358,5 +371,131 @@ public class RunMarDReLocalTest {
 	@Test
 	public void pairedEndWithMismatchesKeepsTheBestPairOfEachGroupOfSimilarPairs() throws Exception {
 		checkPairedEnd(true, true, 2);
+	}
+
+	/** What a run of the tool wrote to the standard output and logged (INFO or higher). */
+	private static final class Output {
+		int status;
+		String stdout;
+		final List<LoggingEvent> events = new ArrayList<LoggingEvent>();
+
+		boolean logged(Level level, String text) {
+			for (LoggingEvent event : events)
+				if (event.getLevel().equals(level) && event.getRenderedMessage().contains(text))
+					return true;
+			return false;
+		}
+	}
+
+	private Output runCapturing(String... args) throws Exception {
+		final Output output = new Output();
+		Logger logger = Logger.getLogger("es.udc.gac.mardre");
+		Level level = logger.getLevel();
+		boolean additive = logger.getAdditivity();
+		PrintStream stdout = System.out;
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		AppenderSkeleton appender = new AppenderSkeleton() {
+			@Override
+			protected void append(LoggingEvent event) {
+				synchronized (output.events) {
+					output.events.add(event);
+				}
+			}
+
+			@Override
+			public boolean requiresLayout() {
+				return false;
+			}
+
+			@Override
+			public void close() {}
+		};
+
+		logger.setLevel(Level.INFO);
+		logger.setAdditivity(false);
+		logger.addAppender(appender);
+		System.setOut(new PrintStream(bytes, true, "UTF-8"));
+		try {
+			output.status = run(args);
+		} finally {
+			System.setOut(stdout);
+			logger.removeAppender(appender);
+			logger.setAdditivity(additive);
+			logger.setLevel(level);
+		}
+		output.stdout = bytes.toString("UTF-8");
+		return output;
+	}
+
+	private String[] singleEndArgs(File input, String... extra) {
+		List<String> args = new ArrayList<String>(Arrays.asList("-i", input.getAbsolutePath(), "-l", String.valueOf(PREFIX_LENGTH), "-nr", "2", "-q"));
+		args.addAll(Arrays.asList(extra));
+		return args.toArray(new String[0]);
+	}
+
+	@Test
+	public void theSummaryIsPrintedToTheStandardOutput() throws Exception {
+		List<Read> best = new ArrayList<Read>();
+		List<Read> reads = singleEndReads(new Random(3), 200, false, best);
+		writeConf(true, false);
+
+		Output output = runCapturing(singleEndArgs(write("reads.fastq", reads), "-m", "0"));
+
+		assertEquals(0, output.status);
+		assertTrue(output.stdout, output.stdout.contains(String.format("MarDRe: non duplicate reads %d/%d (", best.size(), reads.size())));
+		assertTrue(output.stdout, output.stdout.contains("MarDRe: execution time was "));
+		assertTrue(output.stdout, output.stdout.contains("Duplicate reads were removed in "));
+		assertTrue(output.stdout, output.stdout.contains("MarDRe: output path = "));
+	}
+
+	@Test
+	public void theDiagnosticsOfTheDriverAreLoggedInsteadOfPrinted() throws Exception {
+		List<Read> reads = singleEndReads(new Random(3), 200, false, new ArrayList<Read>());
+		writeConf(true, false);
+
+		Output output = runCapturing(singleEndArgs(write("reads.fastq", reads), "-m", "0"));
+
+		assertEquals(0, output.status);
+		for (String diagnostic : new String[] { "prefix length", "running in single-end mode", "removing duplicate reads" })
+			assertFalse(diagnostic + " printed:\n" + output.stdout, output.stdout.contains(diagnostic));
+		assertTrue(output.logged(Level.INFO, "prefix length = " + PREFIX_LENGTH));
+		assertTrue(output.logged(Level.INFO, "running in single-end mode"));
+	}
+
+	@Test
+	public void aFailedJobIsLoggedAsAnError() throws Exception {
+		// 1 is not a letter: the mappers fail
+		List<Read> reads = Arrays.asList(new Read("@bad", "ACGTACGT1CGTACGTACGTACGTACGTACGTACGTACGT", "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII"));
+		writeConf(true, false);
+
+		Output output = runCapturing(singleEndArgs(write("reads.fastq", reads), "-m", "0"));
+
+		assertEquals(-1, output.status);
+		assertTrue(output.events.toString(), output.logged(Level.ERROR, "job_local"));
+	}
+
+	@Test
+	public void anInvalidConfigurationValueIsLoggedAsAnError() throws Exception {
+		List<Read> reads = singleEndReads(new Random(3), 20, false, new ArrayList<Read>());
+		writeConf(true, false);
+		File conf = new File(home, "etc/mardre.conf");
+		Files.write(conf.toPath(), "INPUT_BUFFER_SIZE=10\n".getBytes(StandardCharsets.UTF_8), java.nio.file.StandardOpenOption.APPEND);
+
+		Output output = runCapturing(singleEndArgs(write("reads.fastq", reads), "-m", "0"));
+
+		assertEquals(-1, output.status);
+		assertTrue(output.events.toString(), output.logged(Level.ERROR, "INPUT_BUFFER_SIZE=10"));
+	}
+
+	@Test
+	public void theAdjustmentOfAnOptionIsLoggedAsAWarning() throws Exception {
+		List<Read> reads = singleEndReads(new Random(3), 20, false, new ArrayList<Read>());
+		writeConf(true, false);
+
+		Output output = runCapturing(singleEndArgs(write("reads.fastq", reads), "-m", "-1"));
+
+		assertEquals(0, output.status);
+		assertFalse(output.stdout, output.stdout.contains("WARNING"));
+		assertTrue(output.events.toString(), output.logged(Level.WARN, "-m -1"));
 	}
 }
