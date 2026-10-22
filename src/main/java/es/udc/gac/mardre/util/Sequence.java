@@ -144,6 +144,7 @@ public class Sequence implements Writable {
 
 	public void setQuals(String quals) {
 		_quals = quals;
+		_avgQual = -1;
 	}
 
 	public float getAvgQual() {
@@ -449,6 +450,7 @@ public class Sequence implements Writable {
 		_compressSuffix = null;
 		_compressSuffixRemainder = null;
 		_quals = null;
+		_avgQual = -1;
 
 		if (_compressSuffixLength > 0) {
 			_compressSuffix = new long[_compressSuffixLength];

@@ -43,6 +43,7 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 	private static final NullWritable nullKey = NullWritable.get();
 	private static List<Sequence> sequences;
 	private static Sequence firstSeq;
+	private static Sequence refSeq;
 	private static Sequence iterSeq;
 
 	@Override
@@ -98,12 +99,14 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 
 		// Get the first sequence
 		firstSeq = new Sequence(values.iterator().next());
+		// Reference of the distances: it must not change when a better duplicate replaces firstSeq
+		refSeq = new Sequence(firstSeq);
 
 		// Iterate over the remaining sequences
 		for (Sequence newSeq : values) {
 			inputClusterSize++;
 
-			if (newSeq.setDist(firstSeq) > Configuration.MISMATCH) {
+			if (newSeq.setDist(refSeq) > Configuration.MISMATCH) {
 				insert = true;
 
 				for (j=0; j<outputClusterSize; j++) {
@@ -133,6 +136,9 @@ public class SingleEndReducer extends Reducer<LongWritable, Sequence, NullWritab
 					}
 					outputClusterSize++;
 				}
+			} else if (newSeq.getAvgQual() > firstSeq.getAvgQual()) {
+				// Duplicate of the first read with higher quality
+				firstSeq.set(newSeq);
 			}
 		}
 

@@ -45,6 +45,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 	private static final NullWritable nullKey = NullWritable.get();
 	private static List<PairedSequence> sequences;
 	private static PairedSequence firstSeq;
+	private static PairedSequence refSeq;
 	private static PairedSequence iterSeq;
 	private static MultipleOutputs<NullWritable,Sequence> mos;
 
@@ -111,12 +112,14 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 
 		// Get the first sequence
 		firstSeq = new PairedSequence(values.iterator().next());
+		// Reference of the distances: it must not change when a better duplicate replaces firstSeq
+		refSeq = new PairedSequence(firstSeq);
 
 		// Iterate over the remaining sequences
 		for (PairedSequence newSeq : values) {
 			inputClusterSize++;
 
-			if (newSeq.setDist(firstSeq) > Configuration.MISMATCH) {
+			if (newSeq.setDist(refSeq) > Configuration.MISMATCH) {
 				insert = true;
 
 				for (j=0; j<outputClusterSize; j++) {
@@ -146,6 +149,9 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 					}
 					outputClusterSize++;
 				}
+			} else if (newSeq.getAvgQual() > firstSeq.getAvgQual()) {
+				// Duplicate of the first read with higher quality
+				firstSeq.set(newSeq);
 			}
 		}
 
