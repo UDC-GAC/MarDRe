@@ -31,15 +31,15 @@ import es.udc.gac.mardre.util.Timer;
 
 public class PairedEndReduceJoinMapper extends Mapper<LongWritable, PairedSequence, LongWritable, PairedSequence> {
 
-	private static final Timer timer = new Timer();
+	private final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
 	private static final int T_SETUP = 1;
 	private static final int T_MAP = 2;
 	private static final int T_CLEANUP = 3;
-	private static LongWritable longKey = new LongWritable();
-	private static long numInputSequences;
+	private LongWritable longKey = new LongWritable();
+	private long numInputSequences;
 
-	private static final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
+	private final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
 			new CombiningFunction<LongWritable, PairedSequence>() {
 				@Override
 				public void combine(Map<LongWritable, List<PairedSequence>> cache, List<PairedSequence> seqsInCache, PairedSequence newSeq) {

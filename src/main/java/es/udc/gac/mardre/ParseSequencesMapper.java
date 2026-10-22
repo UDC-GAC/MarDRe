@@ -34,14 +34,14 @@ import es.udc.gac.mardre.util.Timer;
 
 public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
 
-	private static final Timer timer = new Timer();
+	private final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
 	private static final int T_SETUP = 1;
 	private static final int T_MAP = 2;
-	private static Sequence seq = new Sequence();
-	private static SeqStringParser parser;
-	private static boolean isFirstInputPath = true;
-	private static long numInputSequences;
+	private Sequence seq = new Sequence();
+	private SeqStringParser parser;
+	private boolean isFirstInputPath = true;
+	private long numInputSequences;
 
 	@Override
 	public void run(Context context) throws IOException, InterruptedException {

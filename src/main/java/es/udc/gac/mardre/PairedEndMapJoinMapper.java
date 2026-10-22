@@ -36,20 +36,20 @@ import es.udc.gac.mardre.util.Timer;
 
 public class PairedEndMapJoinMapper extends Mapper<LongWritable, Text, LongWritable, PairedSequence> {
 
-	private static final Timer timer = new Timer();
+	private final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
 	private static final int T_SETUP = 1;
 	private static final int T_MAP = 2;
 	private static final int T_CLEANUP = 3;
-	private static PairedSequence pairedSeq = new PairedSequence();
-	private static LongWritable longKey = new LongWritable();
-	private static Sequence firstSeq = new Sequence();
-	private static Sequence secondSeq = new Sequence();
-	private static SeqStringParser firstParser;
-	private static SeqStringParser secondParser;
-	private static long numInputSequences;
+	private PairedSequence pairedSeq = new PairedSequence();
+	private LongWritable longKey = new LongWritable();
+	private Sequence firstSeq = new Sequence();
+	private Sequence secondSeq = new Sequence();
+	private SeqStringParser firstParser;
+	private SeqStringParser secondParser;
+	private long numInputSequences;
 
-	private static final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
+	private final InMapperCombiner<LongWritable, PairedSequence> combiner = new InMapperCombiner<LongWritable, PairedSequence>(
 			new CombiningFunction<LongWritable, PairedSequence>() {
 				@Override
 				public void combine(Map<LongWritable, List<PairedSequence>> cache, List<PairedSequence> seqsInCache, PairedSequence newSeq) {

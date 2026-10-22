@@ -35,15 +35,15 @@ import es.udc.gac.mardre.util.SequenceParserFactory;
 
 public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Sequence> {
 
-	private static final Timer timer = new Timer();
+	private final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
 	private static final int T_SETUP = 1;
 	private static final int T_MAP = 2;
 	private static final int T_CLEANUP = 3;
-	private static Sequence seq = new Sequence();
-	private static LongWritable longKey = new LongWritable();
-	private static SeqStringParser parser;
-	private static long numInputSequences;
+	private Sequence seq = new Sequence();
+	private LongWritable longKey = new LongWritable();
+	private SeqStringParser parser;
+	private long numInputSequences;
 
 	private final InMapperCombiner<LongWritable, Sequence> combiner = new InMapperCombiner<LongWritable, Sequence>(
 			new CombiningFunction<LongWritable, Sequence>() {

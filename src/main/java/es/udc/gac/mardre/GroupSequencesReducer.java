@@ -32,12 +32,12 @@ import es.udc.gac.mardre.util.Timer;
 
 public class GroupSequencesReducer extends Reducer<LongWritable, Sequence, LongWritable, PairedSequence> {
 
-	private static final Timer timer = new Timer();
+	private final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
 	private static final int T_REDUCE = 1;
-	private static PairedSequence pairedSeq = new PairedSequence();
-	private static LongWritable longKey = new LongWritable();
-	private static long numInputSequences = 0;
+	private PairedSequence pairedSeq = new PairedSequence();
+	private LongWritable longKey = new LongWritable();
+	private long numInputSequences = 0;
 
 	@Override
 	public void run(Reducer<LongWritable, Sequence, LongWritable, PairedSequence>.Context context) throws IOException, InterruptedException {
