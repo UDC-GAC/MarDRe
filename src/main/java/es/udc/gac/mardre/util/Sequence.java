@@ -32,16 +32,6 @@ public class Sequence implements Writable {
 
 	private static final String COMMENT_LINE = "\n+\n";
 	private static final String LF = "\n";
-	private static char[] bases = null;
-	private static short compressSuffixLength = -1;
-	private static short compressSuffixLengthRemainder = -1;
-	private static int totalSuffixLength = -1;
-	private static int suffixLength = -1;
-	private static int suffixLengthDiv = -1;
-	private static int suffixLengthMod = -1;
-	private static int suffixLengthRemainder = -1;
-	private static int suffixLengthRemainderDiv = -1;
-	private static int suffixLengthRemainderMod = -1;
 
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
 
@@ -209,18 +199,21 @@ public class Sequence implements Writable {
 		// Set sequence length
 		_length = (short) bases.length();
 
+		// Layout of the compressed suffix
 		int totalSuffixLength = _length - prefixLength;
-
-		// Set compress suffix length
-		if (Sequence.totalSuffixLength != totalSuffixLength)
-			Sequence.setCompressSuffixLength(_length, prefixLength, numBasesCompared, !_isFirstSeq);
+		int suffixLength = Sequence.getSuffixLengthToCompare(_length, prefixLength, totalSuffixLength, numBasesCompared, !_isFirstSeq);
+		int suffixLengthDiv = suffixLength >> 4;
+		int suffixLengthMod = suffixLength & 15;
+		int suffixLengthRemainder = totalSuffixLength - suffixLength;
+		int suffixLengthRemainderDiv = suffixLengthRemainder >> 4;
+		int suffixLengthRemainderMod = suffixLengthRemainder & 15;
 
 		// Code the part of the suffix to be compared (if any)
-		if (Sequence.suffixLength > 0) {
-			_compressSuffixLength = Sequence.compressSuffixLength;
+		if (suffixLength > 0) {
+			_compressSuffixLength = (short) ((suffixLengthMod > 0)? suffixLengthDiv + 1 : suffixLengthDiv);
 			_compressSuffix = new long[_compressSuffixLength];
 
-			for (i = 0; i < Sequence.suffixLengthDiv; i++) {
+			for (i = 0; i < suffixLengthDiv; i++) {
 				_compressSuffix[i] = 0;
 
 				for (j = 0; j < 16; j++) {
@@ -230,10 +223,10 @@ public class Sequence implements Writable {
 				}
 			}
 
-			if (Sequence.suffixLengthMod > 0) {
+			if (suffixLengthMod > 0) {
 				_compressSuffix[_compressSuffix.length - 1] = 0;
 
-				for (i = 0; i < Sequence.suffixLengthMod; i++) {
+				for (i = 0; i < suffixLengthMod; i++) {
 					_compressSuffix[_compressSuffix.length - 1] <<= 4;
 					_compressSuffix[_compressSuffix.length - 1] += Sequence.code(bases.charAt(iterBases));
 					iterBases++;
@@ -242,10 +235,10 @@ public class Sequence implements Writable {
 		}
 
 		// Code the remainder of the suffix (if any)
-		if (Sequence.suffixLengthRemainder > 0) {
-			_compressSuffixRemainder = new long[Sequence.compressSuffixLengthRemainder];
+		if (suffixLengthRemainder > 0) {
+			_compressSuffixRemainder = new long[(suffixLengthRemainderMod > 0)? suffixLengthRemainderDiv + 1 : suffixLengthRemainderDiv];
 
-			for (i = 0; i < Sequence.suffixLengthRemainderDiv; i++) {
+			for (i = 0; i < suffixLengthRemainderDiv; i++) {
 				_compressSuffixRemainder[i] = 0;
 
 				for (j = 0; j < 16; j++) {
@@ -255,10 +248,10 @@ public class Sequence implements Writable {
 				}
 			}
 
-			if (Sequence.suffixLengthRemainderMod > 0) {
+			if (suffixLengthRemainderMod > 0) {
 				_compressSuffixRemainder[_compressSuffixRemainder.length - 1] = 0;
 
-				for (i = 0; i < Sequence.suffixLengthRemainderMod; i++) {
+				for (i = 0; i < suffixLengthRemainderMod; i++) {
 					_compressSuffixRemainder[_compressSuffixRemainder.length - 1] <<= 4;
 					_compressSuffixRemainder[_compressSuffixRemainder.length - 1] += Sequence.code(bases.charAt(iterBases));
 					iterBases++;
@@ -308,10 +301,9 @@ public class Sequence implements Writable {
 		return numMisMatch;
 	}
 
-	private void decodeBases(short prefixLength, int numBasesCompared) {
+	private char[] decodeBases(short prefixLength, int numBasesCompared) {
 
-		if (Sequence.bases == null || Sequence.bases.length != _length)
-			Sequence.bases = new char[_length];
+		char[] bases = new char[_length];
 
 		// Decode the prefix
 		int iterBases = prefixLength - 1;
@@ -319,7 +311,7 @@ public class Sequence implements Writable {
 		int i,j;
 
 		for (i = 0; i < prefixLength; i++) {
-			Sequence.bases[iterBases] = (char) Sequence.decodePrefixTab[(int) (auxKey % 5)];
+			bases[iterBases] = (char) Sequence.decodePrefixTab[(int) (auxKey % 5)];
 			auxKey *= 0.2;
 			iterBases--;
 		}
@@ -338,7 +330,7 @@ public class Sequence implements Writable {
 
 			if (suffixLengthToCompareMod > 0) {
 				for (i = 0; i < suffixLengthToCompareMod; i++) {
-					Sequence.bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
+					bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
 					auxCompress >>= 4;
 				iterBases--;
 				}
@@ -350,7 +342,7 @@ public class Sequence implements Writable {
 				auxCompress = _compressSuffix[iterSuffix];
 
 				for (j = 0; j < 16; j++) {
-					Sequence.bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
+					bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
 					auxCompress >>= 4;
 				iterBases--;
 				}
@@ -368,7 +360,7 @@ public class Sequence implements Writable {
 
 			if (suffixLengthRemainderMod > 0) {
 				for (i = 0; i < suffixLengthRemainderMod; i++) {
-					Sequence.bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
+					bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
 					auxCompress >>= 4;
 				iterBases--;
 				}
@@ -380,13 +372,15 @@ public class Sequence implements Writable {
 				auxCompress = _compressSuffixRemainder[iterSuffix];
 
 				for (j = 0; j < 16; j++) {
-					Sequence.bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
+					bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
 					auxCompress >>= 4;
 				iterBases--;
 				}
 				iterSuffix--;
 			}
 		}
+
+		return bases;
 	}
 
 	@Override
@@ -396,12 +390,12 @@ public class Sequence implements Writable {
 
 		try {
 			// Decode the bases
-			decodeBases((_isFirstSeq)? Configuration.PREFIX_LENGTH : 0, Configuration.NUMBER_BASES_COMPARED);
+			char[] bases = decodeBases((_isFirstSeq)? Configuration.PREFIX_LENGTH : 0, Configuration.NUMBER_BASES_COMPARED);
 
 			// Print name and bases
 			stringWriter.write(_name);
 			stringWriter.write(LF);
-			stringWriter.write(Sequence.bases);
+			stringWriter.write(bases);
 
 			// Print quality scores if available
 			if (_quals != null) {
@@ -478,31 +472,6 @@ public class Sequence implements Writable {
 			} catch (EOFException eof) {
 				_quals = null;
 			}
-		}
-	}
-
-	private static final void setCompressSuffixLength(int length, int prefixLength, int numBasesCompared, boolean isSecondPairedRead) {
-
-		Sequence.totalSuffixLength = length - prefixLength;
-
-		int suffixLengthToCompare = Sequence.getSuffixLengthToCompare(length, prefixLength, Sequence.totalSuffixLength, numBasesCompared, isSecondPairedRead);
-
-		// Suffix length (to be compared)
-		Sequence.suffixLength = suffixLengthToCompare;
-
-		if (Sequence.suffixLength > 0) {
-			Sequence.suffixLengthDiv = Sequence.suffixLength >> 4;
-			Sequence.suffixLengthMod = Sequence.suffixLength & 15;
-			Sequence.compressSuffixLength = (short)((Sequence.suffixLengthMod > 0)? Sequence.suffixLengthDiv + 1 : Sequence.suffixLengthDiv);
-		}
-
-		// Remainder suffix length (not to be compared)
-		Sequence.suffixLengthRemainder = Sequence.totalSuffixLength - suffixLengthToCompare;
-
-		if (Sequence.suffixLengthRemainder > 0) {
-			Sequence.suffixLengthRemainderDiv = Sequence.suffixLengthRemainder >> 4;
-			Sequence.suffixLengthRemainderMod = Sequence.suffixLengthRemainder & 15;
-			Sequence.compressSuffixLengthRemainder = (short)((Sequence.suffixLengthRemainderMod > 0)? Sequence.suffixLengthRemainderDiv + 1 : Sequence.suffixLengthRemainderDiv);
 		}
 	}
 

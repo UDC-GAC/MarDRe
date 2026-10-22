@@ -25,7 +25,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -39,6 +47,26 @@ public class SequenceTest {
 	@BeforeClass
 	public static void setUpClass() {
 		Configuration.FILE_FORMAT = FileFormat.FILE_FORMAT_FASTQ;
+		Configuration.PREFIX_LENGTH = PREFIX_LENGTH;
+		Configuration.NUMBER_BASES_COMPARED = -1;
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		Configuration.NUMBER_BASES_COMPARED = -1;
+	}
+
+	private static String randomString(Random random, String alphabet, int length) {
+		StringBuilder sb = new StringBuilder(length);
+
+		for (int i = 0; i < length; i++)
+			sb.append(alphabet.charAt(random.nextInt(alphabet.length())));
+
+		return sb.toString();
+	}
+
+	private static String record(String name, String bases, String quals) {
+		return name + "\n" + bases + "\n+\n" + quals;
 	}
 
 	private static Sequence parse(String name, String bases, String quals) {
@@ -83,5 +111,98 @@ public class SequenceTest {
 	@Test
 	public void avgQualIsTheMeanOfTheQualityScores() {
 		assertEquals(('5' + 'I') / 2.0f, parse("@seq", "ACGTACGTAC", "5I5I5I5I5I").getAvgQual(), 0.0001f);
+	}
+
+	@Test
+	public void toStringRestoresTheParsedRecord() {
+		Random random = new Random(1);
+
+		for (int length : new int[] { 6, 21, 32, 37, 101, 150 }) {
+			String expected = record("@read" + length, randomString(random, "ACGTN", length), randomString(random, "!5I", length));
+			Sequence seq = new Sequence();
+			PARSER.getSeq(expected, seq, true);
+			assertEquals(expected, seq.toString());
+		}
+	}
+
+	@Test
+	public void toStringRestoresTheParsedRecordWhenOnlyPartOfTheReadIsCompared() {
+		Configuration.NUMBER_BASES_COMPARED = 50;
+
+		try {
+			SeqStringParser parser = new FastQSeqStringParser(PREFIX_LENGTH, (short) 50);
+			Random random = new Random(2);
+
+			for (int length : new int[] { 40, 50, 55, 101 }) {
+				String expected = record("@read" + length, randomString(random, "ACGT", length), randomString(random, "!5I", length));
+				Sequence seq = new Sequence();
+				parser.getSeq(expected, seq, true);
+				assertEquals(expected, seq.toString());
+			}
+		} finally {
+			Configuration.NUMBER_BASES_COMPARED = -1;
+		}
+	}
+
+	@Test
+	public void firstAndSecondReadsWithTheSameSuffixLengthKeepTheirOwnLayout() {
+		// The first read has a 50-base suffix of which 45 are compared, the second one has 50 bases of which none is compared
+		Configuration.NUMBER_BASES_COMPARED = 50;
+
+		try {
+			SeqStringParser firstParser = new FastQSeqStringParser(PREFIX_LENGTH, (short) 50);
+			SeqStringParser secondParser = new FastQSeqStringParser((short) 0, (short) 50);
+			Random random = new Random(3);
+			String first = record("@pair/1", randomString(random, "ACGT", 55), randomString(random, "!5I", 55));
+			String second = record("@pair/2", randomString(random, "ACGT", 50), randomString(random, "!5I", 50));
+			Sequence firstSeq = new Sequence();
+			Sequence secondSeq = new Sequence();
+
+			firstParser.getSeq(first, firstSeq, true);
+			secondParser.getSeq(second, secondSeq, false);
+
+			assertEquals(first, firstSeq.toString());
+			assertEquals(second, secondSeq.toString());
+		} finally {
+			Configuration.NUMBER_BASES_COMPARED = -1;
+		}
+	}
+
+	@Test
+	public void sequencesOfDifferentLengthsCanBeProcessedConcurrently() throws Exception {
+		// Tasks that share a JVM must not see each other's reads
+		final int[] lengths = { 24, 37, 101, 150 };
+		ExecutorService executor = Executors.newFixedThreadPool(lengths.length);
+
+		try {
+			List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
+
+			for (final int length : lengths) {
+				futures.add(executor.submit(new Callable<Integer>() {
+					@Override
+					public Integer call() {
+						Random random = new Random(length);
+						SeqStringParser parser = new FastQSeqStringParser(PREFIX_LENGTH, (short) -1);
+						Sequence seq = new Sequence();
+						int wrong = 0;
+
+						for (int i = 0; i < 20000; i++) {
+							String expected = record("@read" + i, randomString(random, "ACGT", length), randomString(random, "!5I", length));
+							parser.getSeq(expected, seq, true);
+
+							if (!expected.equals(seq.toString()))
+								wrong++;
+						}
+
+						return wrong;
+					}
+				}));
+			}
+
+			for (Future<Integer> future : futures)
+				assertEquals(0, future.get().intValue());
+		} finally {
+			executor.shutdownNow();
+		}
 	}
 }
