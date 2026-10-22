@@ -286,22 +286,26 @@ public class Sequence implements Writable {
 		return true;
 	}
 
-	public boolean equal(Sequence seq2, short misMatch, short[] numMisMatch) {
+	/**
+	 * Adds the mismatches with seq2 to numMisMatch, stopping as soon as the total exceeds misMatch.
+	 * The sequences are equal if the returned total is not greater than misMatch.
+	 */
+	public short misMatches(Sequence seq2, short misMatch, short numMisMatch) {
 
 		int popc, i;
 
 		for (i = 0; i < _compressSuffixLength; i++) {
 			popc = Long.bitCount(_compressSuffix[i] ^ seq2._compressSuffix[i]);
-			numMisMatch[0] += popc >> 1;
+			numMisMatch += popc >> 1;
 
 		if ((popc % 2) > 0)
-			numMisMatch[0]++;
+			numMisMatch++;
 
-		if (numMisMatch[0] > misMatch)
-			return false;
+		if (numMisMatch > misMatch)
+			break;
 		}
 
-		return true;
+		return numMisMatch;
 	}
 
 	private void decodeBases(short prefixLength, int numBasesCompared) {

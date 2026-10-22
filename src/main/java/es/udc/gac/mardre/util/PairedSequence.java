@@ -26,8 +26,6 @@ import org.apache.hadoop.io.Writable;
 
 public class PairedSequence implements Writable {
 
-	private static short[] numMisMatch = new short[1];
-
 	private Sequence firstSeq;
 	private Sequence secondSeq;
 	private short dist;
@@ -84,11 +82,12 @@ public class PairedSequence implements Writable {
 	}
 
 	public boolean equal(PairedSequence seq2, short misMatch) {
-		numMisMatch[0] = 0;
-		if (this.firstSeq.equal(seq2.firstSeq, misMatch, numMisMatch)) {
-			return this.secondSeq.equal(seq2.secondSeq, misMatch, numMisMatch);
-		}
-		return false;
+		short numMisMatch = this.firstSeq.misMatches(seq2.firstSeq, misMatch, (short) 0);
+
+		if (numMisMatch > misMatch)
+			return false;
+
+		return this.secondSeq.misMatches(seq2.secondSeq, misMatch, numMisMatch) <= misMatch;
 	}
 
 	@Override
