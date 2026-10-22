@@ -25,6 +25,8 @@ import java.util.Map;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import es.udc.gac.hadoop.sequence.parser.mapreduce.PairedEndSequenceRecordReader;
 import es.udc.gac.mardre.util.Configuration;
@@ -35,6 +37,8 @@ import es.udc.gac.mardre.util.SequenceParserFactory;
 import es.udc.gac.mardre.util.Timer;
 
 public class PairedEndMapJoinMapper extends Mapper<LongWritable, Text, LongWritable, PairedSequence> {
+
+	private static final Logger LOG = LoggerFactory.getLogger(PairedEndMapJoinMapper.class);
 
 	private final Timer timer = new Timer();
 	private static final int T_TOTAL = 0;
@@ -100,10 +104,8 @@ public class PairedEndMapJoinMapper extends Mapper<LongWritable, Text, LongWrita
 		timer.stop(T_TOTAL);
 
 		// Report stats
-		System.out.format(java.util.Locale.ENGLISH,"Total time for mapper task %d: %.3f seconds (%d reads)\n", taskID, timer.readTotal(T_TOTAL), numInputSequences);
-		System.out.format(java.util.Locale.ENGLISH,"\tSetup time: %.3f seconds\n", timer.readTotal(T_SETUP));
-		System.out.format(java.util.Locale.ENGLISH,"\tMap time: %.3f seconds\n", timer.readTotal(T_MAP));
-		System.out.format(java.util.Locale.ENGLISH,"\tCleanup time: %.3f seconds\n", timer.readTotal(T_CLEANUP));
+		if (LOG.isInfoEnabled())
+			LOG.info(String.format(java.util.Locale.ENGLISH, "Mapper task %d: %d reads in %.3f s (setup %.3f s, map %.3f s, cleanup %.3f s)", taskID, numInputSequences, timer.readTotal(T_TOTAL), timer.readTotal(T_SETUP), timer.readTotal(T_MAP), timer.readTotal(T_CLEANUP)));
 	}
 
 	@Override

@@ -28,6 +28,8 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.ReduceContext;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import es.udc.gac.mardre.util.ClusterStats;
 import es.udc.gac.mardre.util.Configuration;
@@ -36,6 +38,8 @@ import es.udc.gac.mardre.util.Sequence;
 import es.udc.gac.mardre.util.Timer;
 
 public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, NullWritable, Sequence> {
+
+	private static final Logger LOG = LoggerFactory.getLogger(PairedEndReducer.class);
 
 	private static final int T_TOTAL = 0;
 	private static final int T_REDUCE = 1;
@@ -78,10 +82,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		double reduceTime = timer.readTotal(T_REDUCE);
 
 		// Report times
-		System.out.format(java.util.Locale.ENGLISH,"Total time for reducer task %d: %.3f seconds (%d reads)\n", taskID, timer.readTotal(T_TOTAL), clusterStats.getNumInputSequences());
-		System.out.format(java.util.Locale.ENGLISH,"\tReduce time: %.3f seconds\n", reduceTime);
-		System.out.format(java.util.Locale.ENGLISH,"\tClustering time: %.3f seconds\n", timer.readTotal(T_CLUSTER));
-		System.out.format(java.util.Locale.ENGLISH,"\tWrite time: %.3f seconds\n", timer.readTotal(T_WRITE));
+		if (LOG.isInfoEnabled())
+			LOG.info(String.format(java.util.Locale.ENGLISH, "Reducer task %d: %d reads in %.3f s (reduce %.3f s, clustering %.3f s, write %.3f s)", taskID, clusterStats.getNumInputSequences(), timer.readTotal(T_TOTAL), reduceTime, timer.readTotal(T_CLUSTER), timer.readTotal(T_WRITE)));
 
 		// Report stats
 		clusterStats.report(reduceTime);

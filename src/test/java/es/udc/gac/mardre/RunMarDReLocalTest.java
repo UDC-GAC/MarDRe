@@ -463,6 +463,20 @@ public class RunMarDReLocalTest {
 	}
 
 	@Test
+	public void theStatisticsOfTheTasksAreLoggedInsteadOfPrinted() throws Exception {
+		List<Read> reads = singleEndReads(new Random(3), 200, false, new ArrayList<Read>());
+		writeConf(true, false);
+
+		Output output = runCapturing(singleEndArgs(write("reads.fastq", reads), "-m", "0"));
+
+		assertEquals(0, output.status);
+		for (String statistic : new String[] { "Total time for", "Setup time", "Write time", "reads in " })
+			assertFalse(statistic + " printed:\n" + output.stdout, output.stdout.contains(statistic));
+		assertTrue(output.logged(Level.INFO, "Mapper task"));
+		assertTrue(output.logged(Level.INFO, "Reducer task"));
+	}
+
+	@Test
 	public void aFailedJobIsLoggedAsAnError() throws Exception {
 		// 1 is not a letter: the mappers fail
 		List<Read> reads = Arrays.asList(new Read("@bad", "ACGTACGT1CGTACGTACGTACGTACGTACGTACGTACGT", "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII"));

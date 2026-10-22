@@ -18,7 +18,12 @@
  */
 package es.udc.gac.mardre.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ClusterStats {
+
+	private static final Logger LOG = LoggerFactory.getLogger(ClusterStats.class);
 
 	private long maxInputClusterSize;
 	private long maxOutputClusterSize;
@@ -90,15 +95,15 @@ public class ClusterStats {
 	}
 
 	public void report(double reduceTime) {
-		if (numInputSequences > 0) {
-			System.out.format(java.util.Locale.ENGLISH,"\n%d/%d reads in %d clusters: %.3f sec => "
+		if (numInputSequences > 0 && LOG.isInfoEnabled()) {
+			LOG.info(String.format(java.util.Locale.ENGLISH, "%d/%d reads in %d clusters: %.3f sec => "
 					+ "largest cluster %d/%d: %.3f sec (%.3f/%.3f), "
 					+ "highest cluster time %d/%d: %.3f sec (%.3f/%.3f), "
-					+ "highest write time %d/%d: %.3f sec (%.3f/%.3f)\n",
+					+ "highest write time %d/%d: %.3f sec (%.3f/%.3f)",
 					numOutputSequences, numInputSequences, numClusters, reduceTime,
 					maxOutputClusterSize, maxInputClusterSize, maxInputClusterTime + maxInputWriteTime, maxInputClusterTime, maxInputWriteTime,
 					maxOutputClusterTimeSize, maxInputClusterTimeSize, maxClusterTime + maxClusterWriteTime, maxClusterTime, maxClusterWriteTime,
-					maxOutputWriteTimeSize, maxInputWriteTimeSize, maxWriteClusterTime + maxWriteTime, maxWriteClusterTime, maxWriteTime);
+					maxOutputWriteTimeSize, maxInputWriteTimeSize, maxWriteClusterTime + maxWriteTime, maxWriteClusterTime, maxWriteTime));
 		}
 	}
 
