@@ -21,6 +21,7 @@ package es.udc.gac.mardre.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,6 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -56,6 +58,11 @@ public class SequenceTest {
 	@AfterClass
 	public static void tearDownClass() {
 		Configuration.NUMBER_BASES_COMPARED = -1;
+	}
+
+	@After
+	public void switchOpticalDuplicatesOff() {
+		Configuration.OPTICAL_DIST = -1;
 	}
 
 	private static String randomString(Random random, String alphabet, int length) {
@@ -266,6 +273,144 @@ public class SequenceTest {
 		int distance = parse("@a", a.toString(), quals).setDist(parse("@c", c.toString(), quals));
 
 		assertEquals(40000, distance);
+	}
+
+	private static final String BASES = "ACGTAAAAAAAAAAAAAAAAAAAA";
+
+	private static Sequence named(String name, boolean isFirstSeq) {
+		Sequence seq = new Sequence();
+		PARSER.getSeq(record(name, BASES, "I".repeat(BASES.length())), seq, isFirstSeq);
+		return seq;
+	}
+
+	private static Sequence named(String name) {
+		return named(name, true);
+	}
+
+	private static String casava(int tile, int x, int y) {
+		return "@K00417:10:HHKL2BBXX:1:" + tile + ":" + x + ":" + y + " 1:N:0:CGGCTATG+AGGCTATA";
+	}
+
+	/** The reads that are in the same tile are close if their euclidean distance, truncated to an integer, is at most the one of -d. */
+	@Test
+	public void readsOfTheSameTileAreCloseUpToTheOpticalDistance() {
+		Configuration.OPTICAL_DIST = 50;
+
+		assertTrue(named(casava(1101, 1000, 2000)).isOpticallyClose(named(casava(1101, 1030, 2040))));
+		assertTrue(named(casava(1101, 1030, 2040)).isOpticallyClose(named(casava(1101, 1000, 2000))));
+
+		Configuration.OPTICAL_DIST = 49;
+
+		assertFalse(named(casava(1101, 1000, 2000)).isOpticallyClose(named(casava(1101, 1030, 2040))));
+	}
+
+	@Test
+	public void theDistanceIsTruncatedToAnInteger() {
+		Configuration.OPTICAL_DIST = 1;
+
+		// sqrt(2) = 1.41: close with -d 1
+		assertTrue(named(casava(1101, 10, 10)).isOpticallyClose(named(casava(1101, 11, 11))));
+		// sqrt(8) = 2.83: truncated to 2, which is more than 1
+		assertFalse(named(casava(1101, 10, 10)).isOpticallyClose(named(casava(1101, 12, 12))));
+	}
+
+	@Test
+	public void readsOfDifferentTilesLanesOrFlowcellsAreNeverClose() {
+		Configuration.OPTICAL_DIST = 1000000;
+		Sequence read = named("@K00417:10:HHKL2BBXX:1:1101:1000:2000 1:N:0:AAAA");
+
+		assertTrue(read.isOpticallyClose(named("@K00417:10:HHKL2BBXX:1:1101:1001:2001 1:N:0:AAAA")));
+		assertFalse(read.isOpticallyClose(named("@K00417:10:HHKL2BBXX:1:1102:1001:2001 1:N:0:AAAA")));
+		assertFalse(read.isOpticallyClose(named("@K00417:10:HHKL2BBXX:2:1101:1001:2001 1:N:0:AAAA")));
+		assertFalse(read.isOpticallyClose(named("@K00417:10:HHKL2BBYY:1:1101:1001:2001 1:N:0:AAAA")));
+	}
+
+	@Test
+	public void whatFollowsTheCoordinatesIsNotPartOfTheTileOrTheDistance() {
+		Configuration.OPTICAL_DIST = 10;
+
+		assertTrue(named("@K00417:10:HHKL2BBXX:1:1101:1000:2000 1:N:0:AAAA").isOpticallyClose(named("@K00417:10:HHKL2BBXX:1:1101:1003:2004 2:N:0:CCCC")));
+		assertTrue(named("@HWI:268:H7LHBADXX:1:1101:1016:2094/1").isOpticallyClose(named("@HWI:268:H7LHBADXX:1:1101:1020:2097/2")));
+	}
+
+	/** The coordinates of the names of the SRA, where the first word is the identifier of the read, are in the second word. */
+	@Test
+	public void theCoordinatesCanBeInTheSecondWordOfTheName() {
+		Configuration.OPTICAL_DIST = 5;
+		Sequence read = named("@DRR016102.1 HWI-ST500:268:H7LHBADXX:1:1101:1016:2094/1");
+
+		// The identifier of the read differs and it is not part of the tile
+		assertTrue(read.isOpticallyClose(named("@DRR016102.2 HWI-ST500:268:H7LHBADXX:1:1101:1020:2097/1")));
+		assertFalse(read.isOpticallyClose(named("@DRR016102.2 HWI-ST500:268:H7LHBADXX:1:1101:1021:2098/1")));
+		assertFalse(read.isOpticallyClose(named("@DRR016102.3 HWI-ST500:268:H7LHBADXX:1:1102:1020:2097/1")));
+	}
+
+	@Test
+	public void theCoordinatesCanBeZeroOrLarge() {
+		Configuration.OPTICAL_DIST = 3;
+
+		assertTrue(named(casava(1101, 0, 0)).isOpticallyClose(named(casava(1101, 2, 2))));
+		assertTrue(named(casava(1101, 999999999, 999999999)).isOpticallyClose(named(casava(1101, 999999998, 999999999))));
+		assertFalse(named(casava(1101, 0, 999999999)).isOpticallyClose(named(casava(1101, 0, 0))));
+	}
+
+	@Test
+	public void withoutOpticalDistanceEveryReadIsClose() {
+		assertTrue(named("@a").isOpticallyClose(named("@b:1:2")));
+	}
+
+	@Test
+	public void aNameWithoutCoordinatesIsRejectedNamingTheRead() {
+		Configuration.OPTICAL_DIST = 10;
+
+		for (String name : new String[] { "@read1", "@read1 comment", "@a:1 b:2", "@r:12:ab", "@r:1.5:2" }) {
+			try {
+				named(name);
+				fail("no coordinates in " + name);
+			} catch (IllegalArgumentException e) {
+				assertTrue(e.getMessage(), e.getMessage().contains(name));
+			}
+		}
+	}
+
+	@Test
+	public void theSecondMateDoesNotNeedCoordinates() {
+		Configuration.OPTICAL_DIST = 10;
+
+		named("@read1", false);
+	}
+
+	@Test
+	public void theCoordinatesFollowTheObjectWhenItIsReusedByReadFields() throws IOException {
+		Configuration.OPTICAL_DIST = 10;
+		Sequence a = named(casava(1101, 100, 100));
+		Sequence b = named(casava(1101, 500, 500));
+		byte[] dataA = serialize(a);
+		byte[] dataB = serialize(b);
+
+		Sequence reused = new Sequence();
+		readFields(reused, dataA);
+		assertTrue(reused.isOpticallyClose(a));
+		assertFalse(reused.isOpticallyClose(b));
+
+		readFields(reused, dataB);
+		assertTrue(reused.isOpticallyClose(b));
+		assertFalse(reused.isOpticallyClose(a));
+	}
+
+	@Test
+	public void theCoordinatesAreCopiedByTheCopyConstructorAndSet() {
+		Configuration.OPTICAL_DIST = 10;
+		Sequence a = named(casava(1101, 100, 100));
+		Sequence b = named(casava(1101, 500, 500));
+
+		assertTrue(new Sequence(a).isOpticallyClose(a));
+		assertFalse(new Sequence(a).isOpticallyClose(b));
+
+		Sequence copy = new Sequence();
+		copy.set(b);
+		assertTrue(copy.isOpticallyClose(b));
+		assertFalse(copy.isOpticallyClose(a));
 	}
 
 	@Test

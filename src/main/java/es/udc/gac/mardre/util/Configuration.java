@@ -55,6 +55,8 @@ public final class Configuration {
 	public static short PREFIX_LENGTH;
 	public static short MISMATCH;
 	public static int NUMBER_BASES_COMPARED;
+	/** Maximum distance between optical duplicates (-d), or -1 if every duplicate is removed. */
+	public static int OPTICAL_DIST = -1;
 	public static FileFormat FILE_FORMAT = FileFormat.FILE_FORMAT_FASTQ;
 	public static String INPUT_PATH_1;
 

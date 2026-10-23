@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.After;
 import org.junit.Test;
 
 public class PairedSequenceTest {
@@ -49,6 +50,40 @@ public class PairedSequenceTest {
 		pair.setFirstSeq(parse(bases1));
 		pair.setSecondSeq(parse(bases2));
 		return pair;
+	}
+
+	@After
+	public void switchOpticalDuplicatesOff() {
+		Configuration.OPTICAL_DIST = -1;
+	}
+
+	private static Sequence named(String name, boolean isFirstSeq) {
+		Sequence seq = new Sequence();
+		PARSER.getSeq(name + "\n" + BASES + "\n+\n" + "I".repeat(BASES.length()), seq, isFirstSeq);
+		return seq;
+	}
+
+	private static PairedSequence named(String name1, String name2) {
+		PairedSequence pair = new PairedSequence();
+		pair.setFirstSeq(named(name1, true));
+		pair.setSecondSeq(named(name2, false));
+		return pair;
+	}
+
+	@Test
+	public void theOpticalDistanceOfPairsIsTheOneOfTheFirstMate() {
+		Configuration.OPTICAL_DIST = 10;
+
+		// The names of the second mates are not even looked at
+		PairedSequence a = named("@T:1:1101:100:100 1:N", "@mate");
+		assertTrue(a.isOpticallyClose(named("@T:1:1101:105:105 1:N", "@other")));
+		assertFalse(a.isOpticallyClose(named("@T:1:1101:111:100 1:N", "@mate")));
+		assertFalse(a.isOpticallyClose(named("@T:1:1102:100:100 1:N", "@mate")));
+	}
+
+	@Test
+	public void withoutOpticalDistanceEveryPairIsClose() {
+		assertTrue(named("@a", "@b").isOpticallyClose(named("@c:1:2", "@d")));
 	}
 
 	@Test

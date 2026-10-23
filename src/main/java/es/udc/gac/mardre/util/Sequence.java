@@ -23,6 +23,8 @@ import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
@@ -91,6 +93,14 @@ public class Sequence implements Writable {
 	private String _quals;
 	private float _avgQual;
 
+	// Optical coordinates of a first read, taken from its name (only with -d)
+	private static final Pattern COORDINATES = Pattern.compile("(.*):(\\d+):(\\d+)(\\D.*)?");
+	private String _coordinatesOf;
+	private int _baseStart;
+	private int _baseEnd;
+	private int _x;
+	private int _y;
+
 	public Sequence() {
 		_name = null;
 		_key = 0;
@@ -119,6 +129,11 @@ public class Sequence implements Writable {
 		_quals = s._quals;
 		_avgQual = s._avgQual;
 		_dist = s._dist;
+		_coordinatesOf = s._coordinatesOf;
+		_baseStart = s._baseStart;
+		_baseEnd = s._baseEnd;
+		_x = s._x;
+		_y = s._y;
 	}
 
 	public void setName(String name) {
@@ -127,6 +142,75 @@ public class Sequence implements Writable {
 
 	public void setIsFirstSeq(boolean val) {
 		_isFirstSeq = val;
+
+		// Fail as soon as possible if the read cannot be compared by position
+		if (val && Configuration.OPTICAL_DIST > 0)
+			setCoordinates();
+	}
+
+	/**
+	 * Takes the coordinates of the read in the flow cell from its name: the first word that ends in two numeric
+	 * fields (":X:Y"), which can be followed by something that is not a number (such as "/1"). The tile is what
+	 * comes before them in that word, so the identifier that the SRA puts in the first word is not part of it.
+	 */
+	private void setCoordinates() {
+		if (_coordinatesOf == _name)
+			return;
+
+		Matcher matcher = COORDINATES.matcher(_name);
+		int end = _name.length();
+
+		for (int start = 0; start < end; ) {
+			while (start < end && Character.isWhitespace(_name.charAt(start)))
+				start++;
+
+			int wordEnd = start;
+			while (wordEnd < end && !Character.isWhitespace(_name.charAt(wordEnd)))
+				wordEnd++;
+
+			if (wordEnd > start && matcher.region(start, wordEnd).matches()) {
+				try {
+					_x = Integer.parseInt(matcher.group(2));
+					_y = Integer.parseInt(matcher.group(3));
+					_baseStart = start;
+					_baseEnd = matcher.end(1);
+					_coordinatesOf = _name;
+					return;
+				} catch (NumberFormatException e) {
+					// Too many digits: not coordinates
+				}
+			}
+
+			start = wordEnd;
+		}
+
+		throw new IllegalArgumentException("Name '" + _name + "' does not have :X:Y coordinates");
+	}
+
+	/**
+	 * Whether the reads can be optical duplicates: they are in the same tile (the same name before the coordinates)
+	 * and the euclidean distance between them, truncated to an integer, is at most the one of -d. It is always true
+	 * if -d was not given.
+	 */
+	public boolean isOpticallyClose(Sequence seq2) {
+		long dist = Configuration.OPTICAL_DIST;
+
+		if (dist <= 0)
+			return true;
+
+		setCoordinates();
+		seq2.setCoordinates();
+
+		long dx = _x - seq2._x;
+		long dy = _y - seq2._y;
+
+		// floor(sqrt(dx*dx + dy*dy)) <= dist
+		if (dx * dx + dy * dy >= (dist + 1) * (dist + 1))
+			return false;
+
+		int length = _baseEnd - _baseStart;
+
+		return length == seq2._baseEnd - seq2._baseStart && _name.regionMatches(_baseStart, seq2._name, seq2._baseStart, length);
 	}
 
 	public boolean isFirstSeq() {
@@ -462,7 +546,7 @@ public class Sequence implements Writable {
 		_key = in.readLong();
 		_length = WritableUtils.readVInt(in);
 		_name = in.readUTF();
-		_isFirstSeq = in.readBoolean();
+		setIsFirstSeq(in.readBoolean());
 		_compressSuffixLength = WritableUtils.readVInt(in);
 		_compressSuffix = null;
 		_compressSuffixRemainder = null;

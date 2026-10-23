@@ -92,6 +92,11 @@ public class PairedSequence implements Writable {
 		return firstSeq.hasLowerNameThan(seq2.firstSeq);
 	}
 
+	/** Pairs are optical duplicates by the position of their first reads. */
+	public boolean isOpticallyClose(PairedSequence seq2) {
+		return firstSeq.isOpticallyClose(seq2.firstSeq);
+	}
+
 	public boolean equal(PairedSequence seq2, short misMatch) {
 		int numMisMatch = this.firstSeq.misMatches(seq2.firstSeq, misMatch, 0);
 
