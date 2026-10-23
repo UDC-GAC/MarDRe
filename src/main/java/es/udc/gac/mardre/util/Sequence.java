@@ -23,8 +23,6 @@ import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
@@ -94,7 +92,6 @@ public class Sequence implements Writable {
 	private float _avgQual;
 
 	// Optical coordinates of a first read, taken from its name (only with -d)
-	private static final Pattern COORDINATES = Pattern.compile("(.*):(\\d+):(\\d+)(\\D.*)?");
 	private String _coordinatesOf;
 	private int _baseStart;
 	private int _baseEnd;
@@ -157,7 +154,6 @@ public class Sequence implements Writable {
 		if (_coordinatesOf == _name)
 			return;
 
-		Matcher matcher = COORDINATES.matcher(_name);
 		int end = _name.length();
 
 		for (int start = 0; start < end; ) {
@@ -168,23 +164,48 @@ public class Sequence implements Writable {
 			while (wordEnd < end && !Character.isWhitespace(_name.charAt(wordEnd)))
 				wordEnd++;
 
-			if (wordEnd > start && matcher.region(start, wordEnd).matches()) {
-				try {
-					_x = Integer.parseInt(matcher.group(2));
-					_y = Integer.parseInt(matcher.group(3));
-					_baseStart = start;
-					_baseEnd = matcher.end(1);
-					_coordinatesOf = _name;
-					return;
-				} catch (NumberFormatException e) {
-					// Too many digits: not coordinates
-				}
-			}
+			if (setCoordinates(start, wordEnd))
+				return;
 
 			start = wordEnd;
 		}
 
 		throw new IllegalArgumentException("Name '" + _name + "' does not have :X:Y coordinates");
+	}
+
+	/** Looks in a word for the last ":X:Y" (two numbers), which can be followed by something that is not a number. */
+	private boolean setCoordinates(int start, int wordEnd) {
+		for (int colon = wordEnd - 1; colon >= start; colon--) {
+			if (_name.charAt(colon) != ':')
+				continue;
+
+			int xStart = colon + 1;
+			int xEnd = endOfNumber(xStart, wordEnd);
+			if (xEnd == xStart || xEnd >= wordEnd || _name.charAt(xEnd) != ':')
+				continue;
+
+			int yStart = xEnd + 1;
+			int yEnd = endOfNumber(yStart, wordEnd);
+			// At most 9 digits, so that they fit in an int
+			if (yEnd == yStart || xEnd - xStart > 9 || yEnd - yStart > 9)
+				continue;
+
+			_x = Integer.parseInt(_name.substring(xStart, xEnd));
+			_y = Integer.parseInt(_name.substring(yStart, yEnd));
+			_baseStart = start;
+			_baseEnd = colon;
+			_coordinatesOf = _name;
+			return true;
+		}
+
+		return false;
+	}
+
+	private int endOfNumber(int from, int to) {
+		int i = from;
+		while (i < to && _name.charAt(i) >= '0' && _name.charAt(i) <= '9')
+			i++;
+		return i;
 	}
 
 	/**
@@ -546,7 +567,8 @@ public class Sequence implements Writable {
 		_key = in.readLong();
 		_length = WritableUtils.readVInt(in);
 		_name = in.readUTF();
-		setIsFirstSeq(in.readBoolean());
+		// The coordinates were checked by the mapper: they are taken when a comparison needs them
+		_isFirstSeq = in.readBoolean();
 		_compressSuffixLength = WritableUtils.readVInt(in);
 		_compressSuffix = null;
 		_compressSuffixRemainder = null;

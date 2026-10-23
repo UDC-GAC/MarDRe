@@ -355,6 +355,30 @@ public class SequenceTest {
 	}
 
 	@Test
+	public void theLastTwoNumbersOfTheWordAreTheCoordinates() {
+		Configuration.OPTICAL_DIST = 3;
+
+		// X=30, Y=40 and X=31, Y=41, in a tile that is whatever precedes them
+		assertTrue(named("@a:1:2:30:40").isOpticallyClose(named("@a:1:2:31:41")));
+		assertFalse(named("@a:1:2:30:40").isOpticallyClose(named("@a:9:2:31:41")));
+	}
+
+	@Test
+	public void numbersThatDoNotFitInAnIntAreNotCoordinates() {
+		Configuration.OPTICAL_DIST = 10;
+
+		try {
+			named("@r:1234567890:1");
+			fail("coordinates with ten digits");
+		} catch (IllegalArgumentException e) {
+			assertTrue(e.getMessage(), e.getMessage().contains("@r:1234567890:1"));
+		}
+
+		// Nine digits do
+		assertTrue(named("@r:123456789:987654321").isOpticallyClose(named("@r:123456789:987654322")));
+	}
+
+	@Test
 	public void withoutOpticalDistanceEveryReadIsClose() {
 		assertTrue(named("@a").isOpticallyClose(named("@b:1:2")));
 	}
