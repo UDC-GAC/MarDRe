@@ -51,7 +51,7 @@ public class PairedEndReduceJoinMapper extends Mapper<LongWritable, PairedSequen
 					boolean insert = true;
 
 					for (PairedSequence seq : seqsInCache) {
-						if (newSeq.equal(seq, Configuration.MISMATCH)) {
+						if (newSeq.isOpticallyClose(seq) && newSeq.equal(seq, Configuration.MISMATCH)) {
 							insert = false;
 							break;
 						}

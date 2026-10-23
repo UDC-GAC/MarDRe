@@ -37,6 +37,7 @@ public class Options {
 	private short _misMatch;
 	private short _prefixLength;
 	private int _numBasesCompared;
+	private int _opticalDist;
 	private int _nreducers;
 
 	public Options() {
@@ -49,6 +50,7 @@ public class Options {
 		_misMatch = 0;
 		_prefixLength = 20;
 		_numBasesCompared = -1;
+		_opticalDist = -1;
 		_nreducers = 1;
 	}
 
@@ -84,6 +86,11 @@ public class Options {
 		return _prefixLength;
 	}
 
+	/** Maximum distance between optical duplicates (-d), or -1 if every duplicate is removed. */
+	public int getOpticalDist() {
+		return _opticalDist;
+	}
+
 	public int getNumberOfBasesCompared() {
 		return _numBasesCompared;
 	}
@@ -117,6 +124,8 @@ public class Options {
 				"    -l <integer> (prefix length used for clustering, default 20)");
 		System.out.println(
 				"    -c <integer> (number of bases to compare for each read starting from the beginning, default is equal to the sequence length)");
+		System.out.println(
+				"    -d <integer> (only remove the optical duplicates: duplicate reads of the same tile that are at most this euclidean distance apart, taken from the :X:Y coordinates of their names; default is to remove all the duplicates)");
 		System.out.println(
 				"    -nr <integer> (number of reducers, default 1)");
 		System.out.println("Others:");
@@ -215,6 +224,23 @@ public class Options {
 					argInd++;
 				} else {
 					System.err.println("No value specified for parameter -m");
+					Options.printUsage(RunMarDRe.class.getName());
+					return false;
+				}
+			} else if (args[argInd].equals("-d")) {
+				// Distance between optical duplicates
+				argInd++;
+				if (argInd < args.length) {
+					_opticalDist = Integer.parseInt(args[argInd]);
+
+					if (_opticalDist < 1) {
+						LOG.warn("The distance between optical duplicates (-d {}) can not be less than 1. Using -d 1 instead", _opticalDist);
+						_opticalDist = 1;
+					}
+
+					argInd++;
+				} else {
+					System.err.println("No value specified for parameter -d");
 					Options.printUsage(RunMarDRe.class.getName());
 					return false;
 				}

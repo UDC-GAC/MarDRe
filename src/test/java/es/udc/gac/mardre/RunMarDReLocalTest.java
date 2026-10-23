@@ -579,6 +579,163 @@ public class RunMarDReLocalTest {
 		assertEquals(expected, kept);
 	}
 
+	private static final int OPTICAL_DIST = 20;
+
+	/** The names of the reads in the style of Casava (the coordinates are in the first word) or of the SRA (in the second). */
+	private static String opticalName(boolean sra, int id, int tile, int x, int y) {
+		if (sra)
+			return String.format("@SRR000001.%d INST:10:FC:1:%d:%d:%d/1", id, tile, x, y);
+		return String.format("@INST:10:FC:1:%d:%d:%d 1:N:0:ACGT", tile, x, y);
+	}
+
+	/**
+	 * Groups of reads with the same sequence (or at most 2 mismatches apart) in spots of two tiles. The spots of a group are
+	 * far away from each other and the reads of a spot are all close to each other (the pairs, with the first mate).
+	 * A kept read is the best one of a spot, whatever the order of arrival. The list best has them.
+	 */
+	private static List<Pair> opticalPairs(Random random, boolean sra, boolean paired, int groups, boolean variants, List<List<Pair>> spots, List<Pair> best) {
+		List<Pair> pairs = new ArrayList<Pair>();
+		String[] prefixes = prefixes(random);
+		int id = 0;
+
+		for (int g = 0; g < groups; g++) {
+			String bases1 = randomBases(random, prefixes[random.nextInt(prefixes.length)], READ_LENGTH);
+			String bases2 = randomBases(random, "", READ_LENGTH);
+
+			for (int tile = 1101; tile <= 1102; tile++) {
+				for (int spot = 0, n = 1 + random.nextInt(3); spot < n; spot++) {
+					// The spots are at least 4 times the distance apart, the reads of a spot are within half of it of its centre
+					int cx = 1000 + 4 * OPTICAL_DIST * spot + 10000 * g;
+					int cy = 2000 + 7 * OPTICAL_DIST * spot;
+					List<Pair> inSpot = new ArrayList<Pair>();
+					Set<String> positions = new HashSet<String>();
+					Pair kept = null;
+
+					for (int copy = 0, copies = 1 + random.nextInt(3); copy < copies; ) {
+						int x = cx + random.nextInt(15) - 7;
+						int y = cy + random.nextInt(15) - 7;
+						if (!positions.add(x + ":" + y))
+							continue;
+
+						String name = opticalName(sra, id++, tile, x, y);
+						Pair pair = new Pair(new Read(name, variants && copy > 0 ? variant(bases1, copy) : bases1, randomQuals(random, READ_LENGTH)),
+								new Read(name, bases2, randomQuals(random, READ_LENGTH)));
+						pairs.add(pair);
+						inSpot.add(pair);
+						copy++;
+
+						if (kept == null || (paired ? pair.isBetterThan(kept) : isBetter(pair.first.qualSum(), pair.first.name, kept.first.qualSum(), kept.first.name)))
+							kept = pair;
+					}
+
+					best.add(kept);
+					spots.add(inSpot);
+				}
+			}
+		}
+
+		Collections.shuffle(pairs, random);
+		return pairs;
+	}
+
+	private void checkOptical(boolean sra, boolean variants, int mismatches) throws Exception {
+		List<Pair> best = new ArrayList<Pair>();
+		List<Pair> pairs = opticalPairs(new Random(10), sra, false, 150, variants, new ArrayList<List<Pair>>(), best);
+		File input = write("optical.fastq", firsts(pairs));
+		assertTrue("too small to be split", input.length() > 4 * SPLIT_SIZE);
+		writeConf(true, false);
+
+		assertEquals(0, run("-i", input.getAbsolutePath(), "-m", String.valueOf(mismatches), "-d", String.valueOf(OPTICAL_DIST), "-l", String.valueOf(PREFIX_LENGTH), "-nr", String.valueOf(SLOTS), "-q"));
+
+		assertEquals(records(firsts(best)), output("output1"));
+	}
+
+	@Test
+	public void singleEndWithAnOpticalDistanceKeepsTheBestReadOfEachSpot() throws Exception {
+		checkOptical(false, false, 0);
+	}
+
+	@Test
+	public void singleEndWithAnOpticalDistanceAndTheCoordinatesInTheSecondWordOfTheName() throws Exception {
+		checkOptical(true, false, 0);
+	}
+
+	@Test
+	public void singleEndWithAnOpticalDistanceAndMismatchesKeepsTheBestReadOfEachSpot() throws Exception {
+		checkOptical(false, true, 2);
+	}
+
+	private void checkOpticalPaired(boolean mapJoin, boolean sra) throws Exception {
+		List<Pair> best = new ArrayList<Pair>();
+		List<Pair> pairs = opticalPairs(new Random(11), sra, true, 120, false, new ArrayList<List<Pair>>(), best);
+		File input1 = write("optical_1.fastq", firsts(pairs));
+		File input2 = write("optical_2.fastq", seconds(pairs));
+		assertTrue("too small to be split", input1.length() > 4 * SPLIT_SIZE);
+		writeConf(mapJoin, false);
+
+		assertEquals(0, run("-i", input1.getAbsolutePath(), "-p", input2.getAbsolutePath(), "-m", "0", "-d", String.valueOf(OPTICAL_DIST), "-l", String.valueOf(PREFIX_LENGTH), "-nr", String.valueOf(SLOTS), "-q"));
+
+		assertEquals(records(firsts(best)), output("output1"));
+		assertEquals(records(seconds(best)), output("output2"));
+	}
+
+	@Test
+	public void pairedEndMapSideJoinWithAnOpticalDistanceKeepsTheBestPairOfEachSpot() throws Exception {
+		checkOpticalPaired(true, false);
+	}
+
+	@Test
+	public void pairedEndReduceSideJoinWithAnOpticalDistanceKeepsTheBestPairOfEachSpot() throws Exception {
+		checkOpticalPaired(false, false);
+	}
+
+	@Test
+	public void pairedEndWithAnOpticalDistanceAndTheCoordinatesInTheSecondWordOfTheName() throws Exception {
+		checkOpticalPaired(true, true);
+	}
+
+	/** The in-mapper combiner keeps the first read that a mapper sees: one read of each spot, not always the best one. */
+	@Test
+	public void singleEndWithAnOpticalDistanceAndTheInMapperCombinerKeepsOneReadOfEachSpot() throws Exception {
+		List<List<Pair>> spots = new ArrayList<List<Pair>>();
+		List<Pair> pairs = opticalPairs(new Random(12), false, false, 150, false, spots, new ArrayList<Pair>());
+		File input = write("optical.fastq", firsts(pairs));
+		writeConf(true, true);
+
+		assertEquals(0, run("-i", input.getAbsolutePath(), "-m", "0", "-d", String.valueOf(OPTICAL_DIST), "-l", String.valueOf(PREFIX_LENGTH), "-nr", String.valueOf(SLOTS), "-q"));
+
+		Map<String, String> kept = output("output1");
+		for (List<Pair> spot : spots) {
+			int inSpot = 0;
+			for (Pair pair : spot)
+				if (kept.containsKey(pair.first.name))
+					inSpot++;
+			assertEquals("kept reads of a spot of " + spot.get(0).first.name, 1, inSpot);
+		}
+		assertEquals(spots.size(), kept.size());
+	}
+
+	@Test
+	public void aReadWithoutCoordinatesMakesTheRunFailIfThereIsAnOpticalDistance() throws Exception {
+		List<Read> reads = singleEndReads(new Random(3), 20, false, new ArrayList<Read>());
+		writeConf(true, false);
+
+		Output output = runCapturing(singleEndArgs(write("reads.fastq", reads), "-m", "0", "-d", "10"));
+
+		assertEquals(-1, output.status);
+	}
+
+	@Test
+	public void anOpticalDistanceLowerThanOneIsAdjustedWithAWarning() throws Exception {
+		List<Pair> pairs = opticalPairs(new Random(13), false, false, 10, false, new ArrayList<List<Pair>>(), new ArrayList<Pair>());
+		writeConf(true, false);
+
+		Output output = runCapturing(singleEndArgs(write("optical.fastq", firsts(pairs)), "-m", "0", "-d", "0"));
+
+		assertEquals(0, output.status);
+		assertTrue(output.events.toString(), output.logged(Level.WARN, "-d 0"));
+	}
+
 	private List<Read> readsWithComments() {
 		List<Read> reads = new ArrayList<Read>();
 		Random random = new Random(6);

@@ -119,7 +119,8 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 		for (PairedSequence newSeq : values) {
 			inputClusterSize++;
 
-			if (newSeq.setDist(refSeq) > Configuration.MISMATCH) {
+			// A read similar to the first one is only its duplicate if it is also close to it (-d)
+			if (newSeq.setDist(refSeq) > Configuration.MISMATCH || !newSeq.isOpticallyClose(firstSeq)) {
 				insert = true;
 
 				for (j=0; j<outputClusterSize; j++) {
@@ -127,7 +128,7 @@ public class PairedEndReducer extends Reducer<LongWritable, PairedSequence, Null
 					diff = Configuration.fastABS(newSeq.getDist() - iterSeq.getDist());
 
 					if (diff <= Configuration.MISMATCH) {
-						if(newSeq.equal(iterSeq, Configuration.MISMATCH)) {
+						if(newSeq.isOpticallyClose(iterSeq) && newSeq.equal(iterSeq, Configuration.MISMATCH)) {
 							insert = false;
 
 							if (newSeq.isBetterThan(iterSeq))

@@ -87,7 +87,7 @@ public class SingleEndReducerTest {
 		}
 	}
 
-	private static Configuration jobConf(int mismatch) {
+	private static Configuration jobConf(int mismatch, int opticalDist) {
 		Configuration conf = new Configuration(false);
 		// Names of the parameters set by es.udc.gac.mardre.util.Configuration.load()
 		conf.setBoolean("MarDRe_inMapperCombiner", false);
@@ -96,6 +96,7 @@ public class SingleEndReducerTest {
 		conf.setInt("MarDRe_prefixLength", PREFIX_LENGTH);
 		conf.setInt("MarDRe_misMatch", mismatch);
 		conf.setInt("MarDRe_numBasesCompared", -1);
+		conf.setInt("MarDRe_opticalDist", opticalDist);
 		conf.setInt("MarDRe_fileFormat", FileFormat.FILE_FORMAT_FASTQ.ordinal());
 		conf.set("MarDRe_inputPath1", "in");
 		conf.set("MarDRe_tempOutputPath2Prefix", "out2");
@@ -148,8 +149,15 @@ public class SingleEndReducerTest {
 
 	/** Runs the reducer task and returns the FASTQ records written (name, bases and qualities). */
 	private static List<String> reduce(List<Read> reads, int mismatch) throws Exception {
+		return reduce(reads, mismatch, -1);
+	}
+
+	/** Runs the reducer task with the optical distance of -d (-1 if it is not used). */
+	private static List<String> reduce(List<Read> reads, int mismatch, int opticalDist) throws Exception {
 		final List<String> output = new ArrayList<String>();
-		Configuration conf = jobConf(mismatch);
+		Configuration conf = jobConf(mismatch, opticalDist);
+		// The mappers parse the reads with it
+		es.udc.gac.mardre.util.Configuration.OPTICAL_DIST = opticalDist;
 		TaskAttemptID id = new TaskAttemptID("test", 1, TaskType.REDUCE, 0, 0);
 		Counters counters = new Counters();
 		Counter keys = counters.findCounter("test", "keys");
@@ -189,6 +197,15 @@ public class SingleEndReducerTest {
 		List<String> names = new ArrayList<String>();
 		for (String record : records)
 			names.add(record.substring(0, record.indexOf('\n')));
+		Collections.sort(names);
+		return names;
+	}
+
+	/** The sorted names of the reads. */
+	private static List<String> readNames(List<Read> reads) {
+		List<String> names = new ArrayList<String>();
+		for (Read read : reads)
+			names.add(read.name);
 		Collections.sort(names);
 		return names;
 	}
@@ -292,6 +309,71 @@ public class SingleEndReducerTest {
 
 		for (List<Read> order : permutations(reads))
 			assertEquals("arrival order " + arrival(order), Arrays.asList("@m"), names(reduce(order, 0)));
+	}
+
+	/** A read of the tile 1101 of a lane at the given position. */
+	private static Read at(int x, int y, char qual) {
+		return new Read("@I:10:FC:1:1101:" + x + ":" + y + " 1:N:0", BASES, qual);
+	}
+
+	@Test
+	public void duplicatesFarApartAreBothKeptWithAnOpticalDistance() throws Exception {
+		List<Read> reads = Arrays.asList(at(100, 100, '5'), at(1000, 1000, '5'));
+
+		for (List<Read> order : permutations(reads))
+			assertEquals("arrival order " + arrival(order), readNames(reads), names(reduce(order, 0, 10)));
+	}
+
+	@Test
+	public void duplicatesCloseTogetherKeepTheBestWithAnOpticalDistance() throws Exception {
+		List<Read> reads = Arrays.asList(at(100, 100, '5'), at(103, 104, 'I'), at(100, 105, '?'));
+
+		for (List<Read> order : permutations(reads))
+			assertEquals("arrival order " + arrival(order), Arrays.asList(at(103, 104, 'I').name), names(reduce(order, 0, 10)));
+	}
+
+	/** The first read of the group stands for the reads that are close to it, not for all the others with its sequence. */
+	@Test
+	public void aDuplicateOfTheFirstReadIsOnlyDroppedIfItIsCloseToIt() throws Exception {
+		Read a = at(100, 100, '5');
+		Read far = at(1000, 1000, '5');
+		Read b = at(105, 100, 'I');
+		List<Read> reads = Arrays.asList(a, far, b);
+		List<String> expected = Arrays.asList(b.name, far.name);
+		Collections.sort(expected);
+
+		for (List<Read> order : permutations(reads))
+			assertEquals("arrival order " + arrival(order), expected, names(reduce(order, 0, 10)));
+	}
+
+	@Test
+	public void duplicatesOfDifferentTilesAreBothKept() throws Exception {
+		List<Read> reads = Arrays.asList(at(100, 100, '5'),
+				new Read("@I:10:FC:1:1102:100:100 1:N:0", BASES, '5'),
+				new Read("@I:10:FC:2:1101:100:100 1:N:0", BASES, '5'));
+
+		for (List<Read> order : permutations(reads))
+			assertEquals("arrival order " + arrival(order), readNames(reads), names(reduce(order, 0, 1000000)));
+	}
+
+	@Test
+	public void similarReadsCloseTogetherAreCollapsedWithMismatchesAndAnOpticalDistance() throws Exception {
+		String variant = BASES.substring(0, 10) + "A" + BASES.substring(11);
+		List<Read> reads = Arrays.asList(at(100, 100, '5'),
+				new Read("@I:10:FC:1:1101:104:100 1:N:0", variant, 'I'),
+				new Read("@I:10:FC:1:1101:900:900 1:N:0", variant, '5'));
+		List<String> expected = Arrays.asList("@I:10:FC:1:1101:104:100 1:N:0", "@I:10:FC:1:1101:900:900 1:N:0");
+
+		for (List<Read> order : permutations(reads))
+			assertEquals("arrival order " + arrival(order), expected, names(reduce(order, 1, 10)));
+	}
+
+	@Test
+	public void withoutAnOpticalDistancePositionsAreNotLookedAt() throws Exception {
+		List<Read> reads = Arrays.asList(at(100, 100, '5'), at(1000, 1000, 'I'), new Read("@without coordinates", BASES, '?'));
+
+		for (List<Read> order : permutations(reads))
+			assertEquals("arrival order " + arrival(order), Arrays.asList(at(1000, 1000, 'I').name), names(reduce(order, 0)));
 	}
 
 	/** Few quality levels, so there are many ties: the kept read of each sequence does not depend on the arrival order. */

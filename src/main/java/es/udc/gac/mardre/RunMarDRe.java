@@ -366,6 +366,8 @@ public class RunMarDRe extends Configured implements Tool {
 		LOG.info("prefix length = {}", options.getPrefixLength());
 		LOG.info("allowed mismatches = {}", options.getMisMatch());
 		LOG.info("number of bases to compare = {}", options.getNumberOfBasesCompared());
+		if (options.getOpticalDist() > 0)
+			LOG.info("only optical duplicates, at most {} apart", options.getOpticalDist());
 		LOG.info("number of reducers = {}", options.getNumberOfReducers());
 		LOG.info("input buffer size = {} bytes", Configuration.INPUT_BUFFER_SIZE);
 		LOG.info("in-Mapper combiner = {}", Configuration.IN_MAPPER_COMBINER);
