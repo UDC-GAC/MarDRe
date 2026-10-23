@@ -67,6 +67,8 @@ public class RunMarDReLocalTest {
 	public TemporaryFolder tmp = new TemporaryFolder();
 
 	private File home;
+	/** Extra Hadoop properties of the job, set by the tests that need them. */
+	private final Map<String, String> jobProperties = new HashMap<String, String>();
 
 	@Before
 	public void setUp() {
@@ -155,6 +157,8 @@ public class RunMarDReLocalTest {
 		conf.setInt("mapreduce.local.reduce.tasks.maximum", SLOTS);
 		// Small splits: several map tasks even for a small input
 		conf.setLong("mapreduce.input.fileinputformat.split.maxsize", SPLIT_SIZE);
+		for (Map.Entry<String, String> property : jobProperties.entrySet())
+			conf.set(property.getKey(), property.getValue());
 		return ToolRunner.run(conf, new RunMarDRe(), args);
 	}
 
@@ -174,6 +178,47 @@ public class RunMarDReLocalTest {
 				assertEquals("duplicated name " + lines.get(i), null, records.put(lines.get(i), record));
 			}
 		}
+		return records;
+	}
+
+	private File writeFasta(String name, List<Read> reads) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		for (Read read : reads)
+			sb.append('>').append(read.name.substring(1)).append('\n').append(read.bases).append('\n');
+		File file = new File(tmp.getRoot(), name);
+		Files.write(file.toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
+		return file;
+	}
+
+	/** The records (by name) of the part files of an output directory of FASTA reads: a name line and a line of bases. */
+	private Map<String, String> fastaOutput(String dir) throws IOException {
+		Map<String, String> records = new TreeMap<String, String>();
+		File[] parts = new File(tmp.getRoot(), "base/MarDRe/tmp/" + dir).listFiles();
+		assertTrue("no output in " + dir, parts != null);
+
+		for (File part : parts) {
+			if (!part.getName().startsWith("part-"))
+				continue;
+			List<String> lines = Files.readAllLines(part.toPath(), StandardCharsets.UTF_8);
+			assertEquals(0, lines.size() % 2);
+			for (int i = 0; i < lines.size(); i += 2)
+				assertEquals("duplicated name " + lines.get(i), null, records.put(lines.get(i), lines.get(i) + "\n" + lines.get(i + 1) + "\n"));
+		}
+		return records;
+	}
+
+	/** Without quality scores every duplicate ties: the read with the lowest name is kept. */
+	private static Map<String, String> lowestNameOfEachSequence(Iterable<Read> reads) {
+		Map<String, Read> lowest = new HashMap<String, Read>();
+		for (Read read : reads) {
+			Read kept = lowest.get(read.bases);
+			if (kept == null || read.name.compareTo(kept.name) < 0)
+				lowest.put(read.bases, read);
+		}
+
+		Map<String, String> records = new TreeMap<String, String>();
+		for (Read read : lowest.values())
+			records.put(">" + read.name.substring(1), ">" + read.name.substring(1) + "\n" + read.bases + "\n");
 		return records;
 	}
 
@@ -371,6 +416,80 @@ public class RunMarDReLocalTest {
 	@Test
 	public void pairedEndWithMismatchesKeepsTheBestPairOfEachGroupOfSimilarPairs() throws Exception {
 		checkPairedEnd(true, true, 2);
+	}
+
+	@Test
+	public void fastaSingleEndKeepsTheReadWithTheLowestNameOfEachSequence() throws Exception {
+		List<Read> reads = singleEndReads(new Random(4), 1500, false, new ArrayList<Read>());
+		File input = writeFasta("reads.fasta", reads);
+		assertTrue("too small to be split", input.length() > 4 * SPLIT_SIZE);
+		writeConf(true, false);
+
+		assertEquals(0, run("-i", input.getAbsolutePath(), "-m", "0", "-l", String.valueOf(PREFIX_LENGTH), "-nr", String.valueOf(SLOTS), "-f"));
+
+		assertEquals(lowestNameOfEachSequence(reads), fastaOutput("output1"));
+	}
+
+	@Test
+	public void fastaPairedEndKeepsTheLowestNamedPairOfEachDuplicate() throws Exception {
+		List<Pair> pairs = pairedEndReads(new Random(5), 1000, false, new ArrayList<Pair>());
+		File input1 = writeFasta("reads_1.fasta", firsts(pairs));
+		File input2 = writeFasta("reads_2.fasta", seconds(pairs));
+		assertTrue("too small to be split", input1.length() > 4 * SPLIT_SIZE);
+		writeConf(true, false);
+
+		assertEquals(0, run("-i", input1.getAbsolutePath(), "-p", input2.getAbsolutePath(), "-m", "0", "-l", String.valueOf(PREFIX_LENGTH), "-nr", String.valueOf(SLOTS), "-f"));
+
+		// A pair is a duplicate if both mates are
+		Map<String, Pair> lowest = new HashMap<String, Pair>();
+		for (Pair pair : pairs) {
+			String key = pair.first.bases + "/" + pair.second.bases;
+			Pair kept = lowest.get(key);
+			if (kept == null || pair.first.name.compareTo(kept.first.name) < 0)
+				lowest.put(key, pair);
+		}
+		Map<String, String> firsts = new TreeMap<String, String>();
+		Map<String, String> seconds = new TreeMap<String, String>();
+		for (Pair pair : lowest.values()) {
+			String name = ">" + pair.first.name.substring(1);
+			firsts.put(name, name + "\n" + pair.first.bases + "\n");
+			seconds.put(name, name + "\n" + pair.second.bases + "\n");
+		}
+
+		assertEquals(firsts, fastaOutput("output1"));
+		assertEquals(seconds, fastaOutput("output2"));
+	}
+
+	private List<Read> readsWithComments() {
+		List<Read> reads = new ArrayList<Read>();
+		Random random = new Random(6);
+		for (int i = 0; i < 20; i++)
+			reads.add(new Read(String.format("@r%05d lane:%d length=%d", i, i % 3, READ_LENGTH), randomBases(random, "", READ_LENGTH), randomQuals(random, READ_LENGTH)));
+		return reads;
+	}
+
+	@Test
+	public void theReadNamesAreKeptWhole() throws Exception {
+		List<Read> reads = readsWithComments();
+		writeConf(true, false);
+
+		assertEquals(0, run(singleEndArgs(write("reads.fastq", reads), "-m", "0")));
+
+		assertEquals(records(reads), output("output1"));
+	}
+
+	@Test
+	public void theReadNamesAreCutAtTheFirstSpaceIfTheParserTrimsThem() throws Exception {
+		List<Read> reads = readsWithComments();
+		List<Read> trimmed = new ArrayList<Read>();
+		for (Read read : reads)
+			trimmed.add(new Read(read.name.split(" ")[0], read.bases, read.quals));
+		jobProperties.put("hsp.trim.sequence.name", "true");
+		writeConf(true, false);
+
+		assertEquals(0, run(singleEndArgs(write("reads.fastq", reads), "-m", "0")));
+
+		assertEquals(records(trimmed), output("output1"));
 	}
 
 	/** What a run of the tool wrote to the standard output and error and logged (INFO or higher). */
