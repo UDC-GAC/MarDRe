@@ -373,10 +373,11 @@ public class RunMarDReLocalTest {
 		checkPairedEnd(true, true, 2);
 	}
 
-	/** What a run of the tool wrote to the standard output and logged (INFO or higher). */
+	/** What a run of the tool wrote to the standard output and error and logged (INFO or higher). */
 	private static final class Output {
 		int status;
 		String stdout;
+		String stderr;
 		final List<LoggingEvent> events = new ArrayList<LoggingEvent>();
 
 		boolean logged(Level level, String text) {
@@ -393,7 +394,9 @@ public class RunMarDReLocalTest {
 		Level level = logger.getLevel();
 		boolean additive = logger.getAdditivity();
 		PrintStream stdout = System.out;
+		PrintStream stderr = System.err;
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		ByteArrayOutputStream errorBytes = new ByteArrayOutputStream();
 		AppenderSkeleton appender = new AppenderSkeleton() {
 			@Override
 			protected void append(LoggingEvent event) {
@@ -415,15 +418,18 @@ public class RunMarDReLocalTest {
 		logger.setAdditivity(false);
 		logger.addAppender(appender);
 		System.setOut(new PrintStream(bytes, true, "UTF-8"));
+		System.setErr(new PrintStream(errorBytes, true, "UTF-8"));
 		try {
 			output.status = run(args);
 		} finally {
 			System.setOut(stdout);
+			System.setErr(stderr);
 			logger.removeAppender(appender);
 			logger.setAdditivity(additive);
 			logger.setLevel(level);
 		}
 		output.stdout = bytes.toString("UTF-8");
+		output.stderr = errorBytes.toString("UTF-8");
 		return output;
 	}
 
@@ -486,6 +492,7 @@ public class RunMarDReLocalTest {
 
 		assertEquals(-1, output.status);
 		assertTrue(output.events.toString(), output.logged(Level.ERROR, "job_local"));
+		assertTrue(output.stderr, output.stderr.contains("job_local"));
 	}
 
 	@Test
@@ -499,6 +506,7 @@ public class RunMarDReLocalTest {
 
 		assertEquals(-1, output.status);
 		assertTrue(output.events.toString(), output.logged(Level.ERROR, "INPUT_BUFFER_SIZE=10"));
+		assertTrue(output.stderr, output.stderr.contains("INPUT_BUFFER_SIZE=10"));
 	}
 
 	@Test

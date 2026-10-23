@@ -116,12 +116,12 @@ public final class Configuration {
 
 		if (!basePath.equals(fs.getHomeDirectory())) {
 			if (!fs.exists(basePath)) {
-				LOG.error("HDFS_BASE_PATH value is not valid: {} does not exist", basePath);
+				Errors.report(LOG, "HDFS_BASE_PATH value is not valid: {} does not exist", basePath);
 				return false;
 			}
 
 			if(!fs.isDirectory(basePath)) {
-				LOG.error("HDFS_BASE_PATH value is not valid: {} is not a directory", basePath);
+				Errors.report(LOG, "HDFS_BASE_PATH value is not valid: {} is not a directory", basePath);
 				return false;
 			}
 		} else {
@@ -145,22 +145,22 @@ public final class Configuration {
 			DELETE_TEMP = false;
 
 		if (INPUT_BUFFER_SIZE < 512) {
-			LOG.error("INPUT_BUFFER_SIZE={} value is not valid", INPUT_BUFFER_SIZE);
+			Errors.report(LOG, "INPUT_BUFFER_SIZE={} value is not valid", INPUT_BUFFER_SIZE);
 			return false;
 		}
 
 		if (IN_MAPPER_COMBINER_CACHE_SIZE <= 0) {
-			LOG.error("IN_MAPPER_COMBINER_CACHE_SIZE={} value is not valid", IN_MAPPER_COMBINER_CACHE_SIZE);
+			Errors.report(LOG, "IN_MAPPER_COMBINER_CACHE_SIZE={} value is not valid", IN_MAPPER_COMBINER_CACHE_SIZE);
 			return false;
 		}
 
 		if (CLUSTER_LIST_INITIAL_CAPACITY < 0) {
-			LOG.error("CLUSTER_LIST_INITIAL_CAPACITY={} value is not valid", CLUSTER_LIST_INITIAL_CAPACITY);
+			Errors.report(LOG, "CLUSTER_LIST_INITIAL_CAPACITY={} value is not valid", CLUSTER_LIST_INITIAL_CAPACITY);
 			return false;
 		}
 
 		if (HDFS_BLOCK_REPLICATION <= 0) {
-			LOG.error("HDFS_BLOCK_REPLICATION={} value is not valid", HDFS_BLOCK_REPLICATION);
+			Errors.report(LOG, "HDFS_BLOCK_REPLICATION={} value is not valid", HDFS_BLOCK_REPLICATION);
 			return false;
 		}
 

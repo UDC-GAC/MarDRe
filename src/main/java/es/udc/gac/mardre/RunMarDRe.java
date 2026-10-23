@@ -52,6 +52,7 @@ import es.udc.gac.hadoop.sequence.parser.mapreduce.FastQInputFormat;
 import es.udc.gac.hadoop.sequence.parser.mapreduce.PairedEndSequenceInputFormat;
 import es.udc.gac.hadoop.sequence.parser.mapreduce.SingleEndSequenceInputFormat;
 import es.udc.gac.mardre.util.Configuration;
+import es.udc.gac.mardre.util.Errors;
 import es.udc.gac.mardre.util.Options;
 import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.Sequence;
@@ -456,7 +457,7 @@ public class RunMarDRe extends Configured implements Tool {
 				timer.stop(T_PARSE_READS);
 
 				if (!status) {
-					LOG.error("Job {} failed: {}", jobPairedSequences.getJobID(), jobPairedSequences.getStatus().getFailureInfo());
+					Errors.report(LOG, "Job {} failed: {}", jobPairedSequences.getJobID(), jobPairedSequences.getStatus().getFailureInfo());
 					return -1;
 				} else {
 					Path success = new Path(tmpInputPath1+"/_SUCCESS");
@@ -486,7 +487,7 @@ public class RunMarDRe extends Configured implements Tool {
 		timer.stop(T_REMOVE_DUP);
 
 		if (!status) {
-			LOG.error("Job {} failed: {}", jobRemoveDuplicate.getJobID(), jobRemoveDuplicate.getStatus().getFailureInfo());
+			Errors.report(LOG, "Job {} failed: {}", jobRemoveDuplicate.getJobID(), jobRemoveDuplicate.getStatus().getFailureInfo());
 			return -1;
 		}
 
