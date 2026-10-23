@@ -187,8 +187,7 @@ public class RunMarDReLocalTest {
 		Configuration conf = new Configuration();
 		conf.set("hadoop.tmp.dir", new File(tmp.getRoot(), "hadoop").getAbsolutePath());
 		conf.set("mapreduce.framework.name", "local");
-		// Defined by the default configuration of HDFS, which is not loaded here
-		conf.setLong("dfs.blocksize", 128 * 1024 * 1024);
+		// dfs.blocksize, from the default configuration of HDFS, is not defined here
 		conf.setInt("mapreduce.local.map.tasks.maximum", SLOTS);
 		conf.setInt("mapreduce.local.reduce.tasks.maximum", SLOTS);
 		// Small splits: several map tasks even for a small input
@@ -686,6 +685,14 @@ public class RunMarDReLocalTest {
 	@Test
 	public void singleEndWithAnOpticalDistanceAndTheInMapperCombinerKeepsTheBestReadOfEachSpot() throws Exception {
 		checkOptical(false, false, 0, true);
+	}
+
+	@Test
+	public void theBlockSizeOfHdfsIsNotRequiredInTheConfiguration() throws Exception {
+		List<Read> reads = singleEndReads(new Random(14), 20, false, new ArrayList<Read>());
+		writeConf(true, false);
+
+		assertEquals(0, runCapturing(singleEndArgs(write("reads.fastq", reads), "-m", "0")).status);
 	}
 
 	@Test

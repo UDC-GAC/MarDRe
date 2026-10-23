@@ -398,7 +398,8 @@ public class RunMarDRe extends Configured implements Tool {
 		conf.setFloat(MRJobConfig.MAP_SORT_SPILL_PERCENT, 0.9f);
 		// Force one block replica for intermediate output files
 		conf.setInt("dfs.replication", 1);
-		long blockSize = Long.parseLong(conf.get("dfs.blocksize"));
+		// The default of HDFS if its configuration is not loaded; it may have a suffix (128m)
+		long blockSize = conf.getLongBytes("dfs.blocksize", 128L * 1024 * 1024);
 
 		if (options.isPaired()) {
 			LOG.info("running in paired-end mode");
