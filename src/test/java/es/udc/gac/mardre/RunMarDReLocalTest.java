@@ -386,37 +386,16 @@ public class RunMarDReLocalTest {
 
 		assertEquals(0, run("-i", input.getAbsolutePath(), "-m", String.valueOf(mismatches), "-l", String.valueOf(PREFIX_LENGTH), "-nr", String.valueOf(SLOTS), "-q"));
 
-		Map<String, String> kept = output("output1");
-
-		if (!combiner) {
-			assertEquals(records(best), kept);
-			return;
-		}
-
-		// The in-mapper combiner keeps the first read of a sequence that a mapper sees, whatever its quality
-		Map<String, Set<String>> namesOfSequence = new HashMap<String, Set<String>>();
-		for (Read read : reads) {
-			if (!namesOfSequence.containsKey(read.bases))
-				namesOfSequence.put(read.bases, new HashSet<String>());
-			namesOfSequence.get(read.bases).add(read.name);
-		}
-
-		Set<String> sequences = new HashSet<String>();
-		for (Map.Entry<String, String> record : kept.entrySet()) {
-			String bases = record.getValue().split("\n")[1];
-			assertTrue("a read of another sequence: " + record.getKey(), namesOfSequence.get(bases).contains(record.getKey()));
-			assertTrue("sequence kept twice: " + bases, sequences.add(bases));
-		}
-		assertEquals(namesOfSequence.keySet(), sequences);
+		assertEquals(records(best), output("output1"));
 	}
 
-	private void checkPairedEnd(boolean mapJoin, boolean variants, int mismatches) throws Exception {
+	private void checkPairedEnd(boolean mapJoin, boolean variants, int mismatches, boolean combiner) throws Exception {
 		List<Pair> best = new ArrayList<Pair>();
 		List<Pair> pairs = pairedEndReads(new Random(2), 1000, variants, best);
 		File input1 = write("reads_1.fastq", firsts(pairs));
 		File input2 = write("reads_2.fastq", seconds(pairs));
 		assertTrue("too small to be split", input1.length() > 4 * SPLIT_SIZE);
-		writeConf(mapJoin, false);
+		writeConf(mapJoin, combiner);
 
 		assertEquals(0, run("-i", input1.getAbsolutePath(), "-p", input2.getAbsolutePath(), "-m", String.valueOf(mismatches), "-l", String.valueOf(PREFIX_LENGTH), "-nr", String.valueOf(SLOTS), "-q"));
 
@@ -461,23 +440,33 @@ public class RunMarDReLocalTest {
 	}
 
 	@Test
-	public void singleEndWithTheInMapperCombinerKeepsOneReadOfEachSequence() throws Exception {
+	public void singleEndWithTheInMapperCombinerKeepsTheBestReadOfEachSequence() throws Exception {
 		checkSingleEnd(false, 0, true);
 	}
 
 	@Test
+	public void pairedEndMapSideJoinWithTheInMapperCombinerKeepsTheBestPairOfEachDuplicate() throws Exception {
+		checkPairedEnd(true, false, 0, true);
+	}
+
+	@Test
+	public void pairedEndReduceSideJoinWithTheInMapperCombinerKeepsTheBestPairOfEachDuplicate() throws Exception {
+		checkPairedEnd(false, false, 0, true);
+	}
+
+	@Test
 	public void pairedEndMapSideJoinKeepsTheBestPairOfEachDuplicate() throws Exception {
-		checkPairedEnd(true, false, 0);
+		checkPairedEnd(true, false, 0, false);
 	}
 
 	@Test
 	public void pairedEndReduceSideJoinKeepsTheBestPairOfEachDuplicate() throws Exception {
-		checkPairedEnd(false, false, 0);
+		checkPairedEnd(false, false, 0, false);
 	}
 
 	@Test
 	public void pairedEndWithMismatchesKeepsTheBestPairOfEachGroupOfSimilarPairs() throws Exception {
-		checkPairedEnd(true, true, 2);
+		checkPairedEnd(true, true, 2, false);
 	}
 
 	@Test
@@ -638,12 +627,12 @@ public class RunMarDReLocalTest {
 		return pairs;
 	}
 
-	private void checkOptical(boolean sra, boolean variants, int mismatches) throws Exception {
+	private void checkOptical(boolean sra, boolean variants, int mismatches, boolean combiner) throws Exception {
 		List<Pair> best = new ArrayList<Pair>();
 		List<Pair> pairs = opticalPairs(new Random(10), sra, false, 150, variants, new ArrayList<List<Pair>>(), best);
 		File input = write("optical.fastq", firsts(pairs));
 		assertTrue("too small to be split", input.length() > 4 * SPLIT_SIZE);
-		writeConf(true, false);
+		writeConf(true, combiner);
 
 		assertEquals(0, run("-i", input.getAbsolutePath(), "-m", String.valueOf(mismatches), "-d", String.valueOf(OPTICAL_DIST), "-l", String.valueOf(PREFIX_LENGTH), "-nr", String.valueOf(SLOTS), "-q"));
 
@@ -652,17 +641,17 @@ public class RunMarDReLocalTest {
 
 	@Test
 	public void singleEndWithAnOpticalDistanceKeepsTheBestReadOfEachSpot() throws Exception {
-		checkOptical(false, false, 0);
+		checkOptical(false, false, 0, false);
 	}
 
 	@Test
 	public void singleEndWithAnOpticalDistanceAndTheCoordinatesInTheSecondWordOfTheName() throws Exception {
-		checkOptical(true, false, 0);
+		checkOptical(true, false, 0, false);
 	}
 
 	@Test
 	public void singleEndWithAnOpticalDistanceAndMismatchesKeepsTheBestReadOfEachSpot() throws Exception {
-		checkOptical(false, true, 2);
+		checkOptical(false, true, 2, false);
 	}
 
 	private void checkOpticalPaired(boolean mapJoin, boolean sra) throws Exception {
@@ -694,25 +683,9 @@ public class RunMarDReLocalTest {
 		checkOpticalPaired(true, true);
 	}
 
-	/** The in-mapper combiner keeps the first read that a mapper sees: one read of each spot, not always the best one. */
 	@Test
-	public void singleEndWithAnOpticalDistanceAndTheInMapperCombinerKeepsOneReadOfEachSpot() throws Exception {
-		List<List<Pair>> spots = new ArrayList<List<Pair>>();
-		List<Pair> pairs = opticalPairs(new Random(12), false, false, 150, false, spots, new ArrayList<Pair>());
-		File input = write("optical.fastq", firsts(pairs));
-		writeConf(true, true);
-
-		assertEquals(0, run("-i", input.getAbsolutePath(), "-m", "0", "-d", String.valueOf(OPTICAL_DIST), "-l", String.valueOf(PREFIX_LENGTH), "-nr", String.valueOf(SLOTS), "-q"));
-
-		Map<String, String> kept = output("output1");
-		for (List<Pair> spot : spots) {
-			int inSpot = 0;
-			for (Pair pair : spot)
-				if (kept.containsKey(pair.first.name))
-					inSpot++;
-			assertEquals("kept reads of a spot of " + spot.get(0).first.name, 1, inSpot);
-		}
-		assertEquals(spots.size(), kept.size());
+	public void singleEndWithAnOpticalDistanceAndTheInMapperCombinerKeepsTheBestReadOfEachSpot() throws Exception {
+		checkOptical(false, false, 0, true);
 	}
 
 	@Test

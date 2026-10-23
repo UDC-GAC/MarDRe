@@ -54,21 +54,21 @@ public class SingleEndMapper extends Mapper<LongWritable, Text, LongWritable, Se
 				@Override
 				public void combine(Map<LongWritable, List<Sequence>> cache, List<Sequence> seqsInCache, Sequence newSeq) {
 
-					boolean insert = true;
+					for (int i = 0; i < seqsInCache.size(); i++) {
+						Sequence seq = seqsInCache.get(i);
 
-					for (Sequence seq : seqsInCache) {
 						if (newSeq.isOpticallyClose(seq) && newSeq.equal(seq, Configuration.MISMATCH)) {
-							insert = false;
-							break;
+							// Duplicate: keep the best of the two, as the reducers do
+							if (newSeq.isBetterThan(seq))
+								seqsInCache.set(i, newSeq);
+							return;
 						}
 					}
 
-					if (insert) {
-						// Put the sequence into the cache
-						seqsInCache.add(newSeq);
-						longKey.set(newSeq.getKey());
-						cache.put(longKey, seqsInCache);
-					}
+					// Put the sequence into the cache
+					seqsInCache.add(newSeq);
+					longKey.set(newSeq.getKey());
+					cache.put(longKey, seqsInCache);
 				}
 			}
 			);

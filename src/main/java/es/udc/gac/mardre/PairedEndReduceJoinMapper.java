@@ -48,21 +48,21 @@ public class PairedEndReduceJoinMapper extends Mapper<LongWritable, PairedSequen
 				@Override
 				public void combine(Map<LongWritable, List<PairedSequence>> cache, List<PairedSequence> seqsInCache, PairedSequence newSeq) {
 
-					boolean insert = true;
+					for (int i = 0; i < seqsInCache.size(); i++) {
+						PairedSequence seq = seqsInCache.get(i);
 
-					for (PairedSequence seq : seqsInCache) {
 						if (newSeq.isOpticallyClose(seq) && newSeq.equal(seq, Configuration.MISMATCH)) {
-							insert = false;
-							break;
+							// Duplicate: keep the best of the two, as the reducers do
+							if (newSeq.isBetterThan(seq))
+								seqsInCache.set(i, newSeq);
+							return;
 						}
 					}
 
-					if (insert) {
-						// Put the sequence into the cache
-						seqsInCache.add(newSeq);
-						longKey.set(newSeq.getKey());
-						cache.put(longKey, seqsInCache);
-					}
+					// Put the sequence into the cache
+					seqsInCache.add(newSeq);
+					longKey.set(newSeq.getKey());
+					cache.put(longKey, seqsInCache);
 				}
 			}
 			);
