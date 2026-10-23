@@ -25,6 +25,8 @@ import static org.junit.Assume.assumeNotNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -41,6 +43,11 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.compress.BZip2Codec;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
@@ -147,6 +154,35 @@ public class RunMarDReLocalTest {
 		return file;
 	}
 
+	/** The lines of a file, decompressed if its extension is the one of a codec (the output of compressed input is compressed). */
+	private static List<String> readLines(File file) throws IOException {
+		CompressionCodec codec = new CompressionCodecFactory(new Configuration()).getCodec(new Path(file.getPath()));
+		if (codec == null)
+			return Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
+
+		InputStream in = codec.createInputStream(Files.newInputStream(file.toPath()));
+		try {
+			return new java.io.BufferedReader(new java.io.InputStreamReader(in, StandardCharsets.UTF_8)).lines().collect(java.util.stream.Collectors.toList());
+		} finally {
+			in.close();
+		}
+	}
+
+	private File writeBzip2(String name, List<Read> reads) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		for (Read read : reads)
+			sb.append(read.fastq());
+		File file = new File(tmp.getRoot(), name);
+		BZip2Codec codec = ReflectionUtils.newInstance(BZip2Codec.class, new Configuration());
+		OutputStream out = codec.createOutputStream(Files.newOutputStream(file.toPath()));
+		try {
+			out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+		} finally {
+			out.close();
+		}
+		return file;
+	}
+
 	private int run(String... args) throws Exception {
 		Configuration conf = new Configuration();
 		conf.set("hadoop.tmp.dir", new File(tmp.getRoot(), "hadoop").getAbsolutePath());
@@ -171,7 +207,7 @@ public class RunMarDReLocalTest {
 		for (File part : parts) {
 			if (!part.getName().startsWith("part-"))
 				continue;
-			List<String> lines = Files.readAllLines(part.toPath(), StandardCharsets.UTF_8);
+			List<String> lines = readLines(part);
 			assertEquals(0, lines.size() % 4);
 			for (int i = 0; i < lines.size(); i += 4) {
 				String record = lines.get(i) + "\n" + lines.get(i + 1) + "\n" + lines.get(i + 2) + "\n" + lines.get(i + 3) + "\n";
@@ -386,6 +422,32 @@ public class RunMarDReLocalTest {
 
 		assertEquals(records(firsts(best)), output("output1"));
 		assertEquals(records(seconds(best)), output("output2"));
+	}
+
+	/** The two files of a pair are compressed with bzip2, which is splittable: the mates must still be read together. */
+	private void checkPairedEndBzip2(boolean mapJoin) throws Exception {
+		List<Pair> best = new ArrayList<Pair>();
+		List<Pair> pairs = pairedEndReads(new Random(9), 1000, false, best);
+		File input1 = writeBzip2("reads_1.fastq.bz2", firsts(pairs));
+		File input2 = writeBzip2("reads_2.fastq.bz2", seconds(pairs));
+		assertTrue("too small to be split", input1.length() > 4 * SPLIT_SIZE && input2.length() > 4 * SPLIT_SIZE);
+		assertTrue("the files must not compress to the same size", input1.length() != input2.length());
+		writeConf(mapJoin, false);
+
+		assertEquals(0, run("-i", input1.getAbsolutePath(), "-p", input2.getAbsolutePath(), "-m", "0", "-l", String.valueOf(PREFIX_LENGTH), "-nr", String.valueOf(SLOTS), "-q"));
+
+		assertEquals(records(firsts(best)), output("output1"));
+		assertEquals(records(seconds(best)), output("output2"));
+	}
+
+	@Test
+	public void pairedEndMapSideJoinOfBzip2FilesKeepsTheBestPairOfEachDuplicate() throws Exception {
+		checkPairedEndBzip2(true);
+	}
+
+	@Test
+	public void pairedEndReduceSideJoinOfBzip2FilesKeepsTheBestPairOfEachDuplicate() throws Exception {
+		checkPairedEndBzip2(false);
 	}
 
 	@Test
