@@ -21,9 +21,9 @@ package es.udc.gac.mardre.util;
 public abstract class SeqStringParser {
 
 	private final short prefixLength;
-	private final short numBasesCompared;
+	private final int numBasesCompared;
 
-	public SeqStringParser(short prefixLength, short numBasesCompared) {
+	public SeqStringParser(short prefixLength, int numBasesCompared) {
 		this.prefixLength = prefixLength;
 		this.numBasesCompared = numBasesCompared;
 	}
@@ -32,7 +32,7 @@ public abstract class SeqStringParser {
 		return prefixLength;
 	}
 
-	public short getNumBasesCompared() {
+	public int getNumBasesCompared() {
 		return numBasesCompared;
 	}
 

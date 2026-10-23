@@ -212,6 +212,63 @@ public class SequenceTest {
 	}
 
 	@Test
+	public void aLongReadSurvivesTheSerialization() throws IOException {
+		Random random = new Random(4);
+
+		// More than 127 longs in the compared part (2032 bases), and a length that does not fit in a short
+		for (int length : new int[] { 2100, 5000, 40000 }) {
+			String expected = record("@long" + length, randomString(random, "ACGTN", length), randomString(random, "!5I", length));
+			Sequence seq = new Sequence();
+			PARSER.getSeq(expected, seq, true);
+
+			Sequence copy = new Sequence();
+			readFields(copy, serialize(seq));
+
+			assertEquals(expected, copy.toString());
+		}
+	}
+
+	@Test
+	public void aLongReadWithOnlyPartOfItComparedSurvivesTheSerialization() throws IOException {
+		Configuration.NUMBER_BASES_COMPARED = 100;
+
+		try {
+			SeqStringParser parser = new FastQSeqStringParser(PREFIX_LENGTH, (short) 100);
+			Random random = new Random(5);
+
+			// The part that is not compared (the remainder) has more than 127 longs too
+			for (int length : new int[] { 2300, 40000 }) {
+				String expected = record("@long" + length, randomString(random, "ACGT", length), randomString(random, "!5I", length));
+				Sequence seq = new Sequence();
+				parser.getSeq(expected, seq, true);
+
+				Sequence copy = new Sequence();
+				readFields(copy, serialize(seq));
+
+				assertEquals(expected, copy.toString());
+			}
+		} finally {
+			Configuration.NUMBER_BASES_COMPARED = -1;
+		}
+	}
+
+	@Test
+	public void theDistanceBetweenLongReadsIsNotTruncated() {
+		String bases = randomString(new Random(6), "ACGT", PREFIX_LENGTH);
+		StringBuilder a = new StringBuilder(bases);
+		StringBuilder c = new StringBuilder(bases);
+		for (int i = 0; i < 40000; i++) {
+			a.append('A');
+			c.append('C');
+		}
+		String quals = randomString(new Random(7), "5", 40000 + PREFIX_LENGTH);
+
+		int distance = parse("@a", a.toString(), quals).setDist(parse("@c", c.toString(), quals));
+
+		assertEquals(40000, distance);
+	}
+
+	@Test
 	public void firstAndSecondReadsWithTheSameSuffixLengthKeepTheirOwnLayout() {
 		// The first read has a 50-base suffix of which 45 are compared, the second one has 50 bases of which none is compared
 		Configuration.NUMBER_BASES_COMPARED = 50;

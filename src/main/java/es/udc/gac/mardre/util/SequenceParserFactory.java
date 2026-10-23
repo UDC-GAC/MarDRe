@@ -34,7 +34,7 @@ public class SequenceParserFactory {
 
 	private SequenceParserFactory() {}
 
-	public static SeqStringParser createParser(FileFormat format, short prefixLength, short numBasesCompared) {
+	public static SeqStringParser createParser(FileFormat format, short prefixLength, int numBasesCompared) {
 
 		if (format == FileFormat.FILE_FORMAT_FASTQ)
 			return new FastQSeqStringParser(prefixLength, numBasesCompared);

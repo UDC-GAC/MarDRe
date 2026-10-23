@@ -460,6 +460,63 @@ public class RunMarDReLocalTest {
 		assertEquals(seconds, fastaOutput("output2"));
 	}
 
+	/** Reads of thousands of bases (FASTA, so that they tie and the lowest name wins): groups of copies of 1 to 3 reads. */
+	private static List<Read> longReads(Random random, int groups, int[] lengths, boolean variants) {
+		List<Read> reads = new ArrayList<Read>();
+		String[] prefixes = prefixes(random);
+		int next = 0;
+
+		for (int g = 0; g < groups; g++) {
+			String bases = randomBases(random, prefixes[random.nextInt(prefixes.length)], lengths[g % lengths.length]);
+
+			for (int copy = 0, n = 1 + random.nextInt(3); copy < n; copy++) {
+				// With -c the bases after the compared ones do not matter: the copies differ only there
+				char[] chars = bases.toCharArray();
+				if (variants && copy > 0)
+					chars[chars.length - copy] = chars[chars.length - copy] == 'A' ? 'C' : 'A';
+				reads.add(new Read(String.format("@long%05d", next++), new String(chars), ""));
+			}
+		}
+
+		Collections.shuffle(reads, random);
+		return reads;
+	}
+
+	@Test
+	public void longReadsAreDeduplicated() throws Exception {
+		List<Read> reads = longReads(new Random(7), 30, new int[] { 3000, 40000 }, false);
+		File input = writeFasta("long.fasta", reads);
+		writeConf(true, false);
+
+		assertEquals(0, run("-i", input.getAbsolutePath(), "-m", "0", "-l", String.valueOf(PREFIX_LENGTH), "-nr", String.valueOf(SLOTS), "-f"));
+
+		assertEquals(lowestNameOfEachSequence(reads), fastaOutput("output1"));
+	}
+
+	@Test
+	public void longReadsAreComparedOnlyUpToTheNumberOfBasesToCompare() throws Exception {
+		List<Read> reads = longReads(new Random(8), 30, new int[] { 3000, 40000 }, true);
+		File input = writeFasta("long.fasta", reads);
+		writeConf(true, false);
+
+		// Larger than a short. The variants differ in the last bases, which are not compared
+		assertEquals(0, run("-i", input.getAbsolutePath(), "-m", "0", "-l", String.valueOf(PREFIX_LENGTH), "-c", "2000", "-nr", String.valueOf(SLOTS), "-f"));
+
+		Map<String, String> kept = fastaOutput("output1");
+		Map<String, Read> lowest = new HashMap<String, Read>();
+		for (Read read : reads) {
+			String key = read.bases.length() + read.bases.substring(0, 2000);
+			Read current = lowest.get(key);
+			if (current == null || read.name.compareTo(current.name) < 0)
+				lowest.put(key, read);
+		}
+		Map<String, String> expected = new TreeMap<String, String>();
+		for (Read read : lowest.values())
+			expected.put(">" + read.name.substring(1), ">" + read.name.substring(1) + "\n" + read.bases + "\n");
+
+		assertEquals(expected, kept);
+	}
+
 	private List<Read> readsWithComments() {
 		List<Read> reads = new ArrayList<Read>();
 		Random random = new Random(6);

@@ -54,7 +54,7 @@ public final class Configuration {
 	public static String HDFS_BASE_PATH;
 	public static short PREFIX_LENGTH;
 	public static short MISMATCH;
-	public static short NUMBER_BASES_COMPARED;
+	public static int NUMBER_BASES_COMPARED;
 	public static FileFormat FILE_FORMAT = FileFormat.FILE_FORMAT_FASTQ;
 	public static String INPUT_PATH_1;
 
@@ -186,7 +186,7 @@ public final class Configuration {
 		CLUSTER_LIST_INITIAL_CAPACITY = Integer.parseInt(jobConf.get(CLUSTER_LIST_INITIAL_CAPACITY_PARAM));
 		PREFIX_LENGTH = Short.parseShort(jobConf.get(PREFIX_LENGTH_PARAM));
 		MISMATCH = Short.parseShort(jobConf.get(MISMATCH_PARAM));
-		NUMBER_BASES_COMPARED = Short.parseShort(jobConf.get(NUMBER_BASES_COMPARED_PARAM));
+		NUMBER_BASES_COMPARED = jobConf.getInt(NUMBER_BASES_COMPARED_PARAM, -1);
 		FILE_FORMAT = FileFormat.values()[Integer.parseInt(jobConf.get(FILE_FORMAT_PARAM))];
 		INPUT_PATH_1 = jobConf.get(INPUT_PATH_1_PARAM);
 		TEMP_OUTPUT_PATH_2_PREFIX = jobConf.get(TEMP_OUTPUT_PATH_2_PREFIX_PARAM);

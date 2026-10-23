@@ -28,7 +28,7 @@ public class PairedSequence implements Writable {
 
 	private Sequence firstSeq;
 	private Sequence secondSeq;
-	private short dist;
+	private int dist;
 
 	public PairedSequence() {
 		this.firstSeq = null;
@@ -64,12 +64,12 @@ public class PairedSequence implements Writable {
 		this.secondSeq.setIsFirstSeq(false);
 	}
 
-	public short getDist() {
+	public int getDist() {
 		return dist;
 	}
 
-	public short setDist(PairedSequence seq2) {
-		dist = (short) (firstSeq.setDist(seq2.firstSeq) + secondSeq.setDist(seq2.secondSeq));
+	public int setDist(PairedSequence seq2) {
+		dist = firstSeq.setDist(seq2.firstSeq) + secondSeq.setDist(seq2.secondSeq);
 		return dist;
 	}
 
@@ -93,7 +93,7 @@ public class PairedSequence implements Writable {
 	}
 
 	public boolean equal(PairedSequence seq2, short misMatch) {
-		short numMisMatch = this.firstSeq.misMatches(seq2.firstSeq, misMatch, (short) 0);
+		int numMisMatch = this.firstSeq.misMatches(seq2.firstSeq, misMatch, 0);
 
 		if (numMisMatch > misMatch)
 			return false;

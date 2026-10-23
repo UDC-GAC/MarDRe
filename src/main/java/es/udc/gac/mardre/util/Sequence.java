@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
 
 import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 
@@ -80,10 +81,10 @@ public class Sequence implements Writable {
 	}
 
 	private long _key;
-	private short _length;
-	private short _dist;
+	private int _length;
+	private int _dist;
 	private long[] _compressSuffix;
-	private short _compressSuffixLength;
+	private int _compressSuffixLength;
 	private long[] _compressSuffixRemainder;
 	private boolean _isFirstSeq;
 	private String _name;
@@ -168,11 +169,11 @@ public class Sequence implements Writable {
 		return _name != null && s._name != null && _name.compareTo(s._name) < 0;
 	}
 
-	public short getDist() {
+	public int getDist() {
 		return _dist;
 	}
 
-	public short setDist(Sequence seq2) {
+	public int setDist(Sequence seq2) {
 
 		if (_length != seq2._length) {
 			_dist = _length;
@@ -215,7 +216,7 @@ public class Sequence implements Writable {
 		_compressSuffixRemainder = null;
 
 		// Set sequence length
-		_length = (short) bases.length();
+		_length = bases.length();
 
 		// Layout of the compressed suffix
 		int totalSuffixLength = _length - prefixLength;
@@ -228,7 +229,7 @@ public class Sequence implements Writable {
 
 		// Code the part of the suffix to be compared (if any)
 		if (suffixLength > 0) {
-			_compressSuffixLength = (short) ((suffixLengthMod > 0)? suffixLengthDiv + 1 : suffixLengthDiv);
+			_compressSuffixLength = (suffixLengthMod > 0)? suffixLengthDiv + 1 : suffixLengthDiv;
 			_compressSuffix = new long[_compressSuffixLength];
 
 			for (i = 0; i < suffixLengthDiv; i++) {
@@ -280,7 +281,7 @@ public class Sequence implements Writable {
 
 	public boolean equal(Sequence seq2, short misMatch) {
 
-		short numMisMatch = 0;
+		int numMisMatch = 0;
 		int popc, i;
 
 		for (i = 0; i < _compressSuffixLength; i++) {
@@ -301,7 +302,7 @@ public class Sequence implements Writable {
 	 * Adds the mismatches with seq2 to numMisMatch, stopping as soon as the total exceeds misMatch.
 	 * The sequences are equal if the returned total is not greater than misMatch.
 	 */
-	public short misMatches(Sequence seq2, short misMatch, short numMisMatch) {
+	public int misMatches(Sequence seq2, short misMatch, int numMisMatch) {
 
 		int popc, i;
 
@@ -430,12 +431,12 @@ public class Sequence implements Writable {
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeLong(_key);
-		out.writeShort(_length);
+		WritableUtils.writeVInt(out, _length);
 		out.writeUTF(_name);
 		out.writeBoolean(_isFirstSeq);
 
 		if (_compressSuffixLength > 0) {
-			out.writeByte(_compressSuffixLength);
+			WritableUtils.writeVInt(out, _compressSuffixLength);
 
 			for (int i = 0; i < _compressSuffixLength; i++)
 				out.writeLong(_compressSuffix[i]);
@@ -444,7 +445,7 @@ public class Sequence implements Writable {
 		}
 
 		if (_compressSuffixRemainder != null) {
-			out.writeByte(_compressSuffixRemainder.length);
+			WritableUtils.writeVInt(out, _compressSuffixRemainder.length);
 
 			for (int i = 0; i < _compressSuffixRemainder.length; i++)
 				out.writeLong(_compressSuffixRemainder[i]);
@@ -459,10 +460,10 @@ public class Sequence implements Writable {
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		_key = in.readLong();
-		_length = in.readShort();
+		_length = WritableUtils.readVInt(in);
 		_name = in.readUTF();
 		_isFirstSeq = in.readBoolean();
-		_compressSuffixLength = in.readByte();
+		_compressSuffixLength = WritableUtils.readVInt(in);
 		_compressSuffix = null;
 		_compressSuffixRemainder = null;
 		_quals = null;
@@ -475,7 +476,7 @@ public class Sequence implements Writable {
 				_compressSuffix[i] = in.readLong();
 		}
 
-		int compressSuffixRemainderLength = in.readByte();
+		int compressSuffixRemainderLength = WritableUtils.readVInt(in);
 
 		if (compressSuffixRemainderLength > 0) {
 			_compressSuffixRemainder = new long[compressSuffixRemainderLength];

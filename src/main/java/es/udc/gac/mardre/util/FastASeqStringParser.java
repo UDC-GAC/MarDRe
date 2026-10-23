@@ -20,7 +20,7 @@ package es.udc.gac.mardre.util;
 
 public class FastASeqStringParser extends SeqStringParser {
 
-	public FastASeqStringParser(short prefixLength, short numBasesCompared) {
+	public FastASeqStringParser(short prefixLength, int numBasesCompared) {
 		super(prefixLength, numBasesCompared);
 	}
 

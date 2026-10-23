@@ -36,7 +36,7 @@ public class Options {
 	private boolean _paired;
 	private short _misMatch;
 	private short _prefixLength;
-	private short _numBasesCompared;
+	private int _numBasesCompared;
 	private int _nreducers;
 
 	public Options() {
@@ -84,7 +84,7 @@ public class Options {
 		return _prefixLength;
 	}
 
-	public short getNumberOfBasesCompared() {
+	public int getNumberOfBasesCompared() {
 		return _numBasesCompared;
 	}
 
@@ -242,7 +242,7 @@ public class Options {
 				// Number of bases to compare
 				argInd++;
 				if (argInd < args.length) {
-					_numBasesCompared = Short.parseShort(args[argInd]);
+					_numBasesCompared = Integer.parseInt(args[argInd]);
 
 					if (_numBasesCompared < 1) {
 						LOG.warn("The number of bases to compare (-c {}) can not be less than 1. Using -c 1 instead", _numBasesCompared);
