@@ -461,6 +461,7 @@ public class RunMarDRe extends Configured implements Tool {
 
 				if (!status) {
 					Errors.report(LOG, "Job {} failed: {}", jobPairedSequences.getJobID(), jobPairedSequences.getStatus().getFailureInfo());
+					Errors.reportTaskFailures(LOG, jobPairedSequences);
 					return -1;
 				} else {
 					Path success = new Path(tmpInputPath1+"/_SUCCESS");
@@ -491,6 +492,7 @@ public class RunMarDRe extends Configured implements Tool {
 
 		if (!status) {
 			Errors.report(LOG, "Job {} failed: {}", jobRemoveDuplicate.getJobID(), jobRemoveDuplicate.getStatus().getFailureInfo());
+			Errors.reportTaskFailures(LOG, jobRemoveDuplicate);
 			return -1;
 		}
 
