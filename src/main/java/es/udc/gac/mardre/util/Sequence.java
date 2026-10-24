@@ -318,6 +318,7 @@ public class Sequence implements Writable {
 		int iterBases = prefixLength;
 
 		_compressSuffix = null;
+		_compressSuffixLength = 0;
 		_compressSuffixRemainder = null;
 
 		// Set sequence length

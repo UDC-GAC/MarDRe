@@ -523,4 +523,28 @@ public class SequenceTest {
 			Configuration.PREFIX_LENGTH = PREFIX_LENGTH;
 		}
 	}
+
+	@Test
+	public void aSecondReadWithNothingToCompareDoesNotKeepTheLengthOfThePreviousOne() throws IOException {
+		Configuration.NUMBER_BASES_COMPARED = 40;
+
+		try {
+			// Second reads of pairs (no prefix) compare what is left of the 40 bases after the first read
+			SeqStringParser parser = new FastQSeqStringParser((short) 0, 40);
+			Sequence seq = new Sequence();
+			String shortRead = record("@a", "ACGT".repeat(5), "I".repeat(20));
+			String longRead = record("@b", "ACGT".repeat(15), "I".repeat(60));
+
+			parser.getSeq(shortRead, seq, false);
+			parser.getSeq(longRead, seq, false);
+
+			// The first has 20 bases to compare, the second none
+			Sequence copy = new Sequence();
+			readFields(copy, serialize(seq));
+
+			assertEquals(longRead, copy.toString());
+		} finally {
+			Configuration.NUMBER_BASES_COMPARED = -1;
+		}
+	}
 }
