@@ -22,7 +22,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.hadoop.io.Writable;
@@ -33,7 +32,6 @@ import es.udc.gac.mardre.util.SequenceParserFactory.FileFormat;
 public class Sequence implements Writable {
 
 	private static final String COMMENT_LINE = "\n+\n";
-	private static final String LF = "\n";
 
 	private static final short[] decodePrefixTab = { 'A', 'C', 'G', 'T', 'N' };
 
@@ -427,12 +425,11 @@ public class Sequence implements Writable {
 		return numMisMatch;
 	}
 
-	private char[] decodeBases(short prefixLength, int numBasesCompared) {
-
-		char[] bases = new char[_length];
+	// Decodes the bases into 'bases', starting at 'offset'
+	private void decodeBases(char[] bases, int offset, short prefixLength, int numBasesCompared) {
 
 		// Decode the prefix
-		int iterBases = prefixLength - 1;
+		int iterBases = offset + prefixLength - 1;
 		long auxKey = _key;
 		int i,j;
 
@@ -449,7 +446,7 @@ public class Sequence implements Writable {
 		// Decode the suffix
 		if (suffixLengthToCompare > 0) {
 			int suffixLengthToCompareMod = suffixLengthToCompare & 15;
-			iterBases = (prefixLength + suffixLengthToCompare) - 1;
+			iterBases = offset + (prefixLength + suffixLengthToCompare) - 1;
 			int iterSuffix = _compressSuffix.length - 1;
 			long auxCompress = _compressSuffix[iterSuffix];
 			int numDecoded = 0;
@@ -479,7 +476,7 @@ public class Sequence implements Writable {
 		// Decode the remainder of the suffix
 		if (suffixLengthRemainder > 0) {
 			int suffixLengthRemainderMod = suffixLengthRemainder & 15;
-			iterBases = _length - 1;
+			iterBases = offset + _length - 1;
 			int iterSuffix = _compressSuffixRemainder.length - 1;
 			long auxCompress = _compressSuffixRemainder[iterSuffix];
 			int numDecoded = 0;
@@ -505,34 +502,30 @@ public class Sequence implements Writable {
 				iterSuffix--;
 			}
 		}
-
-		return bases;
 	}
 
 	@Override
 	public String toString() {
+		int nameLength = _name.length();
+		int length = nameLength + 1 + _length;
 
-		StringWriter stringWriter = new StringWriter();
+		if (_quals != null)
+			length += COMMENT_LINE.length() + _quals.length();
 
-		try {
-			// Decode the bases
-			char[] bases = decodeBases((_isFirstSeq)? Configuration.PREFIX_LENGTH : 0, Configuration.NUMBER_BASES_COMPARED);
+		// The whole record is built in a single buffer
+		char[] record = new char[length];
+		_name.getChars(0, nameLength, record, 0);
+		record[nameLength] = '\n';
+		decodeBases(record, nameLength + 1, (_isFirstSeq)? Configuration.PREFIX_LENGTH : 0, Configuration.NUMBER_BASES_COMPARED);
 
-			// Print name and bases
-			stringWriter.write(_name);
-			stringWriter.write(LF);
-			stringWriter.write(bases);
-
-			// Print quality scores if available
-			if (_quals != null) {
-				stringWriter.write(COMMENT_LINE);
-				stringWriter.write(_quals);
-			}
-		} catch (IOException e) {
-			throw new RuntimeException(e);
+		// Print quality scores if available
+		if (_quals != null) {
+			int pos = nameLength + 1 + _length;
+			COMMENT_LINE.getChars(0, COMMENT_LINE.length(), record, pos);
+			_quals.getChars(0, _quals.length(), record, pos + COMMENT_LINE.length());
 		}
 
-		return stringWriter.toString();
+		return new String(record);
 	}
 
 	@Override
