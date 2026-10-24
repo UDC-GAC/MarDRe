@@ -53,6 +53,7 @@ import es.udc.gac.hadoop.sequence.parser.mapreduce.PairedEndSequenceInputFormat;
 import es.udc.gac.hadoop.sequence.parser.mapreduce.SingleEndSequenceInputFormat;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.Errors;
+import es.udc.gac.mardre.util.LongKeyComparator;
 import es.udc.gac.mardre.util.Options;
 import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.Sequence;
@@ -115,6 +116,7 @@ public class RunMarDRe extends Configured implements Tool {
 
 		// Mapper output K/V classes
 		job.setMapOutputKeyClass(LongWritable.class);
+		job.setSortComparatorClass(LongKeyComparator.class);
 		job.setMapOutputValueClass(Sequence.class);
 
 		// Job ouput K/V classes
@@ -184,6 +186,7 @@ public class RunMarDRe extends Configured implements Tool {
 
 		// Mapper output K/V classes
 		job.setMapOutputKeyClass(LongWritable.class);
+		job.setSortComparatorClass(LongKeyComparator.class);
 		job.setMapOutputValueClass(PairedSequence.class);
 
 		// Job ouput K/V classes
@@ -232,6 +235,7 @@ public class RunMarDRe extends Configured implements Tool {
 
 		// Mapper output K/V classes
 		job.setMapOutputKeyClass(LongWritable.class);
+		job.setSortComparatorClass(LongKeyComparator.class);
 		job.setMapOutputValueClass(Sequence.class);
 
 		// Job ouput K/V classes
