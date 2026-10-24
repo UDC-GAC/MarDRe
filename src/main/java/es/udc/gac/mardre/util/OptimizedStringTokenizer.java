@@ -37,13 +37,15 @@ public final class OptimizedStringTokenizer {
 	}
 
 	public final String nextToken() {
-		int init = pos;
+		int end = str.indexOf(delim, pos);
 
-		while(pos < len && str.charAt(pos) != delim)
-			pos++;
+		if (end < 0)
+			end = len;
+
+		String token = str.substring(pos, end);
 
 		// Skip delimiter
-		pos++;
-		return str.substring(init, pos-1);
+		pos = end + 1;
+		return token;
 	}
 }
