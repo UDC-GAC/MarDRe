@@ -27,7 +27,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import es.udc.gac.hadoop.sequence.parser.mapreduce.SingleEndSequenceRecordReader;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.SeqStringParser;
 import es.udc.gac.mardre.util.Sequence;
@@ -92,7 +91,7 @@ public class ParseSequencesMapper extends Mapper<LongWritable, Text, LongWritabl
 	public void map(LongWritable key, Text value, Context context)
 			throws IOException, InterruptedException {
 
-		parser.getSeq(SingleEndSequenceRecordReader.getRead(value), seq, isFirstInputPath);
+		parser.getSeq(value.getBytes(), value.getLength(), seq, isFirstInputPath);
 		context.write(key, seq);
 		numInputSequences++;
 	}

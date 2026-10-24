@@ -18,6 +18,10 @@
  */
 package es.udc.gac.mardre.util;
 
+import java.nio.charset.CharacterCodingException;
+
+import org.apache.hadoop.io.Text;
+
 public abstract class SeqStringParser {
 
 	private final short prefixLength;
@@ -37,4 +41,12 @@ public abstract class SeqStringParser {
 	}
 
 	public abstract int getSeq(String s, Sequence seq, boolean isFirstSeq);
+
+	/**
+	 * Parses the record held in the first 'length' bytes of 'buf', the bytes of the Text that the record readers
+	 * return. The parsers override it to read the bytes without decoding the record into a String.
+	 */
+	public int getSeq(byte[] buf, int length, Sequence seq, boolean isFirstSeq) throws CharacterCodingException {
+		return getSeq(Text.decode(buf, 0, length, false), seq, isFirstSeq);
+	}
 }

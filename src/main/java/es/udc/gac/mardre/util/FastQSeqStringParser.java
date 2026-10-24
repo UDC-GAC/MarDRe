@@ -18,10 +18,61 @@
  */
 package es.udc.gac.mardre.util;
 
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
+
+import org.apache.hadoop.io.Text;
+
 public class FastQSeqStringParser extends SeqStringParser {
 
 	public FastQSeqStringParser(short prefixLength, int numBasesCompared) {
 		super(prefixLength, numBasesCompared);
+	}
+
+	// A well formed record of ASCII characters is read from its bytes. Any other record (a byte above 127, a missing
+	// or extra line, qualities of another length, a read shorter than the prefix) goes to the String parser, which
+	// decodes it and reports the problem
+	@Override
+	public int getSeq(byte[] buf, int length, Sequence seq, boolean isFirstSeq) throws CharacterCodingException {
+		// OR of all the bytes read: negative if one is above 127
+		int ascii = 0;
+		int i = 0;
+
+		while (i < length && buf[i] != '\n')
+			ascii |= buf[i++];
+
+		int nameEnd = i;
+		int basesStart = ++i;
+
+		while (i < length && buf[i] != '\n')
+			ascii |= buf[i++];
+
+		int basesEnd = i;
+		i++;
+
+		// The comment line is not used
+		while (i < length && buf[i] != '\n')
+			ascii |= buf[i++];
+
+		int qualsStart = ++i;
+
+		while (i < length && buf[i] != '\n')
+			ascii |= buf[i++];
+
+		int qualsEnd = i;
+		int numBases = basesEnd - basesStart;
+
+		// The record may end with a line feed
+		if (ascii < 0 || qualsStart >= length || qualsEnd < length - 1 || qualsEnd - qualsStart != numBases || numBases < this.getPrefixLength())
+			return getSeq(Text.decode(buf, 0, length, false), seq, isFirstSeq);
+
+		seq.setName(new String(buf, 0, nameEnd, StandardCharsets.ISO_8859_1));
+		seq.setIsFirstSeq(isFirstSeq);
+		seq.setKey(buf, basesStart, numBases, this.getPrefixLength());
+		seq.setSuffix(buf, basesStart, numBases, this.getPrefixLength(), this.getNumBasesCompared());
+		seq.setQuals(new String(buf, qualsStart, numBases, StandardCharsets.ISO_8859_1));
+
+		return numBases;
 	}
 
 	@Override

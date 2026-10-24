@@ -63,32 +63,36 @@ public class Sequence implements Writable {
 			0, 0, 0, 0, 0 // V->Z
 	};
 
-	private static short codePrefix(char ch) {
-		short aux = (short) ch;
+	// Code of every byte as a base, or -1 if it is not a letter
+	private static final short[] codePrefixByteTab = new short[256];
+	private static final short[] codeByteTab = new short[256];
 
-		if (ch >= 'A' && ch <= 'Z') {
-			aux -= 'A';
-		} else if (ch >= 'a' && ch <= 'z') {
-			aux -= 'a';
-		} else {
-			throw new IllegalArgumentException("Unexpected character " + ch 
-					+ " in the bases");
+	static {
+		java.util.Arrays.fill(codePrefixByteTab, (short) -1);
+		java.util.Arrays.fill(codeByteTab, (short) -1);
+
+		for (int letter = 0; letter < 26; letter++) {
+			codePrefixByteTab['A' + letter] = codePrefixByteTab['a' + letter] = codePrefixTab[letter];
+			codeByteTab['A' + letter] = codeByteTab['a' + letter] = codeTab[letter];
 		}
-		return Sequence.codePrefixTab[aux];
 	}
 
-	private static short code(char ch) {
-		short aux = (short) ch;
+	private static short codePrefix(byte b) {
+		short code = codePrefixByteTab[b & 0xFF];
 
-		if (ch >= 'A' && ch <= 'Z') {
-			aux -= 'A';
-		} else if (ch >= 'a' && ch <= 'z') {
-			aux -= 'a';
-		} else {
-			throw new IllegalArgumentException("Unexpected character " + ch 
-					+ " in the bases");
-		}
-		return Sequence.codeTab[aux];
+		if (code < 0)
+			throw new IllegalArgumentException("Unexpected character " + (char) (b & 0xFF) + " in the bases");
+
+		return code;
+	}
+
+	private static short code(byte b) {
+		short code = codeByteTab[b & 0xFF];
+
+		if (code < 0)
+			throw new IllegalArgumentException("Unexpected character " + (char) (b & 0xFF) + " in the bases");
+
+		return code;
 	}
 
 	private long _key;
@@ -315,29 +319,50 @@ public class Sequence implements Writable {
 	}
 
 	public void setKey(String bases, short prefixLength) {
-		_key = 0;
+		byte[] bytes = bases.getBytes(StandardCharsets.ISO_8859_1);
+		setKey(bytes, 0, bytes.length, prefixLength);
+	}
 
-		for (int i = 0; i < prefixLength; i++) {
+	// The bases are the 'length' bytes of 'bases' starting at 'start'
+	public void setKey(byte[] bases, int start, int length, short prefixLength) {
+		_key = 0;
+		int end = start + Math.min(length, prefixLength);
+
+		for (int i = start; i < end; i++) {
 			_key *= 5;
-			_key += Sequence.codePrefix(bases.charAt(i));
+			_key += Sequence.codePrefix(bases[i]);
 		}
+
+		if (length < prefixLength)
+			throw new StringIndexOutOfBoundsException("The read has " + length + " bases, fewer than the prefix length (" + prefixLength + ")");
 	}
 
 	public void setSuffix(String bases, int prefixLength, int numBasesCompared) {
+		byte[] bytes = bases.getBytes(StandardCharsets.ISO_8859_1);
+		setSuffix(bytes, 0, bytes.length, prefixLength, numBasesCompared);
+	}
+
+	// The bases are the 'length' bytes of 'bases' starting at 'start'
+	public void setSuffix(byte[] bases, int start, int length, int prefixLength, int numBasesCompared) {
 
 		int i,j;
-		int iterBases = prefixLength;
+		int iterBases = start + prefixLength;
 
 		_compressSuffix = null;
 		_compressSuffixLength = 0;
 		_compressSuffixRemainder = null;
 
 		// Set sequence length
-		_length = bases.length();
+		_length = length;
 
 		// Layout of the compressed suffix
 		int totalSuffixLength = _length - prefixLength;
 		int suffixLength = Sequence.getSuffixLengthToCompare(_length, prefixLength, totalSuffixLength, numBasesCompared, !_isFirstSeq);
+
+		// The second read of a pair compares what is left of the bases to compare after the first read: it may be more than it has
+		if (suffixLength > totalSuffixLength)
+			throw new StringIndexOutOfBoundsException("The read has " + length + " bases, fewer than the " + (prefixLength + suffixLength) + " to compare");
+
 		int suffixLengthDiv = suffixLength >> 4;
 		int suffixLengthMod = suffixLength & 15;
 		int suffixLengthRemainder = totalSuffixLength - suffixLength;
@@ -354,7 +379,7 @@ public class Sequence implements Writable {
 
 				for (j = 0; j < 16; j++) {
 					_compressSuffix[i] <<= 4;
-					_compressSuffix[i] += Sequence.code(bases.charAt(iterBases));
+					_compressSuffix[i] += Sequence.code(bases[iterBases]);
 					iterBases++;
 				}
 			}
@@ -364,7 +389,7 @@ public class Sequence implements Writable {
 
 				for (i = 0; i < suffixLengthMod; i++) {
 					_compressSuffix[_compressSuffix.length - 1] <<= 4;
-					_compressSuffix[_compressSuffix.length - 1] += Sequence.code(bases.charAt(iterBases));
+					_compressSuffix[_compressSuffix.length - 1] += Sequence.code(bases[iterBases]);
 					iterBases++;
 				}
 			}
@@ -379,7 +404,7 @@ public class Sequence implements Writable {
 
 				for (j = 0; j < 16; j++) {
 					_compressSuffixRemainder[i] <<= 4;
-					_compressSuffixRemainder[i] += Sequence.code(bases.charAt(iterBases));
+					_compressSuffixRemainder[i] += Sequence.code(bases[iterBases]);
 					iterBases++;
 				}
 			}
@@ -389,7 +414,7 @@ public class Sequence implements Writable {
 
 				for (i = 0; i < suffixLengthRemainderMod; i++) {
 					_compressSuffixRemainder[_compressSuffixRemainder.length - 1] <<= 4;
-					_compressSuffixRemainder[_compressSuffixRemainder.length - 1] += Sequence.code(bases.charAt(iterBases));
+					_compressSuffixRemainder[_compressSuffixRemainder.length - 1] += Sequence.code(bases[iterBases]);
 					iterBases++;
 				}
 			}

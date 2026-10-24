@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import es.udc.gac.hadoop.sequence.parser.mapreduce.PairText;
-import es.udc.gac.hadoop.sequence.parser.mapreduce.PairedEndSequenceRecordReader;
 import es.udc.gac.mardre.util.Configuration;
 import es.udc.gac.mardre.util.PairedSequence;
 import es.udc.gac.mardre.util.SeqStringParser;
@@ -132,8 +131,8 @@ public class PairedEndMapJoinMapper extends Mapper<LongWritable, PairText, LongW
 	public void map(LongWritable key, PairText value, Context context)
 			throws IOException, InterruptedException {
 
-		firstParser.getSeq(PairedEndSequenceRecordReader.getLeftRead(value), firstSeq, true);
-		secondParser.getSeq(PairedEndSequenceRecordReader.getRightRead(value), secondSeq, false);
+		firstParser.getSeq(value.getLeft().getBytes(), value.getLeft().getLength(), firstSeq, true);
+		secondParser.getSeq(value.getRight().getBytes(), value.getRight().getLength(), secondSeq, false);
 		pairedSeq.setFirstSeq(firstSeq);
 		pairedSeq.setSecondSeq(secondSeq);
 		longKey.set(pairedSeq.getKey());
