@@ -547,4 +547,65 @@ public class SequenceTest {
 			Configuration.NUMBER_BASES_COMPARED = -1;
 		}
 	}
+	public void aNameAndQualitiesWithNonAsciiCharactersSurviveTheSerialization() throws IOException {
+		String expected = record("@r\u00e9ad \u00fc\u20ac/1", "ACGTAAAAAAAAAAAAAAAAAAAA", "!5I!5I!5I!5I!5I!5I!5I!5I");
+		Sequence copy = new Sequence();
+		readFields(copy, serialize(parse("@r\u00e9ad \u00fc\u20ac/1", "ACGTAAAAAAAAAAAAAAAAAAAA", "!5I!5I!5I!5I!5I!5I!5I!5I")));
+
+		assertEquals(expected, copy.toString());
+	}
+
+	@Test
+	public void aNameAndQualitiesOfAnyLengthSurviveTheSerialization() throws IOException {
+		Random random = new Random(11);
+
+		// Around the sizes where the length prefix takes one, two and three bytes, and beyond the 65535 bytes of a UTF string
+		for (int length : new int[] { 10, 127, 128, 255, 256, 16383, 16384, 65535, 65536, 70000 }) {
+			String name = "@" + randomString(random, "abcXYZ:_/ ", length);
+			String expected = record(name, randomString(random, "ACGT", length), randomString(random, "!5I", length));
+			Sequence seq = new Sequence();
+			PARSER.getSeq(expected, seq, true);
+
+			Sequence copy = new Sequence();
+			readFields(copy, serialize(seq));
+
+			assertEquals("length " + length, expected, copy.toString());
+		}
+	}
+
+	@Test
+	public void severalSequencesInOneStreamAreReadBackInOrder() throws IOException {
+		Random random = new Random(12);
+		List<String> expected = new ArrayList<String>();
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		DataOutputStream out = new DataOutputStream(bytes);
+
+		for (int i = 0; i < 200; i++) {
+			int length = 10 + random.nextInt(300);
+			String record = record("@read" + i + "\u00e9", randomString(random, "ACGT", length), randomString(random, "!5I", length));
+			Sequence seq = new Sequence();
+			PARSER.getSeq(record, seq, true);
+			seq.write(out);
+			expected.add(record);
+		}
+
+		DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes.toByteArray()));
+		Sequence reused = new Sequence();
+
+		for (String record : expected) {
+			reused.readFields(in);
+			assertEquals(record, reused.toString());
+		}
+	}
+
+	@Test
+	public void aSequenceWithoutQualitiesIsReadBackWithoutThem() throws IOException {
+		Sequence seq = parse("@noquals", "ACGTAAAAAAAAAAAAAAAAAAAA", "!5I!5I!5I!5I!5I!5I!5I!5I");
+		seq.setQuals(null);
+
+		Sequence copy = new Sequence();
+		readFields(copy, serialize(seq));
+
+		assertEquals("@noquals\nACGTAAAAAAAAAAAAAAAAAAAA", copy.toString());
+	}
 }

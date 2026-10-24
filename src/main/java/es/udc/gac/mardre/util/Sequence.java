@@ -23,6 +23,7 @@ import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
@@ -538,7 +539,7 @@ public class Sequence implements Writable {
 	public void write(DataOutput out) throws IOException {
 		out.writeLong(_key);
 		WritableUtils.writeVInt(out, _length);
-		out.writeUTF(_name);
+		writeString(out, _name);
 		out.writeBoolean(_isFirstSeq);
 
 		if (_compressSuffixLength > 0) {
@@ -560,14 +561,28 @@ public class Sequence implements Writable {
 		}
 
 		if (_quals != null)
-			out.writeUTF(_quals);
+			writeString(out, _quals);
+	}
+
+	// Length (VInt) and UTF-8 bytes. Unlike DataOutput.writeUTF it has no limit of 65535 bytes and it
+	// does not encode character by character: for ASCII text the conversion is a copy
+	private static void writeString(DataOutput out, String str) throws IOException {
+		byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
+		WritableUtils.writeVInt(out, bytes.length);
+		out.write(bytes);
+	}
+
+	private static String readString(DataInput in) throws IOException {
+		byte[] bytes = new byte[WritableUtils.readVInt(in)];
+		in.readFully(bytes);
+		return new String(bytes, StandardCharsets.UTF_8);
 	}
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		_key = in.readLong();
 		_length = WritableUtils.readVInt(in);
-		_name = in.readUTF();
+		_name = readString(in);
 		// The coordinates were checked by the mapper: they are taken when a comparison needs them
 		_isFirstSeq = in.readBoolean();
 		_compressSuffixLength = WritableUtils.readVInt(in);
@@ -594,7 +609,7 @@ public class Sequence implements Writable {
 
 		if (Configuration.FILE_FORMAT == FileFormat.FILE_FORMAT_FASTQ) {
 			try {
-				_quals = in.readUTF();
+				_quals = readString(in);
 			} catch (EOFException eof) {
 				_quals = null;
 			}
