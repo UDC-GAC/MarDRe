@@ -608,4 +608,27 @@ public class SequenceTest {
 
 		assertEquals("@noquals\nACGTAAAAAAAAAAAAAAAAAAAA", copy.toString());
 	}
+
+	@Test
+	public void readsOfEveryLengthSurviveTheDecodingWithAndWithoutARemainder() {
+		Random random = new Random(22);
+
+		try {
+			// Every number of bases in the last, partial long of the compared part and of the remainder
+			for (int compared : new int[] { -1, 40 }) {
+				Configuration.NUMBER_BASES_COMPARED = compared;
+				SeqStringParser parser = new FastQSeqStringParser(PREFIX_LENGTH, (short) compared);
+
+				for (int length = PREFIX_LENGTH + 1; length <= 200; length++) {
+					String expected = record("@read" + length, randomString(random, "ACGTN", length), randomString(random, "!5I", length));
+					Sequence seq = new Sequence();
+					parser.getSeq(expected, seq, true);
+
+					assertEquals("length " + length + ", compared " + compared, expected, seq.toString());
+				}
+			}
+		} finally {
+			Configuration.NUMBER_BASES_COMPARED = -1;
+		}
+	}
 }

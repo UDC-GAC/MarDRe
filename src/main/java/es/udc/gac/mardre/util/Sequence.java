@@ -44,6 +44,18 @@ public class Sequence implements Writable {
 
 	private static final short[] decodeTab = { 'N', 'A', 'C', 'N', 'G', 'N', 'N', 'N', 'T' };
 
+	// The two bases of a byte (two 4-bit codes): the one of the high nibble in the upper 16 bits
+	private static final int[] decodePairTab = new int[256];
+
+	static {
+		// Only the codes of decodeTab are produced when the bases are encoded: any other nibble is never read
+		for (int b = 0; b < decodePairTab.length; b++) {
+			int high = ((b >> 4) < decodeTab.length)? decodeTab[b >> 4] : 'N';
+			int low = ((b & 15) < decodeTab.length)? decodeTab[b & 15] : 'N';
+			decodePairTab[b] = (high << 16) | low;
+		}
+	}
+
 	private static final short[] codeTab = {
 			1, 0, 2, 0, 0, 0, 4, // A -> G
 			0, 0, 0, 0, 0, 0, 0, // H->N
@@ -431,7 +443,7 @@ public class Sequence implements Writable {
 		// Decode the prefix
 		int iterBases = offset + prefixLength - 1;
 		long auxKey = _key;
-		int i,j;
+		int i;
 
 		for (i = 0; i < prefixLength; i++) {
 			bases[iterBases] = (char) Sequence.decodePrefixTab[(int) (auxKey % 5)];
@@ -444,62 +456,42 @@ public class Sequence implements Writable {
 		int suffixLengthRemainder = totalSuffixLength - suffixLengthToCompare;
 
 		// Decode the suffix
-		if (suffixLengthToCompare > 0) {
-			int suffixLengthToCompareMod = suffixLengthToCompare & 15;
-			iterBases = offset + (prefixLength + suffixLengthToCompare) - 1;
-			int iterSuffix = _compressSuffix.length - 1;
-			long auxCompress = _compressSuffix[iterSuffix];
-			int numDecoded = 0;
+		if (suffixLengthToCompare > 0)
+			decodeSuffix(_compressSuffix, suffixLengthToCompare, bases, offset + prefixLength + suffixLengthToCompare - 1);
 
-			if (suffixLengthToCompareMod > 0) {
-				for (i = 0; i < suffixLengthToCompareMod; i++) {
-					bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
-					auxCompress >>= 4;
-				iterBases--;
-				}
-				iterSuffix--;
-				numDecoded++;
-			}
+		// Decode the remainder of the suffix
+		if (suffixLengthRemainder > 0)
+			decodeSuffix(_compressSuffixRemainder, suffixLengthRemainder, bases, offset + _length - 1);
+	}
 
-			for (; numDecoded < _compressSuffix.length; numDecoded++) {
-				auxCompress = _compressSuffix[iterSuffix];
+	// Decodes 'length' bases, stored 16 per long (4 bits each, the last long may hold fewer), into bases[end - length + 1 .. end]
+	private static void decodeSuffix(long[] compressed, int length, char[] bases, int end) {
+		int iterBases = end;
+		int iterSuffix = compressed.length - 1;
+		int lengthMod = length & 15;
+		long auxCompress;
+		int i;
 
-				for (j = 0; j < 16; j++) {
-					bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
-					auxCompress >>= 4;
-				iterBases--;
-				}
-				iterSuffix--;
+		// The bases of the last, partial long come first, in reverse order
+		if (lengthMod > 0) {
+			auxCompress = compressed[iterSuffix--];
+
+			for (i = 0; i < lengthMod; i++) {
+				bases[iterBases--] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
+				auxCompress >>= 4;
 			}
 		}
 
-		// Decode the remainder of the suffix
-		if (suffixLengthRemainder > 0) {
-			int suffixLengthRemainderMod = suffixLengthRemainder & 15;
-			iterBases = offset + _length - 1;
-			int iterSuffix = _compressSuffixRemainder.length - 1;
-			long auxCompress = _compressSuffixRemainder[iterSuffix];
-			int numDecoded = 0;
+		// Whole longs: 16 bases, two for each byte
+		for (; iterSuffix >= 0; iterSuffix--) {
+			auxCompress = compressed[iterSuffix];
 
-			if (suffixLengthRemainderMod > 0) {
-				for (i = 0; i < suffixLengthRemainderMod; i++) {
-					bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
-					auxCompress >>= 4;
-				iterBases--;
-				}
-				iterSuffix--;
-				numDecoded++;
-			}
-
-			for (; numDecoded < _compressSuffixRemainder.length; numDecoded++) {
-				auxCompress = _compressSuffixRemainder[iterSuffix];
-
-				for (j = 0; j < 16; j++) {
-					bases[iterBases] = (char) Sequence.decodeTab[(int) (auxCompress & 15)];
-					auxCompress >>= 4;
-				iterBases--;
-				}
-				iterSuffix--;
+			for (i = 0; i < 8; i++) {
+				int pair = decodePairTab[(int) (auxCompress & 255)];
+				bases[iterBases] = (char) pair;
+				bases[iterBases - 1] = (char) (pair >>> 16);
+				iterBases -= 2;
+				auxCompress >>= 8;
 			}
 		}
 	}
