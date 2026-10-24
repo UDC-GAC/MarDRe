@@ -498,4 +498,29 @@ public class SequenceTest {
 			executor.shutdownNow();
 		}
 	}
+
+	@Test
+	public void theBasesOfEveryPrefixLengthSurviveTheDecoding() {
+		Random random = new Random(21);
+
+		try {
+			// The key of the prefix holds one base per digit in base 5: up to 27 bases fit in a long
+			for (short prefix = 1; prefix <= 27; prefix++) {
+				Configuration.PREFIX_LENGTH = prefix;
+				SeqStringParser parser = new FastQSeqStringParser(prefix, (short) -1);
+
+				for (int i = 0; i < 2000; i++) {
+					// All the bases of the prefix may be the highest digit: N
+					String bases = (i % 10 == 0)? "N".repeat(101) : randomString(random, "ACGTN", 101);
+					String expected = record("@read" + i, bases, randomString(random, "!5I", 101));
+					Sequence seq = new Sequence();
+					parser.getSeq(expected, seq, true);
+
+					assertEquals("prefix " + prefix, expected, seq.toString());
+				}
+			}
+		} finally {
+			Configuration.PREFIX_LENGTH = PREFIX_LENGTH;
+		}
+	}
 }

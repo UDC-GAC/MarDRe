@@ -436,7 +436,7 @@ public class Sequence implements Writable {
 
 		for (i = 0; i < prefixLength; i++) {
 			bases[iterBases] = (char) Sequence.decodePrefixTab[(int) (auxKey % 5)];
-			auxKey *= 0.2;
+			auxKey /= 5;
 			iterBases--;
 		}
 
