@@ -8,7 +8,7 @@
 	<packaging>jar</packaging>
 
 	<name>MarDRe</name>
-	<url>http://mardre.des.udc.es</url>
+	<url>https://mardre.des.udc.es</url>
 	<licenses>
 		<license>
 		<name>GNU General Public Licence Version 3</name>
