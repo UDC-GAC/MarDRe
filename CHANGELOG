@@ -113,7 +113,7 @@ A point release for the MarDRe 1.x line
 	now executes a single MapReduce job (note that paired-end mode using a
 	reduce-side join still needs to execute two MapReduce jobs)
 
-		* HSP is available at https://github.com/rreye/hsp
+		* HSP is available at https://github.com/UDC-GAC/hsp
 
 	- Fix bug in paired-end mode scenarios
 

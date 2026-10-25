@@ -81,7 +81,7 @@ MarDRe needs but Hadoop. In order to recompile it, make sure you have:
    Maven local repository. It is not published in any public Maven repository,
    so it is a requirement to install it before building MarDRe:
 
-    $ git clone --branch v2.0.0 https://github.com/rreye/hsp.git
+    $ git clone --branch v2.0.0 https://github.com/UDC-GAC/hsp.git
     $ cd hsp
     $ mvn install
 
