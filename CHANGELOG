@@ -3,6 +3,92 @@ MarDRe Changelog
 This file briefly describes the main changes for each version of
 the MarDRe software package.
 
+MarDRe v2.0 - 2026/10/25
+------------------------
+A major release. It requires Java 11 and Hadoop 3, and it changes which
+read is kept among duplicates and the names written to the output (see
+the notes about compatibility below)
+
+	- Requirements: Java 11 or above, Hadoop 3.3.6 and the Hadoop Sequence
+	Parser (HSP) 2.0.0 library. Tested with Java 11, 17 and 21
+
+	- New option -d to remove only the optical duplicates: duplicate reads
+	of the same tile whose distance is at most the given Euclidean distance.
+	The X:Y coordinates are taken from the read names, either in the Illumina
+	format or with the identifier of the SRA before them. Read names are not
+	trimmed in this mode (see below)
+
+	- FASTA datasets are now processed correctly, single-end or paired-end
+	and compressed or not (the version of HSP used by 1.4 failed to read them)
+
+	- No limit on the length of the reads. Previous versions failed with
+	reads of more than about 2000 bases, and compared as empty the reads of
+	more than 32767 bases
+
+	- Overall performance is improved: with datasets of 12 million reads
+	the CPU time of the tasks is between 8% and 16% lower than in 1.4 (when
+	the names are trimmed as in 1.4), thanks to reading the records from
+	their bytes, a faster serialization and sort of the intermediate data
+	and a faster writing of the reads
+
+	- The diagnostics of the program are reported through the SLF4J API,
+	the final summary and timings are still printed on the standard output,
+	the errors that end the execution are also printed on the standard error
+	and the reasons why the tasks of a failed job failed are reported by
+	the program
+
+	- Added a test suite that includes the execution of the whole tool on
+	the local runner of Hadoop
+
+Compatibility with previous versions
+
+	- The read that is kept among duplicates and near-duplicates is the one
+	with the highest average quality, and the one with the lowest name if the
+	average quality is the same. MarDRe 1.4 kept the one with the lowest
+	average quality most of the times. The same applies to the in-mapper
+	combiner
+
+	- The names of the reads are no longer trimmed as HSP 1.x did (it cut
+	them at their first space), so the output keeps the whole name line, as
+	ParDRe does. The previous behavior can be restored with the generic
+	Hadoop option -Dhsp.trim.sequence.name=true, but it must not be used
+	with -d
+
+	- With -m greater than 0 and with -d, each read is compared with the reads
+	already kept, and a better duplicate replaces the one that was kept.
+	Therefore, the result depends on the order in which the reads arrive at
+	the reducers and some near-duplicates (about 0.01% of the reads) can
+	remain in the output. With -m 0 the reads kept are always the same
+
+	- The reads are not written in the order of the input dataset, as
+	before, and the order inside each group of reads with the same prefix
+	can differ from the one of previous versions
+
+	- Paired-end datasets compressed with BZip2 are read in a single split
+	by HSP, which can be slower than in previous versions
+
+	- MARDRE_HOME is only needed by the program that launches the job, not by
+	the MapReduce tasks, and the property dfs.blocksize is no longer required
+
+Bug fixes
+
+	- Fix the selection of the read with the highest average quality, which
+	used a stale average quality and never compared the first read of each
+	group
+
+	- Fix the bases of the prefix written to the output with -l greater than
+	22, which were wrong for most of the reads
+
+	- Fix a failure in paired-end mode with -c when the reads have different
+	lengths
+
+	- Fix the state shared between the tasks of the same JVM, so several
+	tasks can run at the same time in it
+
+	- Fix the messages of the -nr warning and of the error of the parameter
+	HDFS_BASE_PATH
+
+
 MarDRe v1.4 - 2019/01/23
 ------------------------
 A point release for the MarDRe 1.x line
