@@ -65,3 +65,26 @@ can be cut at their first space (but not when using -d) with:
 
 See the User's Guide (doc/MarDRe-UsersGuide.pdf) and the file CHANGELOG for
 the full list of options and the changes of this version.
+
+
+Building MarDRe from the sources
+--------------------------------
+
+The distributed JAR (target/MarDRe-bin.jar) already contains everything that
+MarDRe needs but Hadoop. In order to recompile it, make sure you have:
+
+1) Java Development Kit (JDK) version 11 or above
+
+2) Apache Maven version 3 or above
+
+3) The Hadoop Sequence Parser (HSP) library version 2.0.0 installed in your
+   Maven local repository. It is not published in any public Maven repository,
+   so it is a requirement to install it before building MarDRe:
+
+    $ git clone --branch v2.0.0 https://github.com/rreye/hsp.git
+    $ cd hsp
+    $ mvn install
+
+Then, execute the following command from within the MarDRe root directory:
+
+    $ mvn package
