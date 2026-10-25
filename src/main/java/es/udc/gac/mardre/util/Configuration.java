@@ -35,7 +35,7 @@ public final class Configuration {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
 
-	public static final String MARDRE_VERSION = "1.4";
+	public static final String MARDRE_VERSION = "2.0";
 	public static final String MARDRE_WEBPAGE = "http://mardre.des.udc.es";
 
 	// MarDRe configuration (madre.conf)
