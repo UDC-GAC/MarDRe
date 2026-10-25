@@ -16,9 +16,10 @@ Quick User's Guide
 
 - Prerequisites
 
-1) Make sure you have Java Runtime Environment (JRE) version 1.7 or above
+1) Make sure you have Java Runtime Environment (JRE) version 11 or above
 
-2) Make sure you have a working Hadoop distribution version 2.2 or above
+2) Make sure you have a working Hadoop distribution version 3.3.6 (the
+   version MarDRe is built and tested with)
 
   - HADOOP_HOME environmental variable must be set accordingly
 
@@ -49,3 +50,18 @@ The following command shows a similar example but for paired-end computing,
 allowing two mismatches and using the default prefix length (20) and 8 reducers:
 
   $ mardrerun -i dataset1.fastq -p dataset2.fastq -m 2 -nr 8
+
+The following command only removes the optical duplicates (duplicate reads
+of the same tile that are at most 100 units apart, according to the :X:Y
+coordinates of their names) of a single-end dataset:
+
+  $ mardrerun -i dataset.fastq -d 100 -nr 8
+
+The names of the reads are kept as they are in the dataset. Generic Hadoop
+options can be given before the options of MarDRe. For instance, the names
+can be cut at their first space (but not when using -d) with:
+
+  $ mardrerun -Dhsp.trim.sequence.name=true -i dataset.fastq -nr 8
+
+See the User's Guide (doc/MarDRe-UsersGuide.pdf) and the file CHANGELOG for
+the full list of options and the changes of this version.
