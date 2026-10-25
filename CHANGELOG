@@ -12,6 +12,10 @@ the notes about compatibility below)
 	- Requirements: Java 11 or above, Hadoop 3.3.6 and the Hadoop Sequence
 	Parser (HSP) 2.0.0 library. Tested with Java 11, 17 and 21
 
+	- MarDRe is now also hosted on GitHub, where its source code and its
+	releases are available: https://github.com/UDC-GAC/MarDRe. The website
+	of MarDRe is https://mardre.des.udc.es
+
 	- New option -d to remove only the optical duplicates: duplicate reads
 	of the same tile whose distance is at most the given Euclidean distance.
 	The X:Y coordinates are taken from the read names, either in the Illumina
